@@ -1,0 +1,1 @@
+from nyaggle.constants import *
