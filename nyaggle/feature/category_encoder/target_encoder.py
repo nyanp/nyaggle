@@ -2,14 +2,11 @@ from itertools import tee
 from typing import List, Optional, Iterable, Union
 
 import pandas as pd
-import numpy as np
 import category_encoders as ce
 from sklearn.base import BaseEstimator, clone
 from sklearn.model_selection import KFold, StratifiedKFold
 
 from nyaggle.feature.base import BaseFeaturizer
-
-NAN_INT = 7535805
 
 
 class KFoldEncoderWrapper(BaseFeaturizer):

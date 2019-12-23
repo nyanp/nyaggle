@@ -8,7 +8,7 @@ Code for Kaggle and Offline Competitions
 import pandas as pd
 import numpy as np
 
-from sklearn.model_selection import GroupKFold
+from sklearn.model_selection import KFold
 from nyaggle.feature.category_encoder import TargetEncoder
 
 
@@ -18,12 +18,11 @@ all = pd.concat([train, test]).copy()
 
 cat_cols = [c for c in train.columns if train[c].dtype == np.object]
 target_col = 'y'
-group_col = 'user_id'
 
-gkf = GroupKFold(5)
+kf = KFold(5)
 
-# you can pass splitting information (optional)
-te = TargetEncoder(split=gkf.split(train, groups=train[group_col]))
+# Target encoding with K-fold
+te = TargetEncoder(split=kf.split(train))
 
 # use fit/fit_transform to train data, then apply transform to test data
 train.loc[:, cat_cols] = te.fit_transform(train[cat_cols], train[target_col])
@@ -31,15 +30,12 @@ test.loc[:, cat_cols] = te.transform(test[cat_cols])
 
 # ... or just call fit_transform to concatenated data
 all.loc[:, cat_cols] = te.fit_transform(all[cat_cols], all[cat_cols])
-
 ```
 
 ### NLP
 
 ```python
 import pandas as pd
-import numpy as np
-
 from nyaggle.feature.nlp import BertSentenceVectorizer
 
 
@@ -52,8 +48,14 @@ target_col = 'y'
 group_col = 'user_id'
 
 
-bv = BertSentenceVectorizer()
+# extract BERT-based sentence vector
+bv = BertSentenceVectorizer(text_columns=text_cols)
 
-text_vector = bv.fit_transform(train[text_cols])
+text_vector = bv.fit_transform(train)
 
+
+# BERT + SVD, with cuda
+bv = BertSentenceVectorizer(text_columns=text_cols, use_cuda=True, n_components=40)
+
+text_vector_svd = bv.fit_transform(train)
 ```
