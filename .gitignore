@@ -1,3 +1,4 @@
 build/
 dist/
 nyaggle.egg-info/
+.idea/

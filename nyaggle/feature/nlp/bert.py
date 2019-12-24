@@ -1,5 +1,4 @@
-from typing import List, Optional
-import torch
+from typing import Any, Callable, List, Optional
 import transformers
 
 import numpy as np
@@ -8,6 +7,7 @@ from sklearn.decomposition import TruncatedSVD
 from tqdm import tqdm
 
 from nyaggle import Language, PoolingStrategy
+from nyaggle.environment import requires_torch
 from nyaggle.feature.base import BaseFeaturizer
 
 
@@ -48,7 +48,7 @@ class BertSentenceVectorizer(BaseFeaturizer):
             self.tokenizer = transformers.BertJapaneseTokenizer.from_pretrained('bert-base-japanese-whole-word-masking')
             self.model = transformers.BertModel.from_pretrained('bert-base-japanese-whole-word-masking')
         else:
-            raise ValueError(f'Specified language type ({lang}) is invalid.')
+            raise ValueError('Specified language type () is invalid.'.format(lang))
 
         self.lang = lang
         self.n_components = n_components
@@ -58,6 +58,9 @@ class BertSentenceVectorizer(BaseFeaturizer):
         self.lsa = {}
 
     def _process_text(self, text: str) -> np.ndarray:
+        requires_torch()
+        import torch
+
         tokens_tensor = torch.tensor([self.tokenizer.encode(text, add_special_tokens=True)])
         if self.use_cuda:
             tokens_tensor = tokens_tensor.to('cuda')
@@ -79,47 +82,39 @@ class BertSentenceVectorizer(BaseFeaturizer):
         else:
             raise ValueError("specify valid pooling_strategy: {REDUCE_MEAN, REDUCE_MAX, REDUCE_MEAN_MAX, CLS_TOKEN}")
 
-    def fit(self, X: pd.DataFrame, y=None):
-        tqdm.pandas()
-        columns = self.text_columns or [c for c in X.columns if X[c].dtype == np.object]
+    def _fit_one(self, col: str, emb: np.ndarray):
+        if not self.n_components or self.n_components >= emb.shape[1]:
+            return emb
+        self.lsa[col] = TruncatedSVD(n_components=self.n_components, algorithm='arpack', random_state=0)
+        return self.lsa[col].fit(emb)
 
-        for c in columns:
-            emb = X[c].progress_apply(lambda x: self._process_text(x))
+    def _transform_one(self, col: str, emb: np.ndarray):
+        return self.lsa[col].transform(emb)
 
-            if self.n_components and self.n_components < emb.shape[1]:
-                self.lsa[c] = TruncatedSVD(n_components=self.n_components, algorithm='arpack')
-                self.lsa[c].fit(emb)
+    def _fit_transform_one(self, col: str, emb: np.ndarray):
+        if not self.n_components or self.n_components >= emb.shape[1]:
+            return emb
+        self.lsa[col] = TruncatedSVD(n_components=self.n_components, algorithm='arpack', random_state=0)
+        return self.lsa[col].fit_transform(emb)
 
-        return self
-
-    def transform(self, X: pd.DataFrame, y=None):
-        tqdm.pandas()
-        columns = self.text_columns or [c for c in X.columns if X[c].dtype == np.object]
-
-        processed = []
-        for c in columns:
-            emb = X[c].progress_apply(lambda x: self._process_text(x))
-
-            if self.n_components and self.n_components < emb.shape[1]:
-                processed.append(self.lsa[c].transform(emb))
-            else:
-                processed.append(emb)
-
-        return np.hstack(processed)
-
-    def fit_transform(self, X: pd.DataFrame, y=None, **fit_params):
+    def _process(self, X: pd.DataFrame, func: Callable[[str, np.ndarray], Any]):
         tqdm.pandas()
         columns = self.text_columns or [c for c in X.columns if X[c].dtype == np.object]
 
         processed = []
         for c in columns:
             emb = np.vstack(X[c].progress_apply(lambda x: self._process_text(x)))
-
-            if self.n_components and self.n_components < emb.shape[1]:
-                self.lsa[c] = TruncatedSVD(n_components=self.n_components, algorithm='arpack', random_state=0)
-                processed.append(self.lsa[c].fit_transform(emb))
-            else:
-                processed.append(emb)
+            processed.append(func(c, emb))
 
         return np.hstack(processed)
+
+    def fit(self, X: pd.DataFrame, y=None):
+        self._process(X, self._fit_one)
+        return self
+
+    def transform(self, X: pd.DataFrame, y=None):
+        return self._process(X, self._transform_one)
+
+    def fit_transform(self, X: pd.DataFrame, y=None, **fit_params):
+        return self._process(X, self._fit_transform_one)
 

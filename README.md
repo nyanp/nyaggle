@@ -3,7 +3,7 @@ Code for Kaggle and Offline Competitions
 
 ## Feature Engineering
 
-### Target Encoding
+### Target Encoding with K-Fold
 ```python
 import pandas as pd
 import numpy as np
@@ -33,6 +33,7 @@ all.loc[:, cat_cols] = te.fit_transform(all[cat_cols], all[cat_cols])
 ```
 
 ### NLP
+You need to install pytorch to your virtual environment to use BertSentenceVectorizer.
 
 ```python
 import pandas as pd
@@ -58,4 +59,9 @@ text_vector = bv.fit_transform(train)
 bv = BertSentenceVectorizer(text_columns=text_cols, use_cuda=True, n_components=40)
 
 text_vector_svd = bv.fit_transform(train)
+
+# Japanese BERT
+bv = BertSentenceVectorizer(text_columns=text_cols, lang=Language.JP)
+
+japanese_text_vector = bv.fit_transform(train)
 ```

@@ -29,7 +29,6 @@ setup(
         'category_encoders',
         'numpy',
         'pandas',
-        'torch',
         'sklearn',
         'tqdm',
         'transformers>=2.3.0'
