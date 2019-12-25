@@ -1,8 +1,10 @@
 from itertools import tee
 from typing import List, Optional, Iterable, Union
 
+import numpy as np
 import pandas as pd
 import category_encoders as ce
+from category_encoders.utils import convert_input, convert_input_vector
 from sklearn.base import BaseEstimator, clone
 from sklearn.model_selection import KFold, StratifiedKFold
 
@@ -20,10 +22,12 @@ class KFoldEncoderWrapper(BaseFeaturizer):
         split:
             KFold, StratifiedKFold or kf.split(X, y)
     """
-    def __init__(self, base_transformer: BaseEstimator, split: Union[Iterable, KFold, StratifiedKFold]):
+    def __init__(self, base_transformer: BaseEstimator,
+                 split: Union[Iterable, KFold, StratifiedKFold], return_df: bool = True):
         self.split = split
         self.n_splits = self._get_n_splits()
         self.transformers = [clone(base_transformer) for _ in range(self.n_splits + 1)]
+        self.return_df = return_df
 
     def _get_n_splits(self) -> int:
         if isinstance(self.split, (KFold, StratifiedKFold)):
@@ -31,7 +35,7 @@ class KFoldEncoderWrapper(BaseFeaturizer):
         self.split, split = tee(self.split)
         return len([0 for _ in split])
 
-    def _fit_train(self, X: pd.DataFrame, y: Optional[pd.Series]):
+    def _fit_train(self, X: pd.DataFrame, y: Optional[pd.Series]) -> pd.DataFrame:
         if y is None:
             X_ = self.transformers[-1].transform(X)
             return self._post_transform(X_)
@@ -58,11 +62,16 @@ class KFoldEncoderWrapper(BaseFeaturizer):
     def fit(self, X: pd.DataFrame, y: pd.Series):
         self.fit_transform(X, y)
 
-    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
-        return self._fit_train(X, None)
+    def transform(self, X: Union[pd.DataFrame, np.ndarray]) -> Union[pd.DataFrame, np.ndarray]:
+        X_ = self._fit_train(X, None)
+        return X_ if self.return_df else X_.values
 
-    def fit_transform(self, X: pd.DataFrame, y: pd.Series = None, **fit_params) -> pd.DataFrame:
+    def fit_transform(self, X: Union[pd.DataFrame, np.ndarray], y: pd.Series = None, **fit_params) \
+            -> Union[pd.DataFrame, np.ndarray]:
         assert len(X) == len(y)
+
+        X = convert_input(X)
+        y = convert_input_vector(y, X.index)
 
         if y.isnull().sum() > 0:
             # y == null is regarded as test data
@@ -72,7 +81,7 @@ class KFoldEncoderWrapper(BaseFeaturizer):
         else:
             X_ = self._fit_train(X, y)
 
-        return X_
+        return X_ if self.return_df else X_.values
 
 
 class TargetEncoder(KFoldEncoderWrapper):
@@ -99,13 +108,13 @@ class TargetEncoder(KFoldEncoderWrapper):
     """
     def __init__(self, split: Union[Iterable, KFold, StratifiedKFold], cols: List[str] = None,
                  drop_invariant: bool = False, handle_missing: str = 'value', handle_unknown: str = 'value',
-                 min_samples_leaf: int = 1, smoothing: float = 1.0):
+                 min_samples_leaf: int = 1, smoothing: float = 1.0, return_df: bool = False):
         e = ce.TargetEncoder(cols=cols, drop_invariant=drop_invariant, return_df=True,
                              handle_missing=handle_missing,
                              handle_unknown=handle_unknown,
                              min_samples_leaf=min_samples_leaf, smoothing=smoothing)
 
-        super().__init__(e, split)
+        super().__init__(e, split, return_df)
 
     def _post_transform(self, X: pd.DataFrame) -> pd.DataFrame:
         cols = self.transformers[0].cols
