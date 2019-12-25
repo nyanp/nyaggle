@@ -22,6 +22,10 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install torch
+    - name: Install MeCab
+      run: |
+        sudo apt install mecab libmecab-dev mecab-ipadic-utf8
+        pip install mecab-python3
     - name: Lint with flake8
       run: |
         pip install flake8
