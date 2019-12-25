@@ -27,6 +27,7 @@ setup(
 
     install_requires=[
         'category_encoders',
+        'lightgbm',
         'numpy',
         'pandas',
         'sklearn',
