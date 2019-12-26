@@ -36,7 +36,7 @@ class BertSentenceVectorizer(BaseFeaturizer):
     def __init__(self, lang: Language = Language.EN, n_components: Optional[int] = None,
                  text_columns: List[str] = None, pooling_strategy: PoolingStrategy = PoolingStrategy.REDUCE_MEAN,
                  use_cuda: bool = False, tokenizer: transformers.PreTrainedTokenizer = None,
-                 model: transformers.PreTrainedModel = None):
+                 model = None):
         if tokenizer is not None:
             assert model is not None
             self.tokenizer = tokenizer
