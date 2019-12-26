@@ -3,7 +3,6 @@ import pytest
 import numpy.testing as npt
 import pandas as pd
 
-from nyaggle import Language
 from nyaggle.feature.nlp import BertSentenceVectorizer
 
 
@@ -83,7 +82,7 @@ def test_bert_en_svd_multicol():
 
 
 def test_bert_jp():
-    bert = BertSentenceVectorizer(use_cuda=False, lang=Language.JP)
+    bert = BertSentenceVectorizer(use_cuda=False, lang='jp')
 
     X = pd.DataFrame({
         'id': [0, 1, 2, 3, 4, 5],

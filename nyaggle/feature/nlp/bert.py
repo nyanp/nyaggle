@@ -6,7 +6,6 @@ import pandas as pd
 from sklearn.decomposition import TruncatedSVD
 from tqdm import tqdm
 
-from nyaggle import Language, PoolingStrategy
 from nyaggle.environment import requires_torch
 from nyaggle.feature.base import BaseFeaturizer
 
@@ -18,13 +17,16 @@ class BertSentenceVectorizer(BaseFeaturizer):
 
     Args:
         lang:
-            Language (EN/JP)
+            Type of language. If set to "jp", Japanese BERT model is used (you need to install MeCab).
         n_components:
             Number of components in SVD. If `None`, SVD is not applied.
         text_columns:
             List of processing columns. If `None`, all object columns are regarded as text column.
         pooling_strategy:
-            Algorithm to convert sentence-level vector to fixed-length vector.
+            The pooling algorithm for generating fixed length encoding vector. 'reduce_mean' and 'reduce_max' use
+            average pooling and max pooling respectively to reduce vector from (num-words, emb-dim) to (emb_dim).
+            'reduce_mean_max' performs 'reduce_mean' and 'reduce_max' separately and concat them.
+            'cls_token' takes the first element (i.e. [CLS]).
         use_cuda:
             If `True`, inference is performed on GPU.
         tokenizer:
@@ -33,18 +35,18 @@ class BertSentenceVectorizer(BaseFeaturizer):
             The custom pretrained model used instead of default BERT model
     """
 
-    def __init__(self, lang: Language = Language.EN, n_components: Optional[int] = None,
-                 text_columns: List[str] = None, pooling_strategy: PoolingStrategy = PoolingStrategy.REDUCE_MEAN,
+    def __init__(self, lang: str = 'en', n_components: Optional[int] = None,
+                 text_columns: List[str] = None, pooling_strategy: str = 'reduce_mean',
                  use_cuda: bool = False, tokenizer: transformers.PreTrainedTokenizer = None,
                  model = None):
         if tokenizer is not None:
             assert model is not None
             self.tokenizer = tokenizer
             self.model = model
-        if lang == Language.EN:
+        if lang == 'en':
             self.tokenizer = transformers.BertTokenizer.from_pretrained('bert-base-uncased')
             self.model = transformers.BertModel.from_pretrained('bert-base-uncased')
-        elif lang == Language.JP:
+        elif lang == 'jp':
             self.tokenizer = transformers.BertJapaneseTokenizer.from_pretrained('bert-base-japanese-whole-word-masking')
             self.model = transformers.BertModel.from_pretrained('bert-base-japanese-whole-word-masking')
         else:
@@ -71,16 +73,16 @@ class BertSentenceVectorizer(BaseFeaturizer):
             all_encoder_layers, _ = self.model(tokens_tensor)
 
         embedding = all_encoder_layers.cpu().numpy()[0]
-        if self.pooling_strategy == PoolingStrategy.REDUCE_MEAN:
+        if self.pooling_strategy == 'reduce_mean':
             return np.mean(embedding, axis=0)
-        elif self.pooling_strategy == PoolingStrategy.REDUCE_MAX:
+        elif self.pooling_strategy == 'reduce_max':
             return np.max(embedding, axis=0)
-        elif self.pooling_strategy == PoolingStrategy.REDUCE_MEAN_MAX:
+        elif self.pooling_strategy == 'reduce_mean_max':
             return np.r_[np.max(embedding, axis=0), np.mean(embedding, axis=0)]
-        elif self.pooling_strategy == PoolingStrategy.CLS_TOKEN:
+        elif self.pooling_strategy == 'cls_token':
             return embedding[0]
         else:
-            raise ValueError("specify valid pooling_strategy: {REDUCE_MEAN, REDUCE_MAX, REDUCE_MEAN_MAX, CLS_TOKEN}")
+            raise ValueError("specify valid pooling_strategy: {reduce_mean, reduce_max, reduce_mean_max, cls_token}")
 
     def _fit_one(self, col: str, emb: np.ndarray):
         if not self.n_components or self.n_components >= emb.shape[1]:

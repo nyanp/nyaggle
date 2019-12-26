@@ -72,7 +72,7 @@ bv = BertSentenceVectorizer(text_columns=text_cols, use_cuda=True, n_components=
 text_vector_svd = bv.fit_transform(train)
 
 # Japanese BERT
-bv = BertSentenceVectorizer(text_columns=text_cols, lang=Language.JP)
+bv = BertSentenceVectorizer(text_columns=text_cols, lang='jp')
 
 japanese_text_vector = bv.fit_transform(train)
 ```

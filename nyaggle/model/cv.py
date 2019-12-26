@@ -10,7 +10,7 @@ from lightgbm import LGBMClassifier, LGBMRegressor
 
 
 def cv(model: Union[BaseEstimator, List[BaseEstimator]],
-       X_train: pd.DataFrame, y: pd.Series, X_test: Optional[pd.DataFrame] = None, nfolds: int = 5,
+       X_train: pd.DataFrame, y: pd.Series, X_test: pd.DataFrame = None, nfolds: int = 5,
        stratified: bool = False, seed: int = 42,
        predict_proba: bool = False, eval: Optional[Callable] = None, logger: Optional[Logger] = None,
        on_each_fold: Optional[Callable[[int, BaseEstimator, pd.DataFrame], None]] = None, **kw)\
@@ -21,17 +21,18 @@ def cv(model: Union[BaseEstimator, List[BaseEstimator]],
     :param model: Model used in CV.
     :param X_train: training feature
     :param y: target variable
-    :param X_test: test feature. If None, no prediction is performed.
+    :param X_test: test feature (Optional). If specified, prediction on test data is performed using ensemble of models.
     :param nfolds: number of splits
     :param stratified: If true, use stratified K-Fold
     :param seed: seed
-    :param predict_proba: If true, call predict_proba instead of predict for calculate prediction for test data.
+    :param predict_proba: If true, call `predict_proba` instead of `predict` for calculating prediction for test data.
     :param eval: Function used for logging and returning scores
     :param logger: logger
     :param on_each_fold: called for each fold with (idx_fold, model, X_fold)
     :param kw: additional parameters passed to model.fit()
     :return: (oof prediction, test prediction, list of scores for each fold)
     """
+
     if stratified:
         folds = StratifiedKFold(n_splits=nfolds, random_state=seed)
     else:
