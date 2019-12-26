@@ -1,9 +1,19 @@
 # nyaggle
-Code for Kaggle and Offline Competitions
+**nyaggle** is a utility library for Kaggle and offline competitions, 
+particularly focused on feature engineering and validation. 
+See [the documentation](https://nyaggle.readthedocs.io/en/latest/index.html) for details.
 
-## Feature Engineering
+## Installation
+You can install nyaggle via pip:
+```
+$pip install nyaggle
+```
 
-### Target Encoding with K-Fold
+## Examples
+
+### Feature Engineering
+
+#### Target Encoding with K-Fold
 ```python
 import pandas as pd
 import numpy as np
@@ -32,8 +42,9 @@ test.loc[:, cat_cols] = te.transform(test[cat_cols])
 all.loc[:, cat_cols] = te.fit_transform(all[cat_cols], all[cat_cols])
 ```
 
-### NLP
-You need to install pytorch to your virtual environment to use BertSentenceVectorizer.
+#### NLP
+You need to install pytorch to your virtual environment to use BertSentenceVectorizer. 
+MaCab and mecab-python3 are also required if you use Japanese BERT model.
 
 ```python
 import pandas as pd
