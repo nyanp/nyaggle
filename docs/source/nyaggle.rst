@@ -10,6 +10,7 @@ nyaggle.feature.category_encoder module
 .. automodule:: nyaggle.feature.category_encoder
     :members:
     :imported-members:
+    :inherited-members:
     :show-inheritance:
 
 nyaggle.feature.nlp module
