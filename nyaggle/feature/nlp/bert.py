@@ -97,16 +97,26 @@ class BertSentenceVectorizer(BaseFeaturizer):
         self.lsa[col] = TruncatedSVD(n_components=self.n_components, algorithm='arpack', random_state=0)
         return self.lsa[col].fit_transform(emb)
 
-    def _process(self, X: pd.DataFrame, func: Callable[[str, np.ndarray], Any]):
+    def _process(self, X: pd.DataFrame, func: Callable[[str, np.ndarray], Any], column_format:str = '{col}_{idx}'):
         tqdm.pandas()
         columns = self.text_columns or [c for c in X.columns if X[c].dtype == np.object]
+        non_text_columns = [c for c in X.columns if c not in columns]
 
+        column_names = []
         processed = []
         for c in columns:
             emb = np.vstack(X[c].progress_apply(lambda x: self._process_text(x)))
-            processed.append(func(c, emb))
+            emb = func(c, emb)
+            processed.append(emb)
+            column_names += [column_format.format(col=c, idx=i) for i in range(emb.shape[1])]
 
-        return np.hstack(processed)
+        processed_df = pd.DataFrame(np.hstack(processed), columns=column_names)
+
+        if non_text_columns:
+            X_ = X[non_text_columns].copy()
+            return pd.concat([X_, processed_df], axis=1)
+        else:
+            return processed_df
 
     def fit(self, X: pd.DataFrame, y=None):
         self._process(X, self._fit_one)

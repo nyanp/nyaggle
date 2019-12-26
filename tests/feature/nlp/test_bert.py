@@ -37,9 +37,11 @@ def test_bert_en():
     ret = bert.fit_transform(X)
 
     assert ret.shape[0] == 6
-    assert ret.shape[1] == 768
-    npt.assert_almost_equal(ret[0], ret[4])
-    npt.assert_almost_equal(ret[0], ret[5])
+    assert ret.shape[1] == 768 + 1  # id + embed
+
+    ret.drop('id', axis=1, inplace=True)
+    npt.assert_almost_equal(ret.iloc[0, :].values, ret.iloc[4, :].values)
+    npt.assert_almost_equal(ret.iloc[0, :].values, ret.iloc[5, :].values)
 
 
 def test_bert_en_svd():
@@ -54,9 +56,11 @@ def test_bert_en_svd():
     ret = bert.fit_transform(X)
 
     assert ret.shape[0] == 6
-    assert ret.shape[1] == n_components
-    npt.assert_almost_equal(ret[0], ret[4], decimal=3)
-    npt.assert_almost_equal(ret[0], ret[5], decimal=3)
+    assert ret.shape[1] == n_components + 1
+
+    ret.drop('id', axis=1, inplace=True)
+    npt.assert_almost_equal(ret.iloc[0, :].values, ret.iloc[4, :].values, decimal=3)
+    npt.assert_almost_equal(ret.iloc[0, :].values, ret.iloc[5, :].values, decimal=3)
 
 
 def test_bert_en_svd_multicol():
@@ -71,9 +75,11 @@ def test_bert_en_svd_multicol():
     ret = bert.fit_transform(X)
 
     assert ret.shape[0] == 6
-    assert ret.shape[1] == 2*768
-    npt.assert_almost_equal(ret[0], ret[4], decimal=3)
-    npt.assert_almost_equal(ret[0], ret[5], decimal=3)
+    assert ret.shape[1] == 2*768 + 1
+
+    ret.drop('id', axis=1, inplace=True)
+    npt.assert_almost_equal(ret.iloc[0, :].values, ret.iloc[4, :].values, decimal=3)
+    npt.assert_almost_equal(ret.iloc[0, :].values, ret.iloc[5, :].values, decimal=3)
 
 
 def test_bert_jp():
@@ -87,8 +93,10 @@ def test_bert_jp():
     ret = bert.fit_transform(X)
 
     assert ret.shape[0] == 6
-    assert ret.shape[1] == 768
-    npt.assert_almost_equal(ret[0], ret[4])
-    npt.assert_almost_equal(ret[0], ret[5])
+    assert ret.shape[1] == 768 + 1
+
+    ret.drop('id', axis=1, inplace=True)
+    npt.assert_almost_equal(ret.iloc[0, :].values, ret.iloc[4, :].values)
+    npt.assert_almost_equal(ret.iloc[0, :].values, ret.iloc[5, :].values)
 
 
