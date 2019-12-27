@@ -37,12 +37,14 @@ class BertSentenceVectorizer(BaseFeaturizer):
         return_same_type:
             If True, `transform` and `fit_transform` return the same type as X.
             If False, these APIs always return a numpy array, similar to sklearn's API.
+        column_format:
+            Name of transformed columns (used if returning type is pd.DataFrame)
     """
 
     def __init__(self, lang: str = 'en', n_components: Optional[int] = None,
                  text_columns: List[str] = None, pooling_strategy: str = 'reduce_mean',
                  use_cuda: bool = False, tokenizer: transformers.PreTrainedTokenizer = None,
-                 model = None, return_same_type: bool = True):
+                 model = None, return_same_type: bool = True, column_format: str = '{col}_{idx}'):
         if tokenizer is not None:
             assert model is not None
             self.tokenizer = tokenizer
@@ -63,6 +65,7 @@ class BertSentenceVectorizer(BaseFeaturizer):
         self.use_cuda = use_cuda
         self.return_same_type = return_same_type
         self.svd = {}
+        self.column_format = column_format
 
     def _process_text(self, text: str) -> np.ndarray:
         requires_torch()
@@ -104,7 +107,7 @@ class BertSentenceVectorizer(BaseFeaturizer):
         self.svd[col] = TruncatedSVD(n_components=self.n_components, algorithm='arpack', random_state=0)
         return self.svd[col].fit_transform(emb)
 
-    def _process(self, X: pd.DataFrame, func: Callable[[str, np.ndarray], Any], column_format:str = '{col}_{idx}'):
+    def _process(self, X: pd.DataFrame, func: Callable[[str, np.ndarray], Any]):
         is_pandas = isinstance(X, pd.DataFrame)
         X = convert_input(X)
 
@@ -118,7 +121,7 @@ class BertSentenceVectorizer(BaseFeaturizer):
             emb = np.vstack(X[c].progress_apply(lambda x: self._process_text(x)))
             emb = func(c, emb)
             processed.append(emb)
-            column_names += [column_format.format(col=c, idx=i) for i in range(emb.shape[1])]
+            column_names += [self.column_format.format(col=c, idx=i) for i in range(emb.shape[1])]
 
         processed_df = pd.DataFrame(np.hstack(processed), columns=column_names)
 
@@ -131,12 +134,41 @@ class BertSentenceVectorizer(BaseFeaturizer):
         return X_ if self.return_same_type and is_pandas else X_.values
 
     def fit(self, X: Union[pd.DataFrame, np.ndarray], y=None):
+        """
+        Fit SVD model on training data X.
+
+        Args:
+            X:
+                Data
+            y:
+                Ignored
+        """
         self._process(X, self._fit_one)
         return self
 
     def transform(self, X: Union[pd.DataFrame, np.ndarray], y=None):
+        """
+        Perform feature extraction and dimensionality reduction using
+        BERT pre-trained model and trained SVD model.
+
+        Args:
+            X:
+                Data
+            y:
+                Ignored
+        """
         return self._process(X, self._transform_one)
 
     def fit_transform(self, X: Union[pd.DataFrame, np.ndarray], y=None, **fit_params):
+        """
+        Fit SVD model on training data X and perform feature extraction and dimensionality reduction using
+        BERT pre-trained model and trained SVD model.
+
+        Args:
+            X:
+                Data
+            y:
+                Ignored
+        """
         return self._process(X, self._fit_transform_one)
 

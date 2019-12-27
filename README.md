@@ -42,7 +42,7 @@ test.loc[:, cat_cols] = te.transform(test[cat_cols])
 all.loc[:, cat_cols] = te.fit_transform(all[cat_cols], all[cat_cols])
 ```
 
-#### NLP
+#### Text Vectorization using BERT
 You need to install pytorch to your virtual environment to use BertSentenceVectorizer. 
 MaCab and mecab-python3 are also required if you use Japanese BERT model.
 

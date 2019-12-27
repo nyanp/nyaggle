@@ -21,19 +21,34 @@ def cv(model: Union[BaseEstimator, List[BaseEstimator]],
     """
     Calculate Cross Validation
 
-    :param model: Model used in CV.
-    :param X_train: training feature
-    :param y: target variable
-    :param X_test: test feature (Optional). If specified, prediction on test data is performed using ensemble of models.
-    :param nfolds: number of splits
-    :param stratified: If true, use stratified K-Fold
-    :param seed: seed
-    :param predict_proba: If true, call `predict_proba` instead of `predict` for calculating prediction for test data.
-    :param eval: Function used for logging and returning scores
-    :param logger: logger
-    :param on_each_fold: called for each fold with (idx_fold, model, X_fold)
-    :param kw: additional parameters passed to model.fit()
-    :return: Namedtuple with following members
+    Args:
+        model:
+            Model used in CV.
+        X_train:
+            training feature
+        y:
+            target variable
+        X_test:
+            test feature (Optional). If specified, prediction on test data is performed using ensemble of models.
+        nfolds:
+            number of splits
+        stratified:
+            If true, use stratified K-Fold
+        seed:
+            seed
+        predict_proba:
+            If true, call `predict_proba` instead of `predict` for calculating prediction for test data.
+        eval:
+            Function used for logging and returning scores
+        logger:
+            logger
+        on_each_fold:
+            called for each fold with (idx_fold, model, X_fold)
+        kw:
+            additional parameters passed to model.fit()
+
+    Returns:
+        Namedtuple with following members
 
         * predicted_oof: (numpy array) predicted value on Out-of-Fold validation data
         * predicted_test: (numpy array) predicted value on test data. `None` if X_test is `None`

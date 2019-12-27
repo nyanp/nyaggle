@@ -67,8 +67,11 @@ class KFoldEncoderWrapper(BaseFeaturizer):
         """
         Fit models for each fold.
 
-        :param X: Data
-        :param y: Target
+        Args:
+            X:
+                Data
+            y:
+                Target
         """
         self.fit_transform(X, y)
 
@@ -76,8 +79,11 @@ class KFoldEncoderWrapper(BaseFeaturizer):
         """
         Transform X
 
-        :param X: Data
-        :return: Transformed version of X. It will be pd.DataFrame If X is `pd.DataFrame` and return_same_type is True.
+        Args:
+            X: Data
+
+        Returns:
+            Transformed version of X. It will be pd.DataFrame If X is `pd.DataFrame` and return_same_type is True.
         """
         is_pandas = isinstance(X, pd.DataFrame)
         X_ = self._fit_train(X, None)
@@ -88,10 +94,16 @@ class KFoldEncoderWrapper(BaseFeaturizer):
         """
         Fit models for each fold, then transform X
 
-        :param X: Data
-        :param y: Target
-        :param fit_params: Additional parameters passed to models
-        :return: Transformed version of X. It will be pd.DataFrame If X is `pd.DataFrame` and return_same_type is True.
+        Args:
+            X:
+                Data
+            y:
+                Target
+            fit_params:
+                Additional parameters passed to models
+
+        Returns:
+            Transformed version of X. It will be pd.DataFrame If X is `pd.DataFrame` and return_same_type is True.
         """
         assert len(X) == len(y)
 

@@ -5,7 +5,7 @@ Submodules
 ----------
 
 nyaggle.feature.category_encoder module
------------------------
+----------------------------------------
 
 .. automodule:: nyaggle.feature.category_encoder
     :members:
@@ -14,7 +14,7 @@ nyaggle.feature.category_encoder module
     :show-inheritance:
 
 nyaggle.feature.nlp module
------------------------
+---------------------------
 
 .. automodule:: nyaggle.feature.nlp
     :members:
