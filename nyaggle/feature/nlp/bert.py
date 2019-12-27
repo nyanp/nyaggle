@@ -1,8 +1,9 @@
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, List, Optional, Union
 import transformers
 
 import numpy as np
 import pandas as pd
+from category_encoders.utils import convert_input
 from sklearn.decomposition import TruncatedSVD
 from tqdm import tqdm
 
@@ -33,12 +34,15 @@ class BertSentenceVectorizer(BaseFeaturizer):
             The custom tokenizer used instead of default tokenizer
         model:
             The custom pretrained model used instead of default BERT model
+        return_same_type:
+            If True, `transform` and `fit_transform` return the same type as X.
+            If False, these APIs always return a numpy array, similar to sklearn's API.
     """
 
     def __init__(self, lang: str = 'en', n_components: Optional[int] = None,
                  text_columns: List[str] = None, pooling_strategy: str = 'reduce_mean',
                  use_cuda: bool = False, tokenizer: transformers.PreTrainedTokenizer = None,
-                 model = None):
+                 model = None, return_same_type: bool = True):
         if tokenizer is not None:
             assert model is not None
             self.tokenizer = tokenizer
@@ -57,7 +61,8 @@ class BertSentenceVectorizer(BaseFeaturizer):
         self.text_columns = text_columns
         self.pooling_strategy = pooling_strategy
         self.use_cuda = use_cuda
-        self.lsa = {}
+        self.return_same_type = return_same_type
+        self.svd = {}
 
     def _process_text(self, text: str) -> np.ndarray:
         requires_torch()
@@ -87,19 +92,22 @@ class BertSentenceVectorizer(BaseFeaturizer):
     def _fit_one(self, col: str, emb: np.ndarray):
         if not self.n_components or self.n_components >= emb.shape[1]:
             return emb
-        self.lsa[col] = TruncatedSVD(n_components=self.n_components, algorithm='arpack', random_state=0)
-        return self.lsa[col].fit(emb)
+        self.svd[col] = TruncatedSVD(n_components=self.n_components, algorithm='arpack', random_state=0)
+        return self.svd[col].fit(emb)
 
     def _transform_one(self, col: str, emb: np.ndarray):
-        return self.lsa[col].transform(emb)
+        return self.svd[col].transform(emb)
 
     def _fit_transform_one(self, col: str, emb: np.ndarray):
         if not self.n_components or self.n_components >= emb.shape[1]:
             return emb
-        self.lsa[col] = TruncatedSVD(n_components=self.n_components, algorithm='arpack', random_state=0)
-        return self.lsa[col].fit_transform(emb)
+        self.svd[col] = TruncatedSVD(n_components=self.n_components, algorithm='arpack', random_state=0)
+        return self.svd[col].fit_transform(emb)
 
     def _process(self, X: pd.DataFrame, func: Callable[[str, np.ndarray], Any], column_format:str = '{col}_{idx}'):
+        is_pandas = isinstance(X, pd.DataFrame)
+        X = convert_input(X)
+
         tqdm.pandas()
         columns = self.text_columns or [c for c in X.columns if X[c].dtype == np.object]
         non_text_columns = [c for c in X.columns if c not in columns]
@@ -116,17 +124,19 @@ class BertSentenceVectorizer(BaseFeaturizer):
 
         if non_text_columns:
             X_ = X[non_text_columns].copy()
-            return pd.concat([X_, processed_df], axis=1)
+            X_ = pd.concat([X_, processed_df], axis=1)
         else:
-            return processed_df
+            X_ = processed_df
 
-    def fit(self, X: pd.DataFrame, y=None):
+        return X_ if self.return_same_type and is_pandas else X_.values
+
+    def fit(self, X: Union[pd.DataFrame, np.ndarray], y=None):
         self._process(X, self._fit_one)
         return self
 
-    def transform(self, X: pd.DataFrame, y=None):
+    def transform(self, X: Union[pd.DataFrame, np.ndarray], y=None):
         return self._process(X, self._transform_one)
 
-    def fit_transform(self, X: pd.DataFrame, y=None, **fit_params):
+    def fit_transform(self, X: Union[pd.DataFrame, np.ndarray], y=None, **fit_params):
         return self._process(X, self._fit_transform_one)
 
