@@ -34,9 +34,10 @@ def cv(model: Union[BaseEstimator, List[BaseEstimator]],
     :param on_each_fold: called for each fold with (idx_fold, model, X_fold)
     :param kw: additional parameters passed to model.fit()
     :return: Namedtuple with following members
-        - predicted_oof: (numpy array) predicted value on Out-of-Fold validation data
-        - predicted_test: (numpy array) predicted value on test data. `None` if X_test is `None`
-        - scores: (list of float) scores[i] denotes validation score in i-th fold. scores[-1] is overall score.
+
+        * predicted_oof: (numpy array) predicted value on Out-of-Fold validation data
+        * predicted_test: (numpy array) predicted value on test data. `None` if X_test is `None`
+        * scores: (list of float) scores[i] denotes validation score in i-th fold. scores[-1] is overall score.
     """
 
     if stratified:
