@@ -15,7 +15,7 @@ class KFoldEncoderWrapper(BaseFeaturizer):
     """KFold Wrapper for sklearn like interface
 
     This class wraps sklearn's TransformerMixIn (object that has fit/transform/fit_transform methods),
-    and call them K-fold manner.
+    and call it as K-fold manner.
 
     Args:
         base_transformer:

@@ -1,4 +1,5 @@
 import time
+from collections import namedtuple
 from logging import Logger, getLogger
 from typing import Callable, List, Optional, Tuple, Union
 
@@ -9,12 +10,14 @@ from sklearn.base import BaseEstimator
 from lightgbm import LGBMClassifier, LGBMRegressor
 
 
+CVResult = namedtuple('CVResult', ['predicted_oof', 'predicted_test', 'scores'])
+
+
 def cv(model: Union[BaseEstimator, List[BaseEstimator]],
        X_train: pd.DataFrame, y: pd.Series, X_test: pd.DataFrame = None, nfolds: int = 5,
        stratified: bool = False, seed: int = 42,
        predict_proba: bool = False, eval: Optional[Callable] = None, logger: Optional[Logger] = None,
-       on_each_fold: Optional[Callable[[int, BaseEstimator, pd.DataFrame], None]] = None, **kw)\
-        -> Tuple[np.ndarray, np.ndarray, List[float]]:
+       on_each_fold: Optional[Callable[[int, BaseEstimator, pd.DataFrame], None]] = None, **kw) -> CVResult:
     """
     Calculate Cross Validation
 
@@ -30,7 +33,10 @@ def cv(model: Union[BaseEstimator, List[BaseEstimator]],
     :param logger: logger
     :param on_each_fold: called for each fold with (idx_fold, model, X_fold)
     :param kw: additional parameters passed to model.fit()
-    :return: (oof prediction, test prediction, list of scores for each fold)
+    :return: Namedtuple with following members
+        - predicted_oof: (numpy array) predicted value on Out-of-Fold validation data
+        - predicted_test: (numpy array) predicted value on test data. `None` if X_test is `None`
+        - scores: (list of float) scores[i] denotes validation score in i-th fold. scores[-1] is overall score.
     """
 
     if stratified:
@@ -97,4 +103,4 @@ def cv(model: Union[BaseEstimator, List[BaseEstimator]],
     else:
         predicted = None
 
-    return oof, predicted, scores
+    return CVResult(oof, predicted, scores)
