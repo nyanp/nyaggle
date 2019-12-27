@@ -5,6 +5,7 @@ from typing import Callable, List, Optional, Tuple, Union
 
 import pandas as pd
 import numpy as np
+from category_encoders.utils import convert_input, convert_input_vector
 from sklearn.model_selection import KFold, StratifiedKFold
 from sklearn.base import BaseEstimator
 from lightgbm import LGBMClassifier, LGBMRegressor
@@ -14,8 +15,9 @@ CVResult = namedtuple('CVResult', ['predicted_oof', 'predicted_test', 'scores'])
 
 
 def cv(model: Union[BaseEstimator, List[BaseEstimator]],
-       X_train: pd.DataFrame, y: pd.Series, X_test: pd.DataFrame = None, nfolds: int = 5,
-       stratified: bool = False, seed: int = 42,
+       X_train: Union[pd.DataFrame, np.ndarray], y: Union[pd.Series, np.ndarray],
+       X_test: Union[pd.DataFrame, np.ndarray] = None,
+       nfolds: int = 5, stratified: bool = False, seed: int = 42,
        predict_proba: bool = False, eval: Optional[Callable] = None, logger: Optional[Logger] = None,
        on_each_fold: Optional[Callable[[int, BaseEstimator, pd.DataFrame], None]] = None, **kw) -> CVResult:
     """
@@ -53,7 +55,12 @@ def cv(model: Union[BaseEstimator, List[BaseEstimator]],
         * predicted_oof: (numpy array) predicted value on Out-of-Fold validation data
         * predicted_test: (numpy array) predicted value on test data. `None` if X_test is `None`
         * scores: (list of float) scores[i] denotes validation score in i-th fold. scores[-1] is overall score.
+                  `None` if eval is not specified
     """
+    X_train = convert_input(X_train)
+    y = convert_input_vector(y, X_train.index)
+    if X_test is not None:
+        X_test = convert_input(X_test)
 
     if stratified:
         folds = StratifiedKFold(n_splits=nfolds, random_state=seed)
