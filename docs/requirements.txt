@@ -1,1 +1,8 @@
 sphinx-autodoc-typehints
+category_encoders
+lightgbm
+numpy
+pandas
+sklearn
+tqdm
+transformers
