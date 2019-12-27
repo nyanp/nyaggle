@@ -76,3 +76,35 @@ bv = BertSentenceVectorizer(text_columns=text_cols, lang='jp')
 
 japanese_text_vector = bv.fit_transform(train)
 ```
+
+### Model Validation
+`cv()` provides handy API to calculate K-fold CV, Out-of-Fold prediction and test prediction at one time.
+You can pass LGBMClassifier/LGBMRegressor and any other sklearn models.
+
+```python
+import pandas as pd
+from lightgbm import LGBMClassifier
+from sklearn.datasets import make_classification
+from sklearn.metrics import roc_auc_score
+
+from nyaggle.model.cv import cv
+
+X, y = make_classification(n_samples=1024, n_features=20, class_sep=0.98, random_state=0)
+
+models = [LGBMClassifier(n_estimators=300) for _ in range(5)]
+
+importances = []
+
+def callback(fold: int, model: LGBMClassifier, X_train: pd.DataFrame):
+    df = pd.DataFrame({
+        'feature': list(X_train.columns),
+        'importance': model.booster_.feature_importance(importance_type='gain')
+    })
+    importances.append(df)
+
+pred_oof, pred_test, scores = cv(models, X[:512, :], y[:512], X[512:, :], nfolds=5, 
+                                 eval=roc_auc_score,     # (optional) evaluation metric
+                                 on_each_fold=callback,  # (optional) called for each fold
+                                 categorical_feature=[]  # (optioanl) additional parameters are passed to model.fit()
+                                 )
+```
