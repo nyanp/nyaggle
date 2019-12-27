@@ -75,4 +75,4 @@ def test_target_encoder_ndarray():
         'x': ['A', 'B', 'C', 'D']
     })
 
-    _test_target_encoder(X_train.values, y_train.values, X_test.values, return_df=False)
+    _test_target_encoder(X_train.values, y_train.values, X_test.values)
