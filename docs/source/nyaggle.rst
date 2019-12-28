@@ -28,3 +28,11 @@ nyaggle.model module
     :members:
     :imported-members:
     :show-inheritance:
+
+nyaggle.util module
+-----------------------
+
+.. automodule:: nyaggle.util
+    :members:
+    :imported-members:
+    :show-inheritance:

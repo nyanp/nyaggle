@@ -28,8 +28,10 @@ setup(
     install_requires=[
         'category_encoders',
         'lightgbm',
+        'matplotlib',
         'numpy',
         'pandas',
+        'seaborn',
         'sklearn',
         'tqdm',
         'transformers>=2.3.0'

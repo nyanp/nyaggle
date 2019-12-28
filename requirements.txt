@@ -1,7 +1,9 @@
 category_encoders
 lightgbm
+matplotlib
 numpy
 pandas
+seaborn
 sklearn
 tqdm
 transformers
