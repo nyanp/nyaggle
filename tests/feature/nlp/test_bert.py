@@ -2,6 +2,7 @@ import pytest
 
 import numpy.testing as npt
 import pandas as pd
+from pandas.testing import assert_frame_equal
 
 from nyaggle.feature.nlp import BertSentenceVectorizer
 
@@ -25,7 +26,7 @@ _TEST_SENTENCE_JP = [
 ]
 
 
-def test_bert_en():
+def test_bert_fit():
     bert = BertSentenceVectorizer(use_cuda=False)
 
     X = pd.DataFrame({
@@ -33,7 +34,8 @@ def test_bert_en():
         'sentence': _TEST_SENTENCE_EN
     })
 
-    ret = bert.fit_transform(X)
+    bert.fit(X)
+    ret = bert.transform(X)
 
     assert ret.shape[0] == 6
     assert ret.shape[1] == 768 + 1  # id + embed
@@ -41,6 +43,22 @@ def test_bert_en():
     ret.drop('id', axis=1, inplace=True)
     npt.assert_almost_equal(ret.iloc[0, :].values, ret.iloc[4, :].values)
     npt.assert_almost_equal(ret.iloc[0, :].values, ret.iloc[5, :].values)
+
+
+def test_bert_fit_transform():
+    X = pd.DataFrame({
+        'id': [0, 1, 2, 3, 4, 5],
+        'sentence': _TEST_SENTENCE_EN
+    })
+
+    bert = BertSentenceVectorizer(use_cuda=False)
+    ret = bert.fit_transform(X)
+
+    bert = BertSentenceVectorizer(use_cuda=False)
+    bert.fit(X)
+    ret2 = bert.fit_transform(X)
+
+    assert_frame_equal(ret, ret2)
 
 
 def test_bert_en_svd():

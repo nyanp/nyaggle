@@ -99,6 +99,8 @@ class BertSentenceVectorizer(BaseFeaturizer):
         return self.svd[col].fit(emb)
 
     def _transform_one(self, col: str, emb: np.ndarray):
+        if not self.n_components or self.n_components >= emb.shape[1]:
+            return emb
         return self.svd[col].transform(emb)
 
     def _fit_transform_one(self, col: str, emb: np.ndarray):
