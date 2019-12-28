@@ -10,6 +10,7 @@ Welcome to nyaggle's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   installation
    source/nyaggle
 
 
