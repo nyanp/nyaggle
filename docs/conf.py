@@ -25,7 +25,7 @@ copyright = '2019, nyanp'
 author = 'nyanp'
 
 # The full version, including alpha/beta/rc tags
-release = '0.0.1'
+release = nyaggle.__version__
 
 
 # -- General configuration ---------------------------------------------------
