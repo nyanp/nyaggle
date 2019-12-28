@@ -21,14 +21,18 @@ class KFoldEncoderWrapper(BaseFeaturizer):
         base_transformer:
             Transformer object to be wrapped.
         split:
-            KFold, StratifiedKFold or kf.split(X, y)
+            KFold, StratifiedKFold or cross-validation generator which determines the cross-validation splitting strategy.
+            If `None`, default 5-fold split is used.
         return_same_type:
             If True, `transform` and `fit_transform` return the same type as X.
             If False, these APIs always return a numpy array, similar to sklearn's API.
     """
     def __init__(self, base_transformer: BaseEstimator,
-                 split: Union[Iterable, KFold, StratifiedKFold], return_same_type: bool = True):
-        self.split = split
+                 split: Optional[Union[Iterable, KFold, StratifiedKFold]] = None, return_same_type: bool = True):
+        if split is None:
+            self.split = KFold(5, random_state=42)
+        else:
+            self.split = split
         self.n_splits = self._get_n_splits()
         self.transformers = [clone(base_transformer) for _ in range(self.n_splits + 1)]
         self.return_same_type = return_same_type
@@ -55,7 +59,7 @@ class KFoldEncoderWrapper(BaseFeaturizer):
             X_.iloc[test_index, :] = self.transformers[i].transform(X.iloc[test_index])
         self.transformers[-1].fit(X, y, **fit_params)
 
-        return self._post_transform(self._post_fit(X_, y))
+        return X_
 
     def _post_fit(self, X: pd.DataFrame, y: pd.Series) -> pd.DataFrame:
         return X
@@ -73,7 +77,7 @@ class KFoldEncoderWrapper(BaseFeaturizer):
             y:
                 Target
         """
-        self.fit_transform(X, y)
+        self._post_fit(self.fit_transform(X, y), y)
 
     def transform(self, X: Union[pd.DataFrame, np.ndarray]) -> Union[pd.DataFrame, np.ndarray]:
         """
@@ -87,6 +91,7 @@ class KFoldEncoderWrapper(BaseFeaturizer):
         """
         is_pandas = isinstance(X, pd.DataFrame)
         X_ = self._fit_train(X, None)
+        X_ = self._post_transform(X_)
         return X_ if self.return_same_type and is_pandas else X_.values
 
     def fit_transform(self, X: Union[pd.DataFrame, np.ndarray], y: pd.Series = None, **fit_params) \
@@ -119,6 +124,8 @@ class KFoldEncoderWrapper(BaseFeaturizer):
         else:
             X_ = self._fit_train(X, y, **fit_params)
 
+        X_ = self._post_transform(self._post_fit(X_, y))
+
         return X_ if self.return_same_type and is_pandas else X_.values
 
 
@@ -130,6 +137,7 @@ class TargetEncoder(KFoldEncoderWrapper):
     Args:
         split:
             KFold, StratifiedKFold or cross-validation generator which determines the cross-validation splitting strategy.
+            If `None`, default 5-fold split is used.
         cols:
             A list of columns to encode, if None, all string columns will be encoded.
         drop_invariant:
@@ -147,7 +155,7 @@ class TargetEncoder(KFoldEncoderWrapper):
             If True, `transform` and `fit_transform` return the same type as X.
             If False, these APIs always return a numpy array, similar to sklearn's API.
     """
-    def __init__(self, split: Union[Iterable, KFold, StratifiedKFold], cols: List[str] = None,
+    def __init__(self, split: Optional[Union[Iterable, KFold, StratifiedKFold]] = None, cols: List[str] = None,
                  drop_invariant: bool = False, handle_missing: str = 'value', handle_unknown: str = 'value',
                  min_samples_leaf: int = 1, smoothing: float = 1.0, return_same_type: bool = True):
         e = ce.TargetEncoder(cols=cols, drop_invariant=drop_invariant, return_df=True,

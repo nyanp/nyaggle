@@ -12,8 +12,6 @@ from nyaggle.feature.category_encoder import TargetEncoder
 
 
 def _test_target_encoder(X_train, y_train, X_test, **kw):
-
-
     cv = KFold(n_splits=2, random_state=42, shuffle=True)
 
     te = TargetEncoder(cv.split(X_train), **kw)
@@ -50,6 +48,31 @@ def _test_target_encoder(X_train, y_train, X_test, **kw):
         assert_frame_equal(ret_test, ret_test2)
     else:
         npt.assert_array_equal(ret_test, ret_test2)
+
+
+def test_target_encoder_fit_transform():
+    X_train = pd.DataFrame({
+        'x': ['A', 'A', 'A', 'B', 'B', 'C'],
+        'a': [1, 2, 3, 1, 2, 3]
+
+    })
+    y_train = pd.Series([0, 0, 1, 0, 1, 1])
+    X_test = pd.DataFrame({
+        'x': ['A', 'B', 'C', 'D'],
+        'a': [1, 2, 3, 4]
+    })
+
+    X = pd.concat([X_train, X_test])
+    y = pd.concat([y_train, pd.Series([None]*4)]).astype(float)
+
+    ce = TargetEncoder(cols=['x'])
+    ce.fit(X_train, y_train)
+    ret1 = ce.transform(X_test)
+
+    ce = TargetEncoder(cols=['x'])
+    ret2 = ce.fit_transform(X, y).iloc[6:, :]
+
+    assert_frame_equal(ret1, ret2)
 
 
 def test_target_encoder():
