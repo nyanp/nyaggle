@@ -1,31 +1,32 @@
+import copy
 import time
 from collections import namedtuple
 from logging import Logger, getLogger
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Callable, Dict, List, Optional, Union
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 from category_encoders.utils import convert_input, convert_input_vector
-from sklearn.model_selection import KFold, StratifiedKFold
-from sklearn.base import BaseEstimator
 from lightgbm import LGBMClassifier, LGBMRegressor
-
+from sklearn.base import BaseEstimator
+from sklearn.model_selection import KFold, StratifiedKFold
 
 CVResult = namedtuple('CVResult', ['predicted_oof', 'predicted_test', 'scores'])
 
 
-def cv(model: Union[BaseEstimator, List[BaseEstimator]],
+def cv(estimator: Union[BaseEstimator, List[BaseEstimator]],
        X_train: Union[pd.DataFrame, np.ndarray], y: Union[pd.Series, np.ndarray],
        X_test: Union[pd.DataFrame, np.ndarray] = None,
        nfolds: int = 5, stratified: bool = False, seed: int = 42,
        predict_proba: bool = False, eval: Optional[Callable] = None, logger: Optional[Logger] = None,
-       on_each_fold: Optional[Callable[[int, BaseEstimator, pd.DataFrame], None]] = None, **kw) -> CVResult:
+       on_each_fold: Optional[Callable[[int, BaseEstimator, pd.DataFrame, pd.Series], None]] = None,
+       fit_params: Optional[Dict] = None) -> CVResult:
     """
-    Calculate Cross Validation
+    Evaluate metrics by cross-validation. It also records out-of-fold prediction and test prediction.
 
     Args:
-        model:
-            Model used in CV.
+        estimator:
+            The object to be used in cross-validation. For list inputs, ``estimator[i]`` is trained on i-th fold.
         X_train:
             Training data
         y:
@@ -45,9 +46,9 @@ def cv(model: Union[BaseEstimator, List[BaseEstimator]],
         logger:
             logger
         on_each_fold:
-            called for each fold with (idx_fold, model, X_fold)
-        kw:
-            additional parameters passed to model.fit()
+            called for each fold with (idx_fold, model, X_fold, y_fold)
+        fit_params:
+            Parameters passed to the fit method of the estimator
 
     Returns:
         Namedtuple with following members
@@ -81,6 +82,9 @@ def cv(model: Union[BaseEstimator, List[BaseEstimator]],
         >>> print(scores)
         [71912.80290003832, 15236.680239881942, 15472.822033121925, 34207.43505768073]
     """
+    if isinstance(estimator, list):
+        assert len(estimator) == nfolds, "Number of estimators should be same to nfolds."
+
     X_train = convert_input(X_train)
     y = convert_input_vector(y, X_train.index)
     if X_test is not None:
@@ -91,10 +95,10 @@ def cv(model: Union[BaseEstimator, List[BaseEstimator]],
     else:
         folds = KFold(n_splits=nfolds, random_state=seed)
 
-    if not isinstance(model, list):
-        model = [model] * nfolds
+    if not isinstance(estimator, list):
+        estimator = [estimator] * nfolds
 
-    assert len(model) == nfolds
+    assert len(estimator) == nfolds
 
     if logger is None:
         logger = getLogger(__name__)
@@ -118,18 +122,29 @@ def cv(model: Union[BaseEstimator, List[BaseEstimator]],
         train_x, train_y = X_train.iloc[train_idx], y.iloc[train_idx]
         valid_x, valid_y = X_train.iloc[valid_idx], y.iloc[valid_idx]
 
-        if isinstance(model[n], (LGBMRegressor, LGBMClassifier)):
-            model[n].fit(train_x, train_y, eval_set=[(valid_x, valid_y)], early_stopping_rounds=100, **kw)
-        else:
-            model[n].fit(train_x, train_y, **kw)
+        if isinstance(estimator[n], (LGBMRegressor, LGBMClassifier)):
+            if fit_params is None:
+                fit_params_fold = {}
+            else:
+                fit_params_fold = copy.copy(fit_params)
+            if 'eval_set' not in fit_params_fold:
+                fit_params_fold['eval_set'] = [(valid_x, valid_y)]
+            if 'early_stopping_rounds' not in fit_params_fold:
+                fit_params_fold['early_stopping_rounds'] = 100
 
-        oof[valid_idx] = _predict(model[n], valid_x, predict_proba)
+            estimator[n].fit(train_x, train_y, **fit_params_fold)
+        elif fit_params is not None:
+            estimator[n].fit(train_x, train_y, **fit_params)
+        else:
+            estimator[n].fit(train_x, train_y)
+
+        oof[valid_idx] = _predict(estimator[n], valid_x, predict_proba)
 
         if X_test is not None:
-            test[:, n] = _predict(model[n], X_test, predict_proba)
+            test[:, n] = _predict(estimator[n], X_test, predict_proba)
 
         if on_each_fold is not None:
-            on_each_fold(n, model[n], train_x)
+            on_each_fold(n, estimator[n], train_x, train_y)
 
         if eval is not None:
             score = eval(valid_y, oof[valid_idx])

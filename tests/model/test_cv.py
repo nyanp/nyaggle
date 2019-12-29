@@ -42,8 +42,7 @@ def test_cv_lgbm():
     models = [LGBMClassifier(n_estimators=300) for _ in range(5)]
 
     pred_oof, pred_test, scores = cv(models, X[:512, :], y[:512], X[512:, :], nfolds=5, eval=roc_auc_score,
-                                     # additional parameters are passed to LGBMClassifier.fit()
-                                     categorical_feature=[])
+                                     fit_params={'early_stopping_rounds': 200})
 
     print(scores)
     assert len(scores) == 5 + 1
@@ -68,7 +67,7 @@ def test_cv_lgbm_df():
     models = [LGBMClassifier(n_estimators=300) for _ in range(5)]
 
     pred_oof, pred_test, scores = cv(models, X_train, y_train, X_test, nfolds=5, eval=roc_auc_score,
-                                     categorical_feature=[])
+                                     fit_params={'early_stopping_rounds': 200})
 
     print(scores)
     assert len(scores) == 5 + 1

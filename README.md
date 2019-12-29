@@ -95,7 +95,7 @@ models = [LGBMClassifier(n_estimators=300) for _ in range(5)]
 
 importances = []
 
-def callback(fold: int, model: LGBMClassifier, X_train: pd.DataFrame):
+def callback(fold: int, model: LGBMClassifier, X_train: pd.DataFrame, y_train: pd.Series):
     df = pd.DataFrame({
         'feature': list(X_train.columns),
         'importance': model.booster_.feature_importance(importance_type='gain')
