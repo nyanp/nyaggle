@@ -152,7 +152,7 @@ class TargetEncoder(KFoldEncoderWrapper):
             Smoothing effect to balance categorical average vs prior. Higher value means stronger regularization.
             The value must be strictly bigger than 0.
         return_same_type:
-            If True, `transform` and `fit_transform` return the same type as X.
+            If True, ``transform`` and ``fit_transform`` return the same type as X.
             If False, these APIs always return a numpy array, similar to sklearn's API.
     """
     def __init__(self, split: Optional[Union[Iterable, KFold, StratifiedKFold]] = None, cols: List[str] = None,

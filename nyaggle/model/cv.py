@@ -27,19 +27,19 @@ def cv(model: Union[BaseEstimator, List[BaseEstimator]],
         model:
             Model used in CV.
         X_train:
-            training feature
+            Training data
         y:
-            target variable
+            Target
         X_test:
-            test feature (Optional). If specified, prediction on test data is performed using ensemble of models.
+            Test data (Optional). If specified, prediction on the test data is performed using ensemble of models.
         nfolds:
-            number of splits
+            Number of splits
         stratified:
             If true, use stratified K-Fold
         seed:
-            seed
+            Seed used by the random number generator in ``KFold``
         predict_proba:
-            If true, call `predict_proba` instead of `predict` for calculating prediction for test data.
+            If true, call ``predict_proba`` instead of ``predict`` for calculating prediction for test data.
         eval:
             Function used for logging and returning scores
         logger:
@@ -52,10 +52,34 @@ def cv(model: Union[BaseEstimator, List[BaseEstimator]],
     Returns:
         Namedtuple with following members
 
-        * predicted_oof: (numpy array) predicted value on Out-of-Fold validation data
-        * predicted_test: (numpy array) predicted value on test data. `None` if X_test is `None`
-        * scores: (list of float) scores[i] denotes validation score in i-th fold. scores[-1] is overall score.
-                  `None` if eval is not specified
+        * predicted_oof:
+            numpy array, shape (len(X_train),) Predicted value on Out-of-Fold validation data.
+        * predicted_test:
+            numpy array, shape (len(X_test),) Predicted value on test data. ``None`` if X_test is ``None``
+        * scores:
+            list of float, shape(nfolds+1) ``scores[i]`` denotes validation score in i-th fold.
+            ``scores[-1]`` is overall score. `None` if eval is not specified
+
+    Example:
+        >>> from sklearn.datasets import make_regression
+        >>> from sklearn.linear_model import Ridge
+        >>> from sklearn.metrics import mean_squared_error
+        >>> from nyaggle.model import cv
+
+        >>> X, y = make_regression(n_samples=8)
+        >>> model = Ridge(alpha=1.0)
+        >>> pred_oof, pred_test, scores = cv(model,
+        >>>                                  X_train=X[:3, :],
+        >>>                                  y=y[:3],
+        >>>                                  X_test=X[3:, :],
+        >>>                                  nfolds=3,
+        >>>                                  eval=mean_squared_error)
+        >>> print(pred_oof)
+        [-101.1123267 ,   26.79300693,   17.72635528]
+        >>> print(pred_test)
+        [-10.65095894 -12.18909059 -23.09906427 -17.68360714 -20.08218267]
+        >>> print(scores)
+        [71912.80290003832, 15236.680239881942, 15472.822033121925, 34207.43505768073]
     """
     X_train = convert_input(X_train)
     y = convert_input_vector(y, X_train.index)
