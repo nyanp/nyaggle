@@ -36,3 +36,11 @@ nyaggle.util module
     :members:
     :imported-members:
     :show-inheritance:
+
+nyaggle.experiment module
+-----------------------
+
+.. automodule:: nyaggle.util
+    :members:
+    :imported-members:
+    :show-inheritance:
