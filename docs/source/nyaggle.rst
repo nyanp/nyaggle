@@ -40,7 +40,7 @@ nyaggle.util module
 nyaggle.experiment module
 -----------------------
 
-.. automodule:: nyaggle.util
+.. automodule:: nyaggle.experiment
     :members:
     :imported-members:
     :show-inheritance:
