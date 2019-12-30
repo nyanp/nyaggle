@@ -7,6 +7,7 @@ from sklearn.linear_model import RidgeClassifier, Ridge
 from sklearn.metrics import roc_auc_score, r2_score
 
 from nyaggle.model.cv import cv
+from nyaggle.testing import make_classification_df
 
 
 def test_cv_sklean_binary():
@@ -53,13 +54,12 @@ def test_cv_lgbm():
 
 
 def test_cv_lgbm_df():
-    X, y = make_classification(n_samples=1024, n_features=20, class_sep=0.98, random_state=0)
-    cols = ['col{}'.format(i) for i in range(20)]
+    X, y = make_classification_df(n_samples=1024, n_features=20, class_sep=0.98, random_state=0)
 
-    X_train = pd.DataFrame(X[:512, :], columns=cols)
-    y_train = pd.Series(y[:512], name='target')
-    X_test = pd.DataFrame(X[512:, :], columns=cols)
-    y_test = pd.Series(y[512:], name='target')
+    X_train = X.iloc[:512, :]
+    y_train = y.iloc[:512]
+    X_test = X.iloc[512:, :]
+    y_test = y.iloc[512:]
 
     X_train['cat'] = pd.Series(np.random.choice(['A', 'B', 'C'], size=512)).astype('category')
     X_test['cat'] = pd.Series(np.random.choice(['A', 'B', 'C'], size=512)).astype('category')

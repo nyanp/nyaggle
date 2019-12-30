@@ -16,31 +16,36 @@ from nyaggle.util import plot_importance
 LGBResult = namedtuple('LGBResult', ['predicted_oof', 'predicted_test', 'scores', 'importance'])
 
 
-def experiment_lgb(logging_directory: str, lgb_params: Dict[str, Any],
+def experiment_lgb(logging_directory: str, lgb_params: Dict[str, Any], id_column: str,
                    X_train: pd.DataFrame, y: pd.Series,
-                   X_test: Optional[pd.Series],
-                   id_column: str,
+                   X_test: Optional[pd.DataFrame] = None,
                    eval: Optional[Callable] = None, 
                    nfolds: int = 5,
                    overwrite: bool = True,
                    stratified: bool = False,
-                   seed: int = 42):
+                   seed: int = 42,
+                   submission_filename: str = 'submission.csv'):
     """
+    Evaluate metrics by cross-validation and stores result
+    (log, oof prediction, test prediction, feature importance plot and submission file)
+    under the directory specified.
+
+    LGBMClassifier or LGBMRegressor with early-stopping is used (dispatched by ``type_of_target(y)``).
 
     Args:
         logging_directory:
             Path to directory where output of experiment is stored.
         lgb_params:
             Parameters passed to the constructor of LGBMClassifer/LGBMRegressor.
+        id_column:
+            The name of index or column which is used as index.
+            If `X_test` is not None, submission file is created along with this column.
         X_train:
             Training data
         y:
             Target
         X_test:
             Test data (Optional). If specified, prediction on the test data is performed using ensemble of models.
-        id_column:
-            The name of index or column which is used as index.
-            If `X_test` is not None, submission file is created along with this column.
         eval:
             Function used for logging and returning scores
         nfolds:
@@ -51,6 +56,8 @@ def experiment_lgb(logging_directory: str, lgb_params: Dict[str, Any],
             If true, use stratified K-Fold
         seed:
             Seed used by the random number generator in ``KFold``
+        submission_filename:
+            The name of submission file created under logging directory.
     :return:
         Namedtuple with following members
 
@@ -66,7 +73,7 @@ def experiment_lgb(logging_directory: str, lgb_params: Dict[str, Any],
     """
     if id_column in X_train.columns:
         if X_test is not None:
-            assert X_train.columns == X_test.columns
+            assert list(X_train.columns) == list(X_test.columns)
             X_test.set_index(id_column, inplace=True)
         X_train.set_index(id_column, inplace=True)
         
@@ -122,6 +129,6 @@ def experiment_lgb(logging_directory: str, lgb_params: Dict[str, Any],
         id_column: X_test.index,
         y.name: result.predicted_test
     })
-    submit.to_csv(os.path.join(logging_directory, 'submit.csv'), index=False)
+    submit.to_csv(os.path.join(logging_directory, submission_filename), index=False)
 
     return LGBResult(result.predicted_oof, result.predicted_test, result.scores, importance)
