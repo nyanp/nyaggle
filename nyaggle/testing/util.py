@@ -1,36 +1,49 @@
 from typing import Tuple
+import numpy as np
 import pandas as pd
 from sklearn.datasets import make_classification, make_regression
 
 
 def make_classification_df(n_samples: int = 1024,
-                           n_features: int = 20,
+                           n_num_features: int = 20,
+                           n_cat_features: int = 0,
                            class_sep: float = 1.0,
                            feature_name: str = 'col_{}',
                            target_name: str = 'target',
                            random_state: int = 0,
                            id_column: str = None) -> Tuple[pd.DataFrame, pd.Series]:
-    X, y = make_classification(n_samples=n_samples, n_features=n_features, class_sep=class_sep,
+    X, y = make_classification(n_samples=n_samples, n_features=n_num_features, class_sep=class_sep,
                                random_state=random_state)
 
-    X = pd.DataFrame(X, columns=[feature_name.format(i) for i in range(n_features)])
+    X = pd.DataFrame(X, columns=[feature_name.format(i) for i in range(n_num_features)])
     y = pd.Series(y, name=target_name)
 
     if id_column is not None:
         X[id_column] = range(n_samples)
 
+    for i in range(n_cat_features):
+        X['cat_{}'.format(i)] = pd.Series(np.random.choice(['A', 'B', None], size=n_samples)).astype(str).astype('category')
+
     return X, y
 
 
 def make_regression_df(n_samples: int = 1024,
-                       n_features: int = 20,
+                       n_num_features: int = 20,
+                       n_cat_features: int = 0,
                        feature_name: str = 'col_{}',
                        target_name: str = 'target',
-                       random_state: int = 0) -> Tuple[pd.DataFrame, pd.Series]:
-    X, y = make_regression(n_samples=n_samples, n_features=n_features,
+                       random_state: int = 0,
+                       id_column: str = None) -> Tuple[pd.DataFrame, pd.Series]:
+    X, y = make_regression(n_samples=n_samples, n_features=n_num_features,
                            random_state=random_state)
 
-    X = pd.DataFrame(X, columns=[feature_name.format(i) for i in range(n_features)])
+    X = pd.DataFrame(X, columns=[feature_name.format(i) for i in range(n_num_features)])
     y = pd.Series(y, name=target_name)
+
+    if id_column is not None:
+        X[id_column] = range(n_samples)
+
+    for i in range(n_cat_features):
+        X['cat_{}'.format(i)] = pd.Series(np.random.choice(['A', 'B', None], size=n_samples)).astype(str).astype('category')
 
     return X, y

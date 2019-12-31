@@ -1,1 +1,1 @@
-from nyaggle.experiment.lgb import experiment_lgb
+from nyaggle.experiment.gbdt import experiment_gbdt
