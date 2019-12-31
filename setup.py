@@ -30,6 +30,7 @@ setup(
         'category_encoders',
         'lightgbm',
         'matplotlib',
+        'more-itertools',
         'numpy',
         'pandas',
         'seaborn',
