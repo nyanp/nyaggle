@@ -3,7 +3,7 @@ import time
 from collections import namedtuple
 from more_itertools import first_true
 from logging import getLogger, FileHandler, DEBUG
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -28,7 +28,8 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
                     nfolds: int = 5,
                     overwrite: bool = True,
                     stratified: bool = False,
-                    seed: int = 42,
+                    seed_split: int = 42,
+                    seed_model: int = 0,
                     categorical_feature: Optional[List[str]] = None,
                     submission_filename: str = 'submission.csv'):
     """
@@ -81,8 +82,10 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
             If True, contents in ``logging_directory`` will be overwritten.
         stratified:
             If true, use stratified K-Fold
-        seed:
+        seed_split:
             Seed used by the random number generator in ``KFold``
+        seed_model:
+            Seed used by GBDT training.
         categorical_feature:
             List of categorical column names. If ``None``, categorical columns are automatically determined by dtype.
         submission_filename:
@@ -129,6 +132,12 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
         categorical_feature = [c for c in X_train.columns if X_train[c].dtype.name in ['object', 'category']]
     logger.info('Categorical: {}'.format(categorical_feature))
 
+    if not any([c in model_params for c in ['seed', 'random_state', 'random_seed']]):
+        model_params['random_state'] = seed_model
+        logger.info('Seed: {}'.format(seed_model))
+    else:
+        logger.info('Seed: (specified in gbdt_params is used)')
+
     target_type = type_of_target(y)
     model, eval, cat_param_name, get_feature_importance = _dispatch_gbdt(gbdt_type, target_type, eval)
     models = [model(**model_params) for _ in range(nfolds)]
@@ -151,7 +160,7 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
         fit_params[cat_param_name] = categorical_feature
 
     result = cv(models, X_train=X_train, y=y, X_test=X_test, nfolds=nfolds, logger=logger,
-                on_each_fold=callback, eval=eval, stratified=stratified, seed=seed,
+                on_each_fold=callback, eval=eval, stratified=stratified, seed=seed_split,
                 fit_params=fit_params)
 
     importance = pd.concat(importances)
@@ -165,10 +174,9 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
     np.save(os.path.join(logging_directory, 'oof'), result.predicted_oof)
     np.save(os.path.join(logging_directory, 'test'), result.predicted_test)
 
-    submit = pd.DataFrame({
-        id_column: X_test.index,
-        y.name: result.predicted_test
-    })
+    submit = pd.DataFrame()
+    submit[id_column] = X_test.index
+    submit[y.name] = result.predicted_test
     submit.to_csv(os.path.join(logging_directory, submission_filename), index=False)
 
     elapsed_time = time.time() - start_time
