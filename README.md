@@ -3,6 +3,16 @@
 particularly focused on feature engineering and validation. 
 See [the documentation](https://nyaggle.readthedocs.io/en/latest/index.html) for details.
 
+- Feature Engineering
+    - K-Fold Target Encoding
+    - BERT Sentence Vectorization
+- Model Validation
+    - CV with OOF
+- GBDT Experiment Package
+    - Generate CV score, submission.csv, OOF, importance plot at once
+- Ensemble
+    - Blending
+
 ## Installation
 You can install nyaggle via pip:
 ```
