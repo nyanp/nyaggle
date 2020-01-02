@@ -26,7 +26,7 @@ setup(
     license='BSD 3-Clause',
 
     install_requires=[
-        'catboost>=0.17'
+        'catboost>=0.17',
         'category_encoders',
         'lightgbm',
         'matplotlib',
