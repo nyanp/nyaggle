@@ -1,4 +1,6 @@
 # nyaggle
+![](https://github.com/nyanp/nyaggle/workflows/.github/workflows/pythonpackage.yml/badge.svg)
+
 **nyaggle** is a utility library for Kaggle and offline competitions, 
 particularly focused on feature engineering and validation. 
 See [the documentation](https://nyaggle.readthedocs.io/en/latest/index.html) for details.
