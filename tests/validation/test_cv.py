@@ -7,7 +7,7 @@ from sklearn.linear_model import RidgeClassifier, Ridge
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score, r2_score
 
-from nyaggle.model.cv import cv
+from nyaggle.validation.cv import cv
 from nyaggle.testing import make_classification_df
 
 

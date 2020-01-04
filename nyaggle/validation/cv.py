@@ -65,7 +65,7 @@ def cv(estimator: Union[BaseEstimator, List[BaseEstimator]],
         >>> from sklearn.datasets import make_regression
         >>> from sklearn.linear_model import Ridge
         >>> from sklearn.metrics import mean_squared_error
-        >>> from nyaggle.model import cv
+        >>> from nyaggle.validation import cv
 
         >>> X, y = make_regression(n_samples=8)
         >>> model = Ridge(alpha=1.0)

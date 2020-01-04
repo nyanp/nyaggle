@@ -12,7 +12,7 @@ from lightgbm import LGBMClassifier, LGBMRegressor
 from sklearn.metrics import roc_auc_score, mean_squared_error
 from sklearn.utils.multiclass import type_of_target
 
-from nyaggle.model.cv import cv
+from nyaggle.validation.cv import cv
 from nyaggle.util import plot_importance
 
 

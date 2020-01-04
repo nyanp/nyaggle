@@ -97,7 +97,7 @@ from lightgbm import LGBMClassifier
 from sklearn.datasets import make_classification
 from sklearn.metrics import roc_auc_score
 
-from nyaggle.model.cv import cv
+from nyaggle.validation.cv import cv
 
 X, y = make_classification(n_samples=1024, n_features=20, class_sep=0.98, random_state=0)
 

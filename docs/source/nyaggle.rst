@@ -21,10 +21,10 @@ nyaggle.feature.nlp module
     :imported-members:
     :show-inheritance:
 
-nyaggle.model module
+nyaggle.validation module
 -----------------------
 
-.. automodule:: nyaggle.model
+.. automodule:: nyaggle.validation
     :members:
     :imported-members:
     :show-inheritance:
