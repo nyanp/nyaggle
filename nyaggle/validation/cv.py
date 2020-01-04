@@ -14,13 +14,13 @@ from sklearn.model_selection import KFold, StratifiedKFold
 CVResult = namedtuple('CVResult', ['predicted_oof', 'predicted_test', 'scores'])
 
 
-def cv(estimator: Union[BaseEstimator, List[BaseEstimator]],
-       X_train: Union[pd.DataFrame, np.ndarray], y: Union[pd.Series, np.ndarray],
-       X_test: Union[pd.DataFrame, np.ndarray] = None,
-       nfolds: int = 5, stratified: bool = False, seed: int = 42,
-       predict_proba: bool = False, eval: Optional[Callable] = None, logger: Optional[Logger] = None,
-       on_each_fold: Optional[Callable[[int, BaseEstimator, pd.DataFrame, pd.Series], None]] = None,
-       fit_params: Optional[Dict] = None) -> CVResult:
+def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
+                   X_train: Union[pd.DataFrame, np.ndarray], y: Union[pd.Series, np.ndarray],
+                   X_test: Union[pd.DataFrame, np.ndarray] = None,
+                   nfolds: int = 5, stratified: bool = False, seed: int = 42,
+                   predict_proba: bool = False, eval: Optional[Callable] = None, logger: Optional[Logger] = None,
+                   on_each_fold: Optional[Callable[[int, BaseEstimator, pd.DataFrame, pd.Series], None]] = None,
+                   fit_params: Optional[Dict] = None) -> CVResult:
     """
     Evaluate metrics by cross-validation. It also records out-of-fold prediction and test prediction.
 
@@ -65,11 +65,11 @@ def cv(estimator: Union[BaseEstimator, List[BaseEstimator]],
         >>> from sklearn.datasets import make_regression
         >>> from sklearn.linear_model import Ridge
         >>> from sklearn.metrics import mean_squared_error
-        >>> from nyaggle.validation import cv
+        >>> from nyaggle.validation import cross_validate
 
         >>> X, y = make_regression(n_samples=8)
         >>> model = Ridge(alpha=1.0)
-        >>> pred_oof, pred_test, scores = cv(model,
+        >>> pred_oof, pred_test, scores = cross_validate(model,
         >>>                                  X_train=X[:3, :],
         >>>                                  y=y[:3],
         >>>                                  X_test=X[3:, :],

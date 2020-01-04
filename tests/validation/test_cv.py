@@ -7,7 +7,7 @@ from sklearn.linear_model import RidgeClassifier, Ridge
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score, r2_score
 
-from nyaggle.validation.cv import cv
+from nyaggle.validation.cv import cross_validate
 from nyaggle.testing import make_classification_df
 
 
@@ -17,7 +17,7 @@ def test_cv_sklean_binary():
 
     model = RidgeClassifier(alpha=1.0)
 
-    pred_oof, pred_test, scores = cv(model, X_train, y_train, X_test, nfolds=5, eval=roc_auc_score)
+    pred_oof, pred_test, scores = cross_validate(model, X_train, y_train, X_test, nfolds=5, eval=roc_auc_score)
 
     assert len(scores) == 5 + 1
     assert scores[-1] >= 0.85  # overall auc
@@ -31,7 +31,7 @@ def test_cv_sklean_regression():
 
     model = Ridge(alpha=1.0)
 
-    pred_oof, pred_test, scores = cv(model, X_train, y_train, X_test, nfolds=5, eval=r2_score)
+    pred_oof, pred_test, scores = cross_validate(model, X_train, y_train, X_test, nfolds=5, eval=r2_score)
 
     print(scores)
     assert len(scores) == 5 + 1
@@ -46,8 +46,8 @@ def test_cv_lgbm():
 
     models = [LGBMClassifier(n_estimators=300) for _ in range(5)]
 
-    pred_oof, pred_test, scores = cv(models, X_train, y_train, X_test, nfolds=5, eval=roc_auc_score,
-                                     fit_params={'early_stopping_rounds': 200})
+    pred_oof, pred_test, scores = cross_validate(models, X_train, y_train, X_test, nfolds=5, eval=roc_auc_score,
+                                                 fit_params={'early_stopping_rounds': 200})
 
     print(scores)
     assert len(scores) == 5 + 1
@@ -63,8 +63,8 @@ def test_cv_lgbm_df():
 
     models = [LGBMClassifier(n_estimators=300) for _ in range(5)]
 
-    pred_oof, pred_test, scores = cv(models, X_train, y_train, X_test, nfolds=5, eval=roc_auc_score,
-                                     fit_params={'early_stopping_rounds': 200})
+    pred_oof, pred_test, scores = cross_validate(models, X_train, y_train, X_test, nfolds=5, eval=roc_auc_score,
+                                                 fit_params={'early_stopping_rounds': 200})
 
     print(scores)
     assert len(scores) == 5 + 1

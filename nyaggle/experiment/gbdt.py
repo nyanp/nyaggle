@@ -12,7 +12,7 @@ from lightgbm import LGBMClassifier, LGBMRegressor
 from sklearn.metrics import roc_auc_score, mean_squared_error
 from sklearn.utils.multiclass import type_of_target
 
-from nyaggle.validation.cv import cv
+from nyaggle.validation.cv import cross_validate
 from nyaggle.util import plot_importance
 
 
@@ -159,9 +159,9 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
     if cat_param_name is not None and cat_param_name not in fit_params:
         fit_params[cat_param_name] = categorical_feature
 
-    result = cv(models, X_train=X_train, y=y, X_test=X_test, nfolds=nfolds, logger=logger,
-                on_each_fold=callback, eval=eval, stratified=stratified, seed=seed_split,
-                fit_params=fit_params)
+    result = cross_validate(models, X_train=X_train, y=y, X_test=X_test, nfolds=nfolds, logger=logger,
+                            on_each_fold=callback, eval=eval, stratified=stratified, seed=seed_split,
+                            fit_params=fit_params)
 
     importance = pd.concat(importances)
 

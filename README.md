@@ -97,24 +97,12 @@ from lightgbm import LGBMClassifier
 from sklearn.datasets import make_classification
 from sklearn.metrics import roc_auc_score
 
-from nyaggle.validation.cv import cv
+from nyaggle.validation import cross_validate
 
 X, y = make_classification(n_samples=1024, n_features=20, class_sep=0.98, random_state=0)
 
 models = [LGBMClassifier(n_estimators=300) for _ in range(5)]
 
-importances = []
-
-def callback(fold: int, model: LGBMClassifier, X_train: pd.DataFrame, y_train: pd.Series):
-    df = pd.DataFrame({
-        'feature': list(X_train.columns),
-        'importance': model.booster_.feature_importance(importance_type='gain')
-    })
-    importances.append(df)
-
-pred_oof, pred_test, scores = cv(models, X[:512, :], y[:512], X[512:, :], nfolds=5, 
-                                 eval=roc_auc_score,     # (optional) evaluation metric
-                                 on_each_fold=callback,  # (optional) called for each fold
-                                 categorical_feature=[]  # (optioanl) additional parameters are passed to model.fit()
-                                 )
+pred_oof, pred_test, scores = cross_validate(models, X[:512, :], y[:512], X[512:, :], nfolds=5,
+                                             eval=roc_auc_score)
 ```
