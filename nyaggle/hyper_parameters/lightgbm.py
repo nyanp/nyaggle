@@ -1,7 +1,7 @@
 import nyaggle.hyper_parameters.util as util
 
-# objective, metric, seed, verbosity, num_boosting_rounds, num_class, num_thread are removed from original code
-# (too specific to the competition, or should be set manually)
+# seed, verbosity, num_boosting_rounds, num_class, num_thread are removed from original code
+# (too specific to the competition or environment)
 
 _parameters = [
     # 2019, ASHRAE - Great Energy Predictor III
@@ -72,8 +72,7 @@ _parameters = [
             "bagging_fraction": 0.5,
             'max_bin': 500,
             'reg_alpha': 0,
-            'reg_lambda': 0,
-            'n_jobs': 1
+            'reg_lambda': 0
         }
     },
     {
@@ -187,7 +186,6 @@ _parameters = [
             'metric': 'binary_logloss',
             'learning_rate': 0.01,
             'num_leaves': 80,
-            'num_threads': 4,
             'feature_fraction': 0.8,
             'bagging_freq': 1,
             'bagging_fraction': 0.8
@@ -318,7 +316,6 @@ _parameters = [
             'learning_rate': 0.1,
             'max_depth': 3,
             'min_data_in_leaf': 1,
-            'n_estimators': 10000,
             'max_bin': 128,
             'bagging_fraction': 0.66
         }
@@ -363,8 +360,7 @@ _parameters = [
             'reg_lambda': 0.479169,
             'colsample_bytree': 0.508716,
             'min_split_gain': 0.024766,
-            'subsample': 1,
-            'is_unbalance': False,
+            'subsample': 1
         }
     },
 
