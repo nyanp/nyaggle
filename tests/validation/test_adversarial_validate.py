@@ -10,8 +10,8 @@ def test_adv():
     X, y = make_classification_df(1024)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
 
-    X_train['target'] = np.random.normal(-1, size=len(X_train))
-    X_test['target'] = np.random.normal(1, size=len(X_test))
+    X_train['target'] = 0
+    X_test['target'] = 1
 
     auc, importance = adversarial_validate(X_train, X_test)
 
