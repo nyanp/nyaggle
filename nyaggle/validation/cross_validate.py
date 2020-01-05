@@ -22,7 +22,8 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
                    predict_proba: bool = False, eval: Optional[Callable] = None, logger: Optional[Logger] = None,
                    on_each_fold: Optional[Callable[[int, BaseEstimator, pd.DataFrame, pd.Series], None]] = None,
                    fit_params: Optional[Dict] = None,
-                   importance_type: str = 'gain') -> CVResult:
+                   importance_type: str = 'gain',
+                   nfolds_evaluate: Optional[int] = None) -> CVResult:
     """
     Evaluate metrics by cross-validation. It also records out-of-fold prediction and test prediction.
 
@@ -51,7 +52,11 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
             called for each fold with (idx_fold, model, X_fold, y_fold)
         fit_params:
             Parameters passed to the fit method of the estimator
-
+        importance_type:
+            The type of feature importance to be used to calculate result. Used only in ``LGBMClassifier`` and ``LGBMRegressor``.
+        nfolds_evaluate:
+            If not ``None``, and ``nfolds_evaluate`` < ``nfolds``, only ``nfolds_evaluate`` folds are evaluated.
+            For example, if ``nfolds = 5`` and ``nfolds_evaluate = 2``, only the first 2 folds out of 5 are evaluated.
     Returns:
         Namedtuple with following members
 
@@ -115,6 +120,7 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
             return model.predict(x)
 
     oof = np.zeros(len(X_train))
+    evaluated = np.full(len(X_train), False)
     if X_test is not None:
         test = np.zeros((len(X_test), nfolds))
 
@@ -123,6 +129,9 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
     importance = []
 
     for n, (train_idx, valid_idx) in enumerate(folds.split(X_train, y)):
+        if nfolds_evaluate is not None and nfolds_evaluate == n:
+            break
+
         start_time = time.time()
 
         train_x, train_y = X_train.iloc[train_idx], y.iloc[train_idx]
@@ -145,6 +154,7 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
             estimator[n].fit(train_x, train_y)
 
         oof[valid_idx] = _predict(estimator[n], valid_x, predict_proba)
+        evaluated[valid_idx] = True
 
         if X_test is not None:
             test[:, n] = _predict(estimator[n], X_test, predict_proba)
@@ -165,7 +175,7 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
         logger.debug('{:.3f} sec / fold'.format(elapsed))
 
     if eval is not None:
-        score = eval(y, oof)
+        score = eval(y.loc[evaluated], oof[evaluated])
         scores.append(score)
         logger.info('Overall score: {}'.format(score))
 
