@@ -115,7 +115,7 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
         
     assert X_train.index.name == id_column, "index does not match"
     
-    with Experiment(logging_directory, overwrite) as exp:
+    with Experiment(logging_directory, overwrite, metrics_filename='scores.txt') as exp:
         exp.log('GBDT: {}'.format(gbdt_type))
         exp.log('Experiment: {}'.format(logging_directory))
         exp.log('Params: {}'.format(model_params))
@@ -162,10 +162,11 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
         exp.log_numpy('oof', result.predicted_oof)
         exp.log_numpy('test', result.predicted_test)
 
-        submit = pd.DataFrame()
-        submit[id_column] = X_test.index
-        submit[y.name] = result.predicted_test
-        exp.log_dataframe(submission_filename, submit, 'csv')
+        if X_test is not None:
+            submit = pd.DataFrame()
+            submit[id_column] = X_test.index
+            submit[y.name] = result.predicted_test
+            exp.log_dataframe(submission_filename, submit, 'csv')
 
         elapsed_time = time.time() - start_time
 

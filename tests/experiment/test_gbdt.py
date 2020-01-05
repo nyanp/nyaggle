@@ -9,6 +9,11 @@ from nyaggle.experiment import experiment_gbdt
 from nyaggle.testing import make_classification_df, make_regression_df
 
 
+def _check_file_exists(directory, files):
+    for f in files:
+        assert os.path.exists(os.path.join(directory, f)), 'File not found: {}'.format(f)
+
+
 def test_experiment_lgb_classifier():
     X, y = make_classification_df(n_samples=1024, n_num_features=10, n_cat_features=2,
                                   class_sep=0.98, random_state=0, id_column='user_id')
@@ -27,9 +32,7 @@ def test_experiment_lgb_classifier():
         assert roc_auc_score(y_train, result.predicted_oof) >= 0.85
         assert roc_auc_score(y_test, result.predicted_test) >= 0.85
 
-        assert os.path.exists(os.path.join(temp_path, 'submission.csv'))
-        assert os.path.exists(os.path.join(temp_path, 'oof.npy'))
-        assert os.path.exists(os.path.join(temp_path, 'test.npy'))
+        _check_file_exists(temp_path, ('submission.csv', 'oof.npy', 'test.npy', 'scores.txt'))
 
 
 def test_experiment_lgb_regressor():
@@ -48,9 +51,8 @@ def test_experiment_lgb_regressor():
                                  X_train, y_train, X_test, stratified=True)
 
         assert mean_squared_error(y_train, result.predicted_oof) == result.scores[-1]
-        assert os.path.exists(os.path.join(temp_path, 'submission.csv'))
-        assert os.path.exists(os.path.join(temp_path, 'oof.npy'))
-        assert os.path.exists(os.path.join(temp_path, 'test.npy'))
+
+        _check_file_exists(temp_path, ('submission.csv', 'oof.npy', 'test.npy', 'scores.txt'))
 
 
 def test_experiment_cat_classifier():
@@ -70,12 +72,9 @@ def test_experiment_cat_classifier():
 
         assert roc_auc_score(y_train, result.predicted_oof) >= 0.85
         assert roc_auc_score(y_test, result.predicted_test) >= 0.85
-
-        assert os.path.exists(os.path.join(temp_path, 'submission.csv'))
         assert list(pd.read_csv(os.path.join(temp_path, 'submission.csv')).columns) == ['user_id', 'tgt']
 
-        assert os.path.exists(os.path.join(temp_path, 'oof.npy'))
-        assert os.path.exists(os.path.join(temp_path, 'test.npy'))
+        _check_file_exists(temp_path, ('submission.csv', 'oof.npy', 'test.npy', 'scores.txt'))
 
 
 def test_experiment_cat_regressor():
@@ -94,9 +93,8 @@ def test_experiment_cat_regressor():
                                  X_train, y_train, X_test, stratified=True, gbdt_type='cat')
 
         assert mean_squared_error(y_train, result.predicted_oof) == result.scores[-1]
-        assert os.path.exists(os.path.join(temp_path, 'submission.csv'))
-        assert os.path.exists(os.path.join(temp_path, 'oof.npy'))
-        assert os.path.exists(os.path.join(temp_path, 'test.npy'))
+
+        _check_file_exists(temp_path, ('submission.csv', 'oof.npy', 'test.npy', 'scores.txt'))
 
 
 def test_experiment_cat_custom_eval():
@@ -116,3 +114,25 @@ def test_experiment_cat_custom_eval():
                                  X_train, y_train, X_test, stratified=True, gbdt_type='cat', eval=mean_absolute_error)
 
         assert mean_absolute_error(y_train, result.predicted_oof) == result.scores[-1]
+
+        _check_file_exists(temp_path, ('submission.csv', 'oof.npy', 'test.npy', 'scores.txt'))
+
+
+def test_experiment_without_test_data():
+    X, y = make_classification_df(n_samples=1024, n_num_features=10, n_cat_features=2,
+                                  class_sep=0.98, random_state=0, id_column='user_id')
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
+
+    params = {
+        'objective': 'binary',
+        'max_depth': 8
+    }
+
+    with tempfile.TemporaryDirectory() as temp_path:
+        result = experiment_gbdt(temp_path, params, 'user_id',
+                                 X_train, y_train)
+
+        assert roc_auc_score(y_train, result.predicted_oof) >= 0.85
+
+        _check_file_exists(temp_path, ('oof.npy', 'scores.txt'))
