@@ -41,6 +41,25 @@ def adversarial_validate(X_train: pd.DataFrame,
             float, ROC AUC score of adversarial validation.
         * importance:
             pandas DataFrame, feature importance of adversarial model (order by importance)
+
+    Example:
+        >>> from sklearn.model_selection import train_test_split
+        >>> from nyaggle.testing import make_regression_df
+        >>> from nyaggle.validation import adversarial_validate
+
+        >>> X, y = make_regression_df(n_samples=8)
+        >>> X_train, X_test, y_train, y_test = train_test_split(X, y)
+        >>> auc, importance = cross_validate(X_train, X_test)
+        >>>
+        >>> print(auc)
+        0.51078231
+        >>> importance.head()
+        feature importance
+        col_1   231.5827204
+        col_5   207.1837266
+        col_7   188.6920685
+        col_4   174.5668498
+        col_9   170.6438643
     """
     concat = pd.concat([X_train, X_test]).copy().reset_index(drop=True)
     y = np.array([1]*len(X_train) + [0]*len(X_test))
