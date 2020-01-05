@@ -1,20 +1,19 @@
 import os
 import time
 from collections import namedtuple
-from more_itertools import first_true
 from logging import getLogger, FileHandler, DEBUG
-from typing import Any, Callable, Dict, Iterable, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
 from catboost import CatBoostClassifier, CatBoostRegressor
 from lightgbm import LGBMClassifier, LGBMRegressor
+from more_itertools import first_true
 from sklearn.metrics import roc_auc_score, mean_squared_error
 from sklearn.utils.multiclass import type_of_target
 
-from nyaggle.validation.cv import cross_validate
 from nyaggle.util import plot_importance
-
+from nyaggle.validation.cross_validate import cross_validate
 
 GBDTResult = namedtuple('LGBResult', ['predicted_oof', 'predicted_test', 'scores', 'models', 'importance', 'time'])
 
@@ -139,20 +138,11 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
         logger.info('Seed: (specified in gbdt_params is used)')
 
     target_type = type_of_target(y)
-    model, eval, cat_param_name, get_feature_importance = _dispatch_gbdt(gbdt_type, target_type, eval)
+    model, eval, cat_param_name = _dispatch_gbdt(gbdt_type, target_type, eval)
     models = [model(**model_params) for _ in range(nfolds)]
 
     if target_type not in ('binary', 'multiclass'):
         stratified = False
-
-    importances = []
-
-    def callback(fold: int, model: LGBMClassifier, x_train: pd.DataFrame, y: pd.Series):
-        df = pd.DataFrame({
-            'feature': list(x_train.columns),
-            'importance': get_feature_importance(model)
-        })
-        importances.append(df)
 
     if fit_params is None:
         fit_params = {}
@@ -160,10 +150,10 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
         fit_params[cat_param_name] = categorical_feature
 
     result = cross_validate(models, X_train=X_train, y=y, X_test=X_test, nfolds=nfolds, logger=logger,
-                            on_each_fold=callback, eval=eval, stratified=stratified, seed=seed_split,
+                            eval=eval, stratified=stratified, seed=seed_split,
                             fit_params=fit_params)
 
-    importance = pd.concat(importances)
+    importance = pd.concat(result.importance)
 
     importance = importance.groupby('feature')['importance'].mean().reset_index()
     importance.sort_values(by='importance', ascending=False, inplace=True)
@@ -184,27 +174,19 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
     return GBDTResult(result.predicted_oof, result.predicted_test, result.scores, models, importance, elapsed_time)
 
 
-def _get_importance_lgbm(model):
-    return model.booster_.feature_importance(importance_type='gain')
-
-
-def _get_importance_cat(model):
-    return model.get_feature_importance()
-
-
 def _dispatch_gbdt(gbdt_type: str, target_type: str, custom_eval: Optional[Callable] = None):
     gbdt_table = [
-        ('binary', 'lgbm', LGBMClassifier, roc_auc_score, 'categorical_feature', _get_importance_lgbm),
-        ('continuous', 'lgbm', LGBMRegressor, mean_squared_error, 'categorical_feature', _get_importance_lgbm),
-        ('binary', 'cat', CatBoostClassifier, roc_auc_score, 'cat_features', _get_importance_cat),
-        ('continuous', 'cat', CatBoostRegressor, mean_squared_error, 'cat_features', _get_importance_cat),
+        ('binary', 'lgbm', LGBMClassifier, roc_auc_score, 'categorical_feature'),
+        ('continuous', 'lgbm', LGBMRegressor, mean_squared_error, 'categorical_feature'),
+        ('binary', 'cat', CatBoostClassifier, roc_auc_score, 'cat_features'),
+        ('continuous', 'cat', CatBoostRegressor, mean_squared_error, 'cat_features'),
     ]
     found = first_true(gbdt_table, pred=lambda x: x[0] == target_type and x[1] == gbdt_type)
     if found is None:
         raise RuntimeError('Not supported gbdt_type ({}) or type_of_target ({}).'.format(gbdt_type, target_type))
 
-    model, eval, cat_param, get_importance = found[2], found[3], found[4], found[5]
+    model, eval, cat_param = found[2], found[3], found[4]
     if custom_eval is not None:
         eval = custom_eval
 
-    return model, eval, cat_param, get_importance
+    return model, eval, cat_param

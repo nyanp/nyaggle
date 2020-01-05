@@ -1,1 +1,1 @@
-from nyaggle.validation.cv import cross_validate
+from nyaggle.validation.cross_validate import cross_validate

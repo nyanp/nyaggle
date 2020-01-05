@@ -7,11 +7,12 @@ from typing import Callable, Dict, List, Optional, Union
 import numpy as np
 import pandas as pd
 from category_encoders.utils import convert_input, convert_input_vector
-from lightgbm import LGBMClassifier, LGBMRegressor
+from catboost import CatBoost
+from lightgbm import LGBMModel
 from sklearn.base import BaseEstimator
 from sklearn.model_selection import KFold, StratifiedKFold
 
-CVResult = namedtuple('CVResult', ['predicted_oof', 'predicted_test', 'scores'])
+CVResult = namedtuple('CVResult', ['predicted_oof', 'predicted_test', 'scores', 'importance'])
 
 
 def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
@@ -20,7 +21,8 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
                    nfolds: int = 5, stratified: bool = False, seed: int = 42,
                    predict_proba: bool = False, eval: Optional[Callable] = None, logger: Optional[Logger] = None,
                    on_each_fold: Optional[Callable[[int, BaseEstimator, pd.DataFrame, pd.Series], None]] = None,
-                   fit_params: Optional[Dict] = None) -> CVResult:
+                   fit_params: Optional[Dict] = None,
+                   importance_type: str = 'gain') -> CVResult:
     """
     Evaluate metrics by cross-validation. It also records out-of-fold prediction and test prediction.
 
@@ -56,10 +58,13 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
         * predicted_oof:
             numpy array, shape (len(X_train),) Predicted value on Out-of-Fold validation data.
         * predicted_test:
-            numpy array, shape (len(X_test),) Predicted value on test data. ``None`` if X_test is ``None``
+            numpy array, shape (len(X_test),) Predicted value on test data. ``None`` if X_test is ``None``.
         * scores:
             list of float, shape(nfolds+1) ``scores[i]`` denotes validation score in i-th fold.
-            ``scores[-1]`` is overall score. `None` if eval is not specified
+            ``scores[-1]`` is overall score. `None` if eval is not specified.
+        * importance:
+            list of pandas DataFrame, shape(nfolds,) ``importance[i]`` denotes feature importance in i-th fold.
+            If estimator is not GBDT, empty array is returned.
 
     Example:
         >>> from sklearn.datasets import make_regression
@@ -69,12 +74,12 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
 
         >>> X, y = make_regression(n_samples=8)
         >>> model = Ridge(alpha=1.0)
-        >>> pred_oof, pred_test, scores = cross_validate(model,
-        >>>                                  X_train=X[:3, :],
-        >>>                                  y=y[:3],
-        >>>                                  X_test=X[3:, :],
-        >>>                                  nfolds=3,
-        >>>                                  eval=mean_squared_error)
+        >>> pred_oof, pred_test, scores, _ = cross_validate(model,
+        >>>                                                 X_train=X[:3, :],
+        >>>                                                 y=y[:3],
+        >>>                                                 X_test=X[3:, :],
+        >>>                                                 nfolds=3,
+        >>>                                                 eval=mean_squared_error)
         >>> print(pred_oof)
         [-101.1123267 ,   26.79300693,   17.72635528]
         >>> print(pred_test)
@@ -115,6 +120,7 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
 
     scores = []
     eta_all = []
+    importance = []
 
     for n, (train_idx, valid_idx) in enumerate(folds.split(X_train, y)):
         start_time = time.time()
@@ -122,7 +128,7 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
         train_x, train_y = X_train.iloc[train_idx], y.iloc[train_idx]
         valid_x, valid_y = X_train.iloc[valid_idx], y.iloc[valid_idx]
 
-        if isinstance(estimator[n], (LGBMRegressor, LGBMClassifier)):
+        if isinstance(estimator[n], LGBMModel):
             if fit_params is None:
                 fit_params_fold = {}
             else:
@@ -146,6 +152,9 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
         if on_each_fold is not None:
             on_each_fold(n, estimator[n], train_x, train_y)
 
+        if isinstance(estimator[n], (LGBMModel, CatBoost)):
+            importance.append(_get_gbdt_importance(estimator[n], list(X_train.columns), importance_type))
+
         if eval is not None:
             score = eval(valid_y, oof[valid_idx])
             scores.append(score)
@@ -165,4 +174,18 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
     else:
         predicted = None
 
-    return CVResult(oof, predicted, scores)
+    return CVResult(oof, predicted, scores, importance)
+
+
+def _get_gbdt_importance(gbdt_model: Union[CatBoost, LGBMModel], features: List[str],
+                         importance_type: str) -> pd.DataFrame:
+    df = pd.DataFrame()
+
+    df['feature'] = features
+
+    if isinstance(gbdt_model, CatBoost):
+        df['importance'] = gbdt_model.get_feature_importance()
+    elif isinstance(gbdt_model, LGBMModel):
+        df['importance'] = gbdt_model.booster_.feature_importance(importance_type=importance_type)
+
+    return df
