@@ -90,7 +90,7 @@ japanese_text_vector = bv.fit_transform(train)
 ```
 
 ### Model Validation
-`cv()` provides handy API to calculate K-fold CV, Out-of-Fold prediction and test prediction at one time.
+`cross_validate()` provides handy API to calculate K-fold CV, Out-of-Fold prediction and test prediction at one time.
 You can pass LGBMClassifier/LGBMRegressor and any other sklearn models.
 
 ```python
