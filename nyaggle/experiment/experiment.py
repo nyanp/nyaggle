@@ -14,6 +14,7 @@ class Experiment(object):
     The output files are laid out as follows:
 
     .. code-block:: none
+
       <logging_directory>/
           <log_filename>            <== output of log()
           <metrics_filename>        <== output of log_metrics(), format: name,score

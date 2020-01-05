@@ -222,7 +222,7 @@ _parameters = [
         "name": "bosch-2016-1st",
         "url": "https://www.kaggle.com/c/bosch-production-line-performance/discussion/25434#144628",
         "competition": "bosch-production-line-performance",
-        "rank": 0,
+        "rank": 1,
         "metric": "mcc",
         "parameters": {
             "eval_metric": "auc",

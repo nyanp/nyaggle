@@ -507,7 +507,7 @@ _parameters = [
         }
     },
     {
-        "name": "recruit-2018-1st",
+        "name": "recruit-2018-8th",
         "url": "https://github.com/MaxHalford/kaggle-recruit-restaurant/blob/master/Solution.ipynb",
         "competition": "recruit-restaurant-visitor-forecasting",
         "rank": 8,

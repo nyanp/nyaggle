@@ -22,7 +22,7 @@ nyaggle.feature.nlp module
     :show-inheritance:
 
 nyaggle.validation module
------------------------
+--------------------------
 
 .. automodule:: nyaggle.validation
     :members:
