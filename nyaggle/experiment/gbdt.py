@@ -152,9 +152,9 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
         exp.log_metrics('Overall', result.scores[-1])
     
         importance = pd.concat(result.importance)
-    
         importance = importance.groupby('feature')['importance'].mean().reset_index()
         importance.sort_values(by='importance', ascending=False, inplace=True)
+        importance.reset_index(drop=True, inplace=True)
     
         plot_importance(importance, os.path.join(logging_directory, 'feature_importance.png'))
     

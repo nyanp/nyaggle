@@ -1,15 +1,12 @@
-import pandas as pd
-import numpy as np
-
 from catboost import CatBoostClassifier
 from lightgbm import LGBMClassifier
 from sklearn.datasets import make_classification, make_regression
 from sklearn.linear_model import RidgeClassifier, Ridge
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score, r2_score
+from sklearn.model_selection import train_test_split
 
-from nyaggle.validation.cross_validate import cross_validate
 from nyaggle.testing import make_classification_df
+from nyaggle.validation.cross_validate import cross_validate
 
 
 def test_cv_sklean_binary():
