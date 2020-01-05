@@ -1,10 +1,8 @@
 import os
 import time
 from collections import namedtuple
-from logging import getLogger, FileHandler, DEBUG
 from typing import Any, Callable, Dict, List, Optional
 
-import numpy as np
 import pandas as pd
 from catboost import CatBoostClassifier, CatBoostRegressor
 from lightgbm import LGBMClassifier, LGBMRegressor
@@ -12,6 +10,7 @@ from more_itertools import first_true
 from sklearn.metrics import roc_auc_score, mean_squared_error
 from sklearn.utils.multiclass import type_of_target
 
+from nyaggle.experiment.experiment import Experiment
 from nyaggle.util import plot_importance
 from nyaggle.validation.cross_validate import cross_validate
 
@@ -115,63 +114,62 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
         X_train.set_index(id_column, inplace=True)
         
     assert X_train.index.name == id_column, "index does not match"
+    
+    with Experiment(logging_directory, overwrite) as exp:
+        exp.log('GBDT: {}'.format(gbdt_type))
+        exp.log('Experiment: {}'.format(logging_directory))
+        exp.log('Params: {}'.format(model_params))
+        exp.log('Features: {}'.format(list(X_train.columns)))
+    
+        if categorical_feature is None:
+            categorical_feature = [c for c in X_train.columns if X_train[c].dtype.name in ['object', 'category']]
+        exp.log('Categorical: {}'.format(categorical_feature))
+    
+        if not any([c in model_params for c in ['seed', 'random_state', 'random_seed']]):
+            model_params['random_state'] = seed_model
+            exp.log('Seed: {}'.format(seed_model))
+        else:
+            exp.log('Seed: (specified in gbdt_params is used)')
+    
+        target_type = type_of_target(y)
+        model, eval, cat_param_name = _dispatch_gbdt(gbdt_type, target_type, eval)
+        models = [model(**model_params) for _ in range(nfolds)]
+    
+        if target_type not in ('binary', 'multiclass'):
+            stratified = False
+    
+        if fit_params is None:
+            fit_params = {}
+        if cat_param_name is not None and cat_param_name not in fit_params:
+            fit_params[cat_param_name] = categorical_feature
+    
+        result = cross_validate(models, X_train=X_train, y=y, X_test=X_test, nfolds=nfolds, logger=exp.get_logger(),
+                                eval=eval, stratified=stratified, seed=seed_split,
+                                fit_params=fit_params)
 
-    os.makedirs(logging_directory, exist_ok=overwrite)
+        for i in range(nfolds):
+            exp.log_metrics('Fold {}'.format(i + 1), result.scores[i])
+        exp.log_metrics('Overall', result.scores[-1])
+    
+        importance = pd.concat(result.importance)
+    
+        importance = importance.groupby('feature')['importance'].mean().reset_index()
+        importance.sort_values(by='importance', ascending=False, inplace=True)
+    
+        plot_importance(importance, os.path.join(logging_directory, 'feature_importance.png'))
+    
+        # save oof
+        exp.log_numpy('oof', result.predicted_oof)
+        exp.log_numpy('test', result.predicted_test)
 
-    logger = getLogger(__name__)
-    logger.setLevel(DEBUG)
-    logger.addHandler(FileHandler(os.path.join(logging_directory, 'log.txt')))
+        submit = pd.DataFrame()
+        submit[id_column] = X_test.index
+        submit[y.name] = result.predicted_test
+        exp.log_dataframe(submission_filename, submit, 'csv')
 
-    logger.info('GBDT: {}'.format(gbdt_type))
-    logger.info('Experiment: {}'.format(logging_directory))
-    logger.info('Params: {}'.format(model_params))
-    logger.info('Features: {}'.format(list(X_train.columns)))
+        elapsed_time = time.time() - start_time
 
-    if categorical_feature is None:
-        categorical_feature = [c for c in X_train.columns if X_train[c].dtype.name in ['object', 'category']]
-    logger.info('Categorical: {}'.format(categorical_feature))
-
-    if not any([c in model_params for c in ['seed', 'random_state', 'random_seed']]):
-        model_params['random_state'] = seed_model
-        logger.info('Seed: {}'.format(seed_model))
-    else:
-        logger.info('Seed: (specified in gbdt_params is used)')
-
-    target_type = type_of_target(y)
-    model, eval, cat_param_name = _dispatch_gbdt(gbdt_type, target_type, eval)
-    models = [model(**model_params) for _ in range(nfolds)]
-
-    if target_type not in ('binary', 'multiclass'):
-        stratified = False
-
-    if fit_params is None:
-        fit_params = {}
-    if cat_param_name is not None and cat_param_name not in fit_params:
-        fit_params[cat_param_name] = categorical_feature
-
-    result = cross_validate(models, X_train=X_train, y=y, X_test=X_test, nfolds=nfolds, logger=logger,
-                            eval=eval, stratified=stratified, seed=seed_split,
-                            fit_params=fit_params)
-
-    importance = pd.concat(result.importance)
-
-    importance = importance.groupby('feature')['importance'].mean().reset_index()
-    importance.sort_values(by='importance', ascending=False, inplace=True)
-
-    plot_importance(importance, os.path.join(logging_directory, 'feature_importance.png'))
-
-    # save oof
-    np.save(os.path.join(logging_directory, 'oof'), result.predicted_oof)
-    np.save(os.path.join(logging_directory, 'test'), result.predicted_test)
-
-    submit = pd.DataFrame()
-    submit[id_column] = X_test.index
-    submit[y.name] = result.predicted_test
-    submit.to_csv(os.path.join(logging_directory, submission_filename), index=False)
-
-    elapsed_time = time.time() - start_time
-
-    return GBDTResult(result.predicted_oof, result.predicted_test, result.scores, models, importance, elapsed_time)
+        return GBDTResult(result.predicted_oof, result.predicted_test, result.scores, models, importance, elapsed_time)
 
 
 def _dispatch_gbdt(gbdt_type: str, target_type: str, custom_eval: Optional[Callable] = None):
