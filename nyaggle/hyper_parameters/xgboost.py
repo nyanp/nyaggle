@@ -53,7 +53,6 @@ _parameters = [
             'objective': 'reg:linear',
             'booster': 'gbtree',
             'min_child_weight': 10,
-            'n_estimators': 1800,
             'reg_alpha': 0,
             'reg_lambda': 0,
             'eval_metric': 'rmse',
@@ -140,10 +139,7 @@ _parameters = [
             'colsample_bytree': 0.7,
             'colsample_bylevel': 0.7,
             'eta': 0.03,
-            'tree_method': 'exact',
-            'seed': 2017,
-            'nthread': 12,
-            "num_class": 3
+            'tree_method': 'exact'
         }
     },
 
