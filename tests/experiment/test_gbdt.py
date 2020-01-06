@@ -1,5 +1,6 @@
 import json
 import os
+import pytest
 import tempfile
 from urllib.parse import urlparse, unquote
 
@@ -192,6 +193,7 @@ def test_experiment_mlflow():
 
         _check_file_exists(temp_path, ('oof.npy', 'scores.txt', 'mlflow.json'))
 
+        # test if output files are also stored in the mlflow artifact uri
         with open(os.path.join(temp_path, 'mlflow.json'), 'r') as f:
             mlflow_meta = json.load(f)
             p = unquote(urlparse(mlflow_meta['artifact_uri']).path)
@@ -199,3 +201,59 @@ def test_experiment_mlflow():
                 p = p[1:]
             _check_file_exists(p, ('oof.npy', 'scores.txt'))
 
+
+def test_experiment_already_exists():
+    X, y = make_classification_df(n_samples=1024, n_num_features=10, n_cat_features=2,
+                                  class_sep=0.98, random_state=0, id_column='user_id')
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
+
+    params = {
+        'objective': 'binary',
+        'max_depth': 8
+    }
+
+    with tempfile.TemporaryDirectory() as temp_path:
+        experiment_gbdt(temp_path, params, 'user_id', X_train, y_train)
+
+        # result is overwrited by default
+        experiment_gbdt(temp_path, params, 'user_id', X_train, y_train)
+
+        with pytest.raises(Exception):
+            experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, overwrite=False)
+
+
+def test_submission_filename():
+    X, y = make_classification_df(n_samples=1024, n_num_features=10, n_cat_features=2,
+                                  class_sep=0.98, random_state=0, id_column='user_id')
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
+
+    params = {
+        'objective': 'binary',
+        'max_depth': 8
+    }
+
+    with tempfile.TemporaryDirectory() as temp_path:
+        experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, X_test, submission_filename='sub.csv')
+
+        df = pd.read_csv(os.path.join(temp_path, 'sub.csv'))
+        assert list(df.columns) == ['user_id', 'target']
+
+
+def test_stratified():
+    X, y = make_classification_df(n_samples=1024, n_num_features=10, n_cat_features=2,
+                                  class_sep=0.98, random_state=0, id_column='user_id')
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
+
+    params = {
+        'objective': 'binary',
+        'max_depth': 8
+    }
+
+    with tempfile.TemporaryDirectory() as temp_path:
+        result1 = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, X_test, stratified=True)
+        result2 = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, X_test, stratified=False)
+
+        assert result1.scores[-1] != result2.scores[-1]
