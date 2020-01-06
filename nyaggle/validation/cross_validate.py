@@ -101,9 +101,9 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
         X_test = convert_input(X_test)
 
     if stratified:
-        folds = StratifiedKFold(n_splits=nfolds, random_state=seed)
+        folds = StratifiedKFold(n_splits=nfolds, shuffle=True, random_state=seed)
     else:
-        folds = KFold(n_splits=nfolds, random_state=seed)
+        folds = KFold(n_splits=nfolds, shuffle=True, random_state=seed)
 
     if not isinstance(estimator, list):
         estimator = [estimator] * nfolds

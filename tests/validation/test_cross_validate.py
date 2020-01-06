@@ -107,8 +107,15 @@ def test_cv_partial_evaluate():
 
     model = RidgeClassifier(alpha=1.0)
 
+    n = 0
+
+    def _fold_count(*args):
+        nonlocal n
+        n += 1
+
     pred_oof, pred_test, scores, _ = cross_validate(model, X_train, y_train, X_test, nfolds=5, eval=roc_auc_score,
-                                                    nfolds_evaluate=2)
+                                                    nfolds_evaluate=2, on_each_fold=_fold_count)
 
     assert len(scores) == 2 + 1
     assert scores[-1] >= 0.85  # overall auc
+    assert n == 2

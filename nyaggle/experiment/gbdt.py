@@ -1,7 +1,7 @@
 import os
 import time
 from collections import namedtuple
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import pandas as pd
 from catboost import CatBoostClassifier, CatBoostRegressor
@@ -29,7 +29,12 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
                     seed_split: int = 42,
                     seed_model: int = 0,
                     categorical_feature: Optional[List[str]] = None,
-                    submission_filename: str = 'submission.csv'):
+                    submission_filename: str = 'submission.csv',
+                    with_mlflow: bool = False,
+                    mlflow_experiment_id: Optional[Union[int, str]] = None,
+                    mlflow_run_name: Optional[str] = None,
+                    mlflow_tracking_uri: Optional[str] = None
+                    ):
     """
     Evaluate metrics by cross-validation and stores result
     (log, oof prediction, test prediction, feature importance plot and submission file)
@@ -88,6 +93,18 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
             List of categorical column names. If ``None``, categorical columns are automatically determined by dtype.
         submission_filename:
             The name of submission file created under logging directory.
+        with_mlflow:
+            If True, [mlflow tracking](https://www.mlflow.org/docs/latest/tracking.html) is used.
+            One instance of ``nyaggle.experiment.Experiment`` corresponds to one run in mlflow.
+            Note that all output files are located both ``logging_directory`` and
+            mlflow's directory (``mlruns`` by default).
+        mlflow_experiment_id:
+            ID of the experiment of mlflow. Passed to ``mlflow.start_run()``.
+        mlflow_run_name:
+            Name of the run in mlflow. Passed to ``mlflow.start_run()``.
+            If ``None``, ``logging_directory`` is used as the run name.
+        mlflow_tracking_uri:
+            Tracking server uri in mlflow. Passed to ``mlflow.set_tracking_uri``.
     :return:
         Namedtuple with following members
 
@@ -115,7 +132,9 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
         
     assert X_train.index.name == id_column, "index does not match"
     
-    with Experiment(logging_directory, overwrite, metrics_filename='scores.txt') as exp:
+    with Experiment(logging_directory, overwrite, metrics_filename='scores.txt',
+                    with_mlflow=with_mlflow, mlflow_tracking_uri=mlflow_tracking_uri,
+                    mlflow_experiment_id=mlflow_experiment_id, mlflow_run_name=mlflow_run_name) as exp:
         exp.log('GBDT: {}'.format(gbdt_type))
         exp.log('Experiment: {}'.format(logging_directory))
         exp.log('Params: {}'.format(model_params))
@@ -144,12 +163,11 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
             fit_params[cat_param_name] = categorical_feature
     
         result = cross_validate(models, X_train=X_train, y=y, X_test=X_test, nfolds=nfolds, logger=exp.get_logger(),
-                                eval=eval, stratified=stratified, seed=seed_split,
-                                fit_params=fit_params)
+                                eval=eval, stratified=stratified, seed=seed_split, fit_params=fit_params)
 
         for i in range(nfolds):
-            exp.log_metrics('Fold {}'.format(i + 1), result.scores[i])
-        exp.log_metrics('Overall', result.scores[-1])
+            exp.log_metric('Fold {}'.format(i + 1), result.scores[i])
+        exp.log_metric('Overall', result.scores[-1])
     
         importance = pd.concat(result.importance)
         importance = importance.groupby('feature')['importance'].mean().reset_index()
