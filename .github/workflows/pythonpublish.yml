@@ -17,7 +17,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install torch
+        pip install torch mlflow
         pip install setuptools==42.0.2
         pip install wheel twine
     - name: Build and publish
