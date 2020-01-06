@@ -1,5 +1,7 @@
+import json
 import os
 import tempfile
+from urllib.parse import urlparse, unquote
 
 import pandas as pd
 from sklearn.metrics import roc_auc_score, mean_squared_error, mean_absolute_error
@@ -93,7 +95,6 @@ def test_experiment_cat_regressor():
                                  X_train, y_train, X_test, stratified=True, gbdt_type='cat')
 
         assert mean_squared_error(y_train, result.predicted_oof) == result.scores[-1]
-
         _check_file_exists(temp_path, ('submission.csv', 'oof.npy', 'test.npy', 'scores.txt'))
 
 
@@ -114,7 +115,6 @@ def test_experiment_cat_custom_eval():
                                  X_train, y_train, X_test, stratified=True, gbdt_type='cat', eval=mean_absolute_error)
 
         assert mean_absolute_error(y_train, result.predicted_oof) == result.scores[-1]
-
         _check_file_exists(temp_path, ('submission.csv', 'oof.npy', 'test.npy', 'scores.txt'))
 
 
@@ -130,9 +130,72 @@ def test_experiment_without_test_data():
     }
 
     with tempfile.TemporaryDirectory() as temp_path:
-        result = experiment_gbdt(temp_path, params, 'user_id',
-                                 X_train, y_train)
+        result = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train)
 
         assert roc_auc_score(y_train, result.predicted_oof) >= 0.85
-
         _check_file_exists(temp_path, ('oof.npy', 'scores.txt'))
+
+
+def test_experiment_fit_params():
+    X, y = make_classification_df(n_samples=1024, n_num_features=10, n_cat_features=2,
+                                  class_sep=0.98, random_state=0, id_column='user_id')
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
+
+    params = {
+        'objective': 'binary',
+        'max_depth': 8
+    }
+
+    with tempfile.TemporaryDirectory() as temp_path:
+        result1 = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, X_test,
+                                  fit_params={'early_stopping_rounds': None})
+        result2 = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, X_test,
+                                  fit_params={'early_stopping_rounds': 10})
+
+        assert result1.scores[-1] != result2.scores[-1]
+
+
+def test_experiment_seed_split():
+    X, y = make_classification_df(n_samples=1024, n_num_features=10, n_cat_features=2,
+                                  class_sep=0.98, random_state=0, id_column='user_id')
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
+
+    params = {
+        'objective': 'binary',
+        'max_depth': 8
+    }
+
+    with tempfile.TemporaryDirectory() as temp_path:
+        result1 = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, X_test, seed_split=1)
+        result2 = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, X_test, seed_split=1)
+        result3 = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, X_test, seed_split=2)
+
+        assert result1.scores[-1] == result2.scores[-1]
+        assert result1.scores[-1] != result3.scores[-1]
+
+
+def test_experiment_mlflow():
+    X, y = make_classification_df(n_samples=1024, n_num_features=10, n_cat_features=2,
+                                  class_sep=0.98, random_state=0, id_column='user_id')
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
+
+    params = {
+        'objective': 'binary',
+        'max_depth': 8
+    }
+
+    with tempfile.TemporaryDirectory() as temp_path:
+        experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, with_mlflow=True)
+
+        _check_file_exists(temp_path, ('oof.npy', 'scores.txt', 'mlflow.json'))
+
+        with open(os.path.join(temp_path, 'mlflow.json'), 'r') as f:
+            mlflow_meta = json.load(f)
+            p = unquote(urlparse(mlflow_meta['artifact_uri']).path)
+            if os.name == 'nt' and p.startswith("/"):
+                p = p[1:]
+            _check_file_exists(p, ('oof.npy', 'scores.txt'))
+
