@@ -10,8 +10,11 @@ See [the documentation](https://nyaggle.readthedocs.io/en/latest/index.html) for
     - BERT Sentence Vectorization
 - Model Validation
     - CV with OOF
-- GBDT Experiment Package
-    - Generate CV score, submission.csv, OOF, importance plot at once
+    - Adversarial Validation
+- Experiment
+    - Minimal experiment logging which can be combined with mlflow
+    - GBDT experiment wrapper
+        - Output CV score, submission.csv, OOF, importance plot at once
 - Ensemble
     - Blending
 
