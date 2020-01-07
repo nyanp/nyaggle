@@ -117,5 +117,5 @@ def test_cv_partial_evaluate():
                                                     nfolds_evaluate=2, on_each_fold=_fold_count)
 
     assert len(scores) == 2 + 1
-    assert scores[-1] >= 0.85  # overall auc
+    assert scores[-1] >= 0.8  # overall auc
     assert n == 2
