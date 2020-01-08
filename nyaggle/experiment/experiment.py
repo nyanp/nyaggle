@@ -88,6 +88,9 @@ class Experiment(object):
         self.stop()
 
     def start(self):
+        """
+        Start a new experiment.
+        """
         if self.with_mlflow:
             import mlflow
             if self.mlflow_tracking_uri is not None:
@@ -103,6 +106,9 @@ class Experiment(object):
                 json.dump(mlflow_metadata, f, indent=4)
 
     def stop(self):
+        """
+        Stop current experiment.
+        """
         self.metrics.close()
 
         if not self.is_custom:
@@ -114,10 +120,22 @@ class Experiment(object):
                 mlflow.log_artifact(self.log_path)
                 mlflow.log_artifact(self.metrics_path)
 
-    def get_logger(self):
+    def get_logger(self) -> Logger:
+        """
+        Get logger used in this experiment.
+
+        Returns:
+            logger object
+        """
         return self.logger
 
     def get_run(self):
+        """
+        Get mlflow's currently active run, or None if ``with_mlflow = False``.
+
+        Returns:
+            active Run
+        """
         if not self.with_mlflow:
             return None
 
@@ -125,9 +143,25 @@ class Experiment(object):
         return mlflow.active_run()
 
     def log(self, text: str):
+        """
+        Logs a message on the logger for the experiment.
+
+        Args:
+            text:
+                The message to be written.
+        """
         self.logger.info(text)
 
     def log_metric(self, name: str, score: float):
+        """
+        Log a metric under the logging directory.
+
+        Args:
+            name:
+                Metric name.
+            score:
+                Metric value.
+        """
         self.metrics.write('{},{}\n'.format(name, score))
         self.metrics.flush()
 
@@ -136,6 +170,15 @@ class Experiment(object):
             mlflow.log_metric(name, score)
 
     def log_numpy(self, name: str, array: np.ndarray):
+        """
+        Log a numpy ndarray under the logging directory.
+
+        Args:
+            name:
+                Name of the file. A .npy extension will be appended to the file name if it does not already have one.
+            array:
+                Array data to be saved.
+        """
         path = os.path.join(self.logging_directory, name)
         np.save(path, array)
 
@@ -144,10 +187,25 @@ class Experiment(object):
             mlflow.log_artifact(path + '.npy')
 
     def log_dataframe(self, name: str, df: pd.DataFrame, format: str = 'feather'):
+        """
+        Log a pandas dataframe under the logging directory.
+
+        Args:
+            name:
+                Name of the file. A .f or .csv extension will be appended to the file name if it does not already have one.
+            df:
+                A dataframe to be saved.
+            format:
+                A format of output file. ``csv`` and ``feather`` are supported.
+        """
         path = os.path.join(self.logging_directory, name)
         if format == 'feather':
+            if not path.endswith('.f'):
+                path += '.f'
             df.to_feather(path)
         elif format == 'csv':
+            if not path.endswith('.csv'):
+                path += '.csv'
             df.to_csv(path, index=False)
         else:
             raise RuntimeError('format not supported')
