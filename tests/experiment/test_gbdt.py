@@ -146,6 +146,7 @@ def test_experiment_fit_params():
     params = {
         'objective': 'binary',
         'max_depth': 8
+        'n_estimators': 1000
     }
 
     with tempfile.TemporaryDirectory() as temp_path:
