@@ -21,6 +21,10 @@ class Experiment(object):
       <logging_directory>/
           <log_filename>            <== output of log()
           <metrics_filename>        <== output of log_metrics(), format: name,score
+          mlflow.json               <== (optional) corresponding mlflow's run_id, experiment_id are logged.
+
+
+    You can add numpy array and pandas dataframe under the directory through ``log_numpy`` and ``log_dataframe``.
 
     Args:
         logging_directory:
