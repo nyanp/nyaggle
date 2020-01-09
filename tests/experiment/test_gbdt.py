@@ -33,7 +33,7 @@ def test_experiment_lgb_classifier():
     X, y = make_classification_df(n_samples=1024, n_num_features=10, n_cat_features=2,
                                   class_sep=0.98, random_state=0, id_column='user_id')
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
 
     params = {
         'objective': 'binary',
@@ -54,7 +54,7 @@ def test_experiment_lgb_regressor():
     X, y = make_regression_df(n_samples=1024, n_num_features=10, n_cat_features=2,
                               random_state=0, id_column='user_id')
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
 
     params = {
         'objective': 'regression',
@@ -74,7 +74,7 @@ def test_experiment_cat_classifier():
     X, y = make_classification_df(n_samples=1024, n_num_features=10, n_cat_features=2,
                                   class_sep=0.98, random_state=0, id_column='user_id', target_name='tgt')
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
 
     params = {
         'max_depth': 8,
@@ -96,7 +96,7 @@ def test_experiment_cat_regressor():
     X, y = make_regression_df(n_samples=1024, n_num_features=10, n_cat_features=2,
                               random_state=0, id_column='user_id')
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
 
     params = {
         'max_depth': 8,
@@ -115,7 +115,7 @@ def test_experiment_cat_custom_eval():
     X, y = make_regression_df(n_samples=1024, n_num_features=10, n_cat_features=2,
                               random_state=0, id_column='user_id')
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
 
     params = {
         'max_depth': 8,
@@ -135,7 +135,7 @@ def test_experiment_without_test_data():
     X, y = make_classification_df(n_samples=1024, n_num_features=10, n_cat_features=2,
                                   class_sep=0.98, random_state=0, id_column='user_id')
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
 
     params = {
         'objective': 'binary',
@@ -153,7 +153,7 @@ def test_experiment_fit_params():
     X, y = make_classification_df(n_samples=1024, n_num_features=10, n_cat_features=2,
                                   class_sep=0.98, random_state=0, id_column='user_id')
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
 
     params = {
         'objective': 'binary',
@@ -176,7 +176,7 @@ def test_experiment_seed_split():
     X, y = make_classification_df(n_samples=1024, n_num_features=10, n_cat_features=2,
                                   class_sep=0.98, random_state=0, id_column='user_id')
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
 
     params = {
         'objective': 'binary',
@@ -198,7 +198,7 @@ def test_experiment_mlflow():
     X, y = make_classification_df(n_samples=1024, n_num_features=10, n_cat_features=2,
                                   class_sep=0.98, random_state=0, id_column='user_id')
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
 
     params = {
         'objective': 'binary',
@@ -223,7 +223,7 @@ def test_experiment_already_exists():
     X, y = make_classification_df(n_samples=1024, n_num_features=10, n_cat_features=2,
                                   class_sep=0.98, random_state=0, id_column='user_id')
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
 
     params = {
         'objective': 'binary',
@@ -244,7 +244,7 @@ def test_submission_filename():
     X, y = make_classification_df(n_samples=1024, n_num_features=10, n_cat_features=2,
                                   class_sep=0.98, random_state=0, id_column='user_id')
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
 
     params = {
         'objective': 'binary',
@@ -262,7 +262,7 @@ def test_stratified():
     X, y = make_classification_df(n_samples=1024, n_num_features=10, n_cat_features=2,
                                   class_sep=0.98, random_state=0, id_column='user_id')
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
 
     params = {
         'objective': 'binary',

@@ -11,7 +11,7 @@ from nyaggle.validation.cross_validate import cross_validate
 
 def test_cv_sklean_binary():
     X, y = make_classification(n_samples=1024, n_features=20, class_sep=0.98, random_state=0)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
 
     model = RidgeClassifier(alpha=1.0)
 
@@ -25,7 +25,7 @@ def test_cv_sklean_binary():
 
 def test_cv_sklean_regression():
     X, y = make_regression(n_samples=1024, n_features=20, random_state=0)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
 
     model = Ridge(alpha=1.0)
 
@@ -40,7 +40,7 @@ def test_cv_sklean_regression():
 
 def test_cv_lgbm():
     X, y = make_classification(n_samples=1024, n_features=20, class_sep=0.98, random_state=0)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
 
     models = [LGBMClassifier(n_estimators=300) for _ in range(5)]
 
@@ -61,7 +61,7 @@ def test_cv_lgbm():
 
 def test_cv_lgbm_df():
     X, y = make_classification_df(n_samples=1024, n_num_features=20, n_cat_features=1, class_sep=0.98, random_state=0)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
 
     models = [LGBMClassifier(n_estimators=300) for _ in range(5)]
 
@@ -82,7 +82,7 @@ def test_cv_lgbm_df():
 
 def test_cv_cat_df():
     X, y = make_classification_df(n_samples=1024, n_num_features=20, n_cat_features=1, class_sep=0.98, random_state=0)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
 
     models = [CatBoostClassifier(n_estimators=300) for _ in range(5)]
 
@@ -103,7 +103,7 @@ def test_cv_cat_df():
 
 def test_cv_partial_evaluate():
     X, y = make_classification(n_samples=1024, n_features=20, class_sep=0.98, random_state=0)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
 
     model = RidgeClassifier(alpha=1.0)
 

@@ -12,7 +12,7 @@ def test_averating():
     X, y = make_classification_df(n_samples=1024, n_num_features=10, n_cat_features=2,
                                   class_sep=0.98, random_state=0, id_column='user_id')
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
 
     params = {
         'objective': 'binary',

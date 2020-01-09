@@ -8,7 +8,7 @@ from nyaggle.testing import make_classification_df
 
 def test_adv():
     X, y = make_classification_df(1024)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
 
     X_train['target'] = 0
     X_test['target'] = 1
