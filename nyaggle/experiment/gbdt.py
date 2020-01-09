@@ -4,11 +4,11 @@ from collections import namedtuple
 from typing import Any, Callable, Dict, List, Optional, Union
 
 import pandas as pd
+import sklearn.utils.multiclass as multiclass
 from catboost import CatBoostClassifier, CatBoostRegressor
 from lightgbm import LGBMClassifier, LGBMRegressor
 from more_itertools import first_true
 from sklearn.metrics import roc_auc_score, mean_squared_error
-from sklearn.utils.multiclass import type_of_target
 
 from nyaggle.experiment.experiment import Experiment
 from nyaggle.util import plot_importance
@@ -30,6 +30,7 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
                     seed_model: int = 0,
                     categorical_feature: Optional[List[str]] = None,
                     submission_filename: str = 'submission.csv',
+                    type_of_target: str = 'auto',
                     with_mlflow: bool = False,
                     mlflow_experiment_id: Optional[Union[int, str]] = None,
                     mlflow_run_name: Optional[str] = None,
@@ -93,10 +94,13 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
             List of categorical column names. If ``None``, categorical columns are automatically determined by dtype.
         submission_filename:
             The name of submission file created under logging directory.
+        type_of_target:
+            The type of target variable. If ``auto``, type is inferred by ``sklearn.utils.multiclass.type_of_target``.
+            Otherwise, ``binary`` or ``continuous`` are supported for binary-classification and regression.
         with_mlflow:
             If True, [mlflow tracking](https://www.mlflow.org/docs/latest/tracking.html) is used.
             One instance of ``nyaggle.experiment.Experiment`` corresponds to one run in mlflow.
-            Note that all output files are located both ``logging_directory`` and
+            Note that all output
             mlflow's directory (``mlruns`` by default).
         mlflow_experiment_id:
             ID of the experiment of mlflow. Passed to ``mlflow.start_run()``.
@@ -149,12 +153,13 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
             exp.log('Seed: {}'.format(seed_model))
         else:
             exp.log('Seed: (specified in gbdt_params is used)')
-    
-        target_type = type_of_target(y)
-        model, eval, cat_param_name = _dispatch_gbdt(gbdt_type, target_type, eval)
+
+        if type_of_target == 'auto':
+            type_of_target = multiclass.type_of_target(y)
+        model, eval, cat_param_name = _dispatch_gbdt(gbdt_type, type_of_target, eval)
         models = [model(**model_params) for _ in range(nfolds)]
     
-        if target_type not in ('binary', 'multiclass'):
+        if type_of_target not in ('binary', 'multiclass'):
             stratified = False
     
         if fit_params is None:
