@@ -12,6 +12,7 @@ def make_classification_df(n_samples: int = 1024,
                            target_name: str = 'target',
                            random_state: int = 0,
                            id_column: str = None) -> Tuple[pd.DataFrame, pd.Series]:
+    np.random.seed(random_state)
     X, y = make_classification(n_samples=n_samples, n_features=n_num_features, class_sep=class_sep,
                                random_state=random_state)
 
@@ -34,6 +35,7 @@ def make_regression_df(n_samples: int = 1024,
                        target_name: str = 'target',
                        random_state: int = 0,
                        id_column: str = None) -> Tuple[pd.DataFrame, pd.Series]:
+    np.random.seed(random_state)
     X, y = make_regression(n_samples=n_samples, n_features=n_num_features,
                            random_state=random_state)
 
