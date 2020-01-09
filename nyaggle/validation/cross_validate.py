@@ -23,7 +23,8 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
                    on_each_fold: Optional[Callable[[int, BaseEstimator, pd.DataFrame, pd.Series], None]] = None,
                    fit_params: Optional[Dict] = None,
                    importance_type: str = 'gain',
-                   nfolds_evaluate: Optional[int] = None) -> CVResult:
+                   nfolds_evaluate: Optional[int] = None,
+                   early_stopping: bool = True) -> CVResult:
     """
     Evaluate metrics by cross-validation. It also records out-of-fold prediction and test prediction.
 
@@ -57,6 +58,9 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
         nfolds_evaluate:
             If not ``None``, and ``nfolds_evaluate`` < ``nfolds``, only ``nfolds_evaluate`` folds are evaluated.
             For example, if ``nfolds = 5`` and ``nfolds_evaluate = 2``, only the first 2 folds out of 5 are evaluated.
+        early_stopping:
+            If ``True``, ``eval_set`` will be added to ``fit_params`` for each fold.
+            ``early_stopping_rounds = 100`` will also be appended to fit_params if it does not already have one.
     Returns:
         Namedtuple with following members
 
@@ -137,15 +141,16 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
         train_x, train_y = X_train.iloc[train_idx], y.iloc[train_idx]
         valid_x, valid_y = X_train.iloc[valid_idx], y.iloc[valid_idx]
 
-        if isinstance(estimator[n], LGBMModel):
+        if isinstance(estimator[n], (LGBMModel, CatBoost)):
             if fit_params is None:
                 fit_params_fold = {}
             else:
                 fit_params_fold = copy.copy(fit_params)
-            if 'eval_set' not in fit_params_fold:
-                fit_params_fold['eval_set'] = [(valid_x, valid_y)]
-            if 'early_stopping_rounds' not in fit_params_fold:
-                fit_params_fold['early_stopping_rounds'] = 100
+            if early_stopping:
+                if 'eval_set' not in fit_params_fold:
+                    fit_params_fold['eval_set'] = [(valid_x, valid_y)]
+                if 'early_stopping_rounds' not in fit_params_fold:
+                    fit_params_fold['early_stopping_rounds'] = 100
 
             estimator[n].fit(train_x, train_y, **fit_params_fold)
         elif fit_params is not None:

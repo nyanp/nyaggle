@@ -66,8 +66,7 @@ def test_cv_lgbm_df():
     models = [LGBMClassifier(n_estimators=300) for _ in range(5)]
 
     pred_oof, pred_test, scores, importance = cross_validate(models, X_train, y_train, X_test, nfolds=5,
-                                                             eval=roc_auc_score,
-                                                             fit_params={'early_stopping_rounds': 200})
+                                                             eval=roc_auc_score)
 
     print(scores)
     assert len(scores) == 5 + 1
@@ -78,6 +77,7 @@ def test_cv_lgbm_df():
     assert len(importance) == 5
     assert list(importance[0].columns) == ['feature', 'importance']
     assert len(importance[0]) == 20 + 1
+    assert models[0].booster_.num_trees() < 300  # making sure early stopping worked
 
 
 def test_cv_cat_df():
@@ -99,6 +99,7 @@ def test_cv_cat_df():
     assert len(importance) == 5
     assert list(importance[0].columns) == ['feature', 'importance']
     assert len(importance[0]) == 20 + 1
+    assert models[0].tree_count_ < 300  # making sure early stopping worked
 
 
 def test_cv_partial_evaluate():
