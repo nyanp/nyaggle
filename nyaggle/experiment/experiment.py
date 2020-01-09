@@ -53,7 +53,7 @@ class Experiment(object):
 
     def __init__(self,
                  logging_directory: str,
-                 overwrite: bool,
+                 overwrite: bool = False,
                  log_filename: str = 'log.txt',
                  metrics_filename: str = 'metrics.txt',
                  custom_logger: Optional[Logger] = None,
