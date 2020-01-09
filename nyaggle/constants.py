@@ -1,2 +1,0 @@
-from enum import Enum
-
