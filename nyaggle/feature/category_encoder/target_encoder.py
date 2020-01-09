@@ -76,8 +76,11 @@ class KFoldEncoderWrapper(BaseFeaturizer):
                 Data
             y:
                 Target
+        Returns:
+            returns the transformer object.
         """
         self._post_fit(self.fit_transform(X, y), y)
+        return self
 
     def transform(self, X: Union[pd.DataFrame, np.ndarray]) -> Union[pd.DataFrame, np.ndarray]:
         """
