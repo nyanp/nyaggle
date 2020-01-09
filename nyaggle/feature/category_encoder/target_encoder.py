@@ -30,7 +30,7 @@ class KFoldEncoderWrapper(BaseFeaturizer):
     def __init__(self, base_transformer: BaseEstimator,
                  split: Optional[Union[Iterable, KFold, StratifiedKFold]] = None, return_same_type: bool = True):
         if split is None:
-            self.split = KFold(5, random_state=42)
+            self.split = KFold(5, random_state=42, shuffle=True)
         else:
             self.split = split
         self.n_splits = self._get_n_splits()
