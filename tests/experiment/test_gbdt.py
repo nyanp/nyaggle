@@ -158,7 +158,7 @@ def test_experiment_fit_params():
     params = {
         'objective': 'binary',
         'max_depth': 8,
-        'n_estimators': 1000
+        'n_estimators': 500
     }
 
     with _get_temp_directory() as temp_path:
@@ -166,9 +166,10 @@ def test_experiment_fit_params():
                                   fit_params={'early_stopping_rounds': None})
     with _get_temp_directory() as temp_path:
         result2 = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, X_test,
-                                  fit_params={'early_stopping_rounds': 10})
+                                  fit_params={'early_stopping_rounds': 5})
 
-    assert result1.scores[-1] != result2.scores[-1]
+    assert result1.models[-1].booster_.num_trees() == params['n_estimators']
+    assert result2.models[-1].booster_.num_trees() < params['n_estimators']
 
 
 def test_experiment_seed_split():
