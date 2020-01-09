@@ -24,7 +24,7 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
                     gbdt_type: str = 'lgbm',
                     fit_params: Optional[Dict[str, Any]] = None,
                     nfolds: int = 5,
-                    overwrite: bool = True,
+                    overwrite: bool = False,
                     stratified: bool = False,
                     seed_split: int = 42,
                     seed_model: int = 0,
