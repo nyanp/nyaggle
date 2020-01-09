@@ -2,7 +2,7 @@ import copy
 import time
 from collections import namedtuple
 from logging import Logger, getLogger
-from typing import Callable, Dict, List, Optional, Union
+from typing import Callable, Dict, Iterable, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -11,6 +11,8 @@ from catboost import CatBoost
 from lightgbm import LGBMModel
 from sklearn.base import BaseEstimator
 from sklearn.model_selection import KFold, StratifiedKFold
+from nyaggle.validation.split import check_cv
+
 
 CVResult = namedtuple('CVResult', ['predicted_oof', 'predicted_test', 'scores', 'importance'])
 
@@ -18,7 +20,9 @@ CVResult = namedtuple('CVResult', ['predicted_oof', 'predicted_test', 'scores', 
 def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
                    X_train: Union[pd.DataFrame, np.ndarray], y: Union[pd.Series, np.ndarray],
                    X_test: Union[pd.DataFrame, np.ndarray] = None,
-                   nfolds: int = 5, stratified: bool = False, seed: int = 42,
+                   cv: Optional[Union[int, Iterable, KFold, StratifiedKFold]] = None,
+                   groups: Optional[pd.Series] = None,
+                   stratified: bool = False, seed: int = 42,
                    predict_proba: bool = False, eval: Optional[Callable] = None, logger: Optional[Logger] = None,
                    on_each_fold: Optional[Callable[[int, BaseEstimator, pd.DataFrame, pd.Series], None]] = None,
                    fit_params: Optional[Dict] = None,
@@ -37,8 +41,15 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
             Target
         X_test:
             Test data (Optional). If specified, prediction on the test data is performed using ensemble of models.
-        nfolds:
-            Number of splits
+        cv:
+            int, cross-validation generator or an iterable which determines the cross-validation splitting strategy.
+
+            - None, to use the default ``KFold(5, random_state=42, shuffle=True)``,
+            - integer, to specify the number of folds in a ``(Stratified)KFold``,
+            - CV splitter (the instance of ``KFold``, ``StratifiedKFold``, ``GroupKFold``, etc.),
+            - An iterable yielding (train, test) splits as arrays of indices.
+        groups:
+            Group labels for the samples. Only used in conjunction with a “Group” cv instance (e.g., ``GroupKFold``).
         stratified:
             If true, use stratified K-Fold
         seed:
@@ -87,7 +98,7 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
         >>>                                                 X_train=X[:3, :],
         >>>                                                 y=y[:3],
         >>>                                                 X_test=X[3:, :],
-        >>>                                                 nfolds=3,
+        >>>                                                 cv=3,
         >>>                                                 eval=mean_squared_error)
         >>> print(pred_oof)
         [-101.1123267 ,   26.79300693,   17.72635528]
@@ -96,23 +107,20 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
         >>> print(scores)
         [71912.80290003832, 15236.680239881942, 15472.822033121925, 34207.43505768073]
     """
+    cv = check_cv(cv, y, stratified, seed)
+
     if isinstance(estimator, list):
-        assert len(estimator) == nfolds, "Number of estimators should be same to nfolds."
+        assert len(estimator) == cv.get_n_splits(), "Number of estimators should be same to nfolds."
 
     X_train = convert_input(X_train)
     y = convert_input_vector(y, X_train.index)
     if X_test is not None:
         X_test = convert_input(X_test)
 
-    if stratified:
-        folds = StratifiedKFold(n_splits=nfolds, shuffle=True, random_state=seed)
-    else:
-        folds = KFold(n_splits=nfolds, shuffle=True, random_state=seed)
-
     if not isinstance(estimator, list):
-        estimator = [estimator] * nfolds
+        estimator = [estimator] * cv.get_n_splits()
 
-    assert len(estimator) == nfolds
+    assert len(estimator) == cv.get_n_splits()
 
     if logger is None:
         logger = getLogger(__name__)
@@ -126,13 +134,13 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
     oof = np.zeros(len(X_train))
     evaluated = np.full(len(X_train), False)
     if X_test is not None:
-        test = np.zeros((len(X_test), nfolds))
+        test = np.zeros((len(X_test), cv.get_n_splits()))
 
     scores = []
     eta_all = []
     importance = []
 
-    for n, (train_idx, valid_idx) in enumerate(folds.split(X_train, y)):
+    for n, (train_idx, valid_idx) in enumerate(cv.split(X_train, y, groups)):
         if nfolds_evaluate is not None and nfolds_evaluate == n:
             break
 

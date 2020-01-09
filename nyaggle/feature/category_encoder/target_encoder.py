@@ -9,6 +9,7 @@ from sklearn.base import BaseEstimator, clone
 from sklearn.model_selection import KFold, StratifiedKFold
 
 from nyaggle.feature.base import BaseFeaturizer
+from nyaggle.validation.split import check_cv
 
 
 class KFoldEncoderWrapper(BaseFeaturizer):
@@ -20,41 +21,43 @@ class KFoldEncoderWrapper(BaseFeaturizer):
     Args:
         base_transformer:
             Transformer object to be wrapped.
-        split:
-            KFold, StratifiedKFold or cross-validation generator which determines the cross-validation splitting strategy.
-            If `None`, default 5-fold split is used.
+        cv:
+            int, cross-validation generator or an iterable which determines the cross-validation splitting strategy.
+
+            - None, to use the default ``KFold(5, random_state=42, shuffle=True)``,
+            - integer, to specify the number of folds in a ``(Stratified)KFold``,
+            - CV splitter (the instance of ``KFold``, ``StratifiedKFold``, ``GroupKFold``, etc.),
+            - An iterable yielding (train, test) splits as arrays of indices.
+        groups:
+            Group labels for the samples. Only used in conjunction with a “Group” cv instance (e.g., ``GroupKFold``).
         return_same_type:
             If True, `transform` and `fit_transform` return the same type as X.
             If False, these APIs always return a numpy array, similar to sklearn's API.
     """
     def __init__(self, base_transformer: BaseEstimator,
-                 split: Optional[Union[Iterable, KFold, StratifiedKFold]] = None, return_same_type: bool = True):
-        if split is None:
-            self.split = KFold(5, random_state=42, shuffle=True)
-        else:
-            self.split = split
-        self.n_splits = self._get_n_splits()
-        self.transformers = [clone(base_transformer) for _ in range(self.n_splits + 1)]
-        self.return_same_type = return_same_type
+                 cv: Optional[Union[int, Iterable, KFold, StratifiedKFold]] = None, return_same_type: bool = True,
+                 groups: Optional[pd.Series] = None):
+        self.cv = cv
+        self.base_transformer = base_transformer
 
-    def _get_n_splits(self) -> int:
-        if isinstance(self.split, (KFold, StratifiedKFold)):
-            return self.split.get_n_splits()
-        self.split, split = tee(self.split)
-        return len([0 for _ in split])
+        self.n_splits = None
+        self.transformers = None
+        self.return_same_type = return_same_type
+        self.groups = groups
+
+    def _pre_train(self, y):
+        self.cv = check_cv(self.cv, y)
+        self.n_splits = self.cv.get_n_splits()
+        self.transformers = [clone(self.base_transformer) for _ in range(self.n_splits + 1)]
 
     def _fit_train(self, X: pd.DataFrame, y: Optional[pd.Series], **fit_params) -> pd.DataFrame:
         if y is None:
             X_ = self.transformers[-1].transform(X)
             return self._post_transform(X_)
 
-        if isinstance(self.split, (KFold, StratifiedKFold)):
-            self.split = self.split.split(X, y)
-
-        self.split, split = tee(self.split)
         X_ = X.copy()
 
-        for i, (train_index, test_index) in enumerate(split):
+        for i, (train_index, test_index) in enumerate(self.cv.split(X_, y, self.groups)):
             self.transformers[i].fit(X.iloc[train_index], y.iloc[train_index], **fit_params)
             X_.iloc[test_index, :] = self.transformers[i].transform(X.iloc[test_index])
         self.transformers[-1].fit(X, y, **fit_params)
@@ -114,6 +117,7 @@ class KFoldEncoderWrapper(BaseFeaturizer):
             Transformed version of X. It will be pd.DataFrame If X is `pd.DataFrame` and return_same_type is True.
         """
         assert len(X) == len(y)
+        self._pre_train(y)
 
         is_pandas = isinstance(X, pd.DataFrame)
         X = convert_input(X)
@@ -138,9 +142,15 @@ class TargetEncoder(KFoldEncoderWrapper):
     KFold version of category_encoders.TargetEncoder in https://contrib.scikit-learn.org/categorical-encoding/targetencoder.html.
 
     Args:
-        split:
-            KFold, StratifiedKFold or cross-validation generator which determines the cross-validation splitting strategy.
-            If `None`, default 5-fold split is used.
+        cv:
+            int, cross-validation generator or an iterable which determines the cross-validation splitting strategy.
+
+            - None, to use the default ``KFold(5, random_state=42, shuffle=True)``,
+            - integer, to specify the number of folds in a ``(Stratified)KFold``,
+            - CV splitter (the instance of ``KFold``, ``StratifiedKFold``, ``GroupKFold``, etc.),
+            - An iterable yielding (train, test) splits as arrays of indices.
+        groups:
+            Group labels for the samples. Only used in conjunction with a “Group” cv instance (e.g., ``GroupKFold``).
         cols:
             A list of columns to encode, if None, all string columns will be encoded.
         drop_invariant:
@@ -158,7 +168,9 @@ class TargetEncoder(KFoldEncoderWrapper):
             If True, ``transform`` and ``fit_transform`` return the same type as X.
             If False, these APIs always return a numpy array, similar to sklearn's API.
     """
-    def __init__(self, split: Optional[Union[Iterable, KFold, StratifiedKFold]] = None, cols: List[str] = None,
+    def __init__(self, cv: Optional[Union[Iterable, KFold, StratifiedKFold]] = None,
+                 groups: Optional[pd.Series] = None,
+                 cols: List[str] = None,
                  drop_invariant: bool = False, handle_missing: str = 'value', handle_unknown: str = 'value',
                  min_samples_leaf: int = 1, smoothing: float = 1.0, return_same_type: bool = True):
         e = ce.TargetEncoder(cols=cols, drop_invariant=drop_invariant, return_df=True,
@@ -166,7 +178,7 @@ class TargetEncoder(KFoldEncoderWrapper):
                              handle_unknown=handle_unknown,
                              min_samples_leaf=min_samples_leaf, smoothing=smoothing)
 
-        super().__init__(e, split, return_same_type)
+        super().__init__(e, cv, return_same_type, groups)
 
     def _post_transform(self, X: pd.DataFrame) -> pd.DataFrame:
         cols = self.transformers[0].cols

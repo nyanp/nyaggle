@@ -48,7 +48,7 @@ target_col = 'y'
 kf = KFold(5)
 
 # Target encoding with K-fold
-te = TargetEncoder(split=kf.split(train))
+te = TargetEncoder(kf.split(train))
 
 # use fit/fit_transform to train data, then apply transform to test data
 train.loc[:, cat_cols] = te.fit_transform(train[cat_cols], train[target_col])
