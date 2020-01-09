@@ -1,7 +1,10 @@
 import json
 import os
 import pytest
+import shutil
 import tempfile
+import uuid
+from contextlib import contextmanager
 from urllib.parse import urlparse, unquote
 
 import pandas as pd
@@ -17,6 +20,15 @@ def _check_file_exists(directory, files):
         assert os.path.exists(os.path.join(directory, f)), 'File not found: {}'.format(f)
 
 
+@contextmanager
+def _get_temp_directory() -> str:
+    try:
+        path = os.path.join(tempfile.gettempdir(), uuid.uuid4().hex)
+        yield path
+    finally:
+        shutil.rmtree(path, ignore_errors=True)
+
+
 def test_experiment_lgb_classifier():
     X, y = make_classification_df(n_samples=1024, n_num_features=10, n_cat_features=2,
                                   class_sep=0.98, random_state=0, id_column='user_id')
@@ -28,7 +40,7 @@ def test_experiment_lgb_classifier():
         'max_depth': 8
     }
 
-    with tempfile.TemporaryDirectory() as temp_path:
+    with _get_temp_directory() as temp_path:
         result = experiment_gbdt(temp_path, params, 'user_id',
                                  X_train, y_train, X_test, roc_auc_score, stratified=True)
 
@@ -49,7 +61,7 @@ def test_experiment_lgb_regressor():
         'max_depth': 8
     }
 
-    with tempfile.TemporaryDirectory() as temp_path:
+    with _get_temp_directory() as temp_path:
         result = experiment_gbdt(temp_path, params, 'user_id',
                                  X_train, y_train, X_test, stratified=True)
 
@@ -69,7 +81,7 @@ def test_experiment_cat_classifier():
         'num_boost_round': 100
     }
 
-    with tempfile.TemporaryDirectory() as temp_path:
+    with _get_temp_directory() as temp_path:
         result = experiment_gbdt(temp_path, params, 'user_id',
                                  X_train, y_train, X_test, roc_auc_score, stratified=True, gbdt_type='cat')
 
@@ -91,7 +103,7 @@ def test_experiment_cat_regressor():
         'num_boost_round': 100
     }
 
-    with tempfile.TemporaryDirectory() as temp_path:
+    with _get_temp_directory() as temp_path:
         result = experiment_gbdt(temp_path, params, 'user_id',
                                  X_train, y_train, X_test, stratified=True, gbdt_type='cat')
 
@@ -111,7 +123,7 @@ def test_experiment_cat_custom_eval():
         'eval_metric': 'MAE'
     }
 
-    with tempfile.TemporaryDirectory() as temp_path:
+    with _get_temp_directory() as temp_path:
         result = experiment_gbdt(temp_path, params, 'user_id',
                                  X_train, y_train, X_test, stratified=True, gbdt_type='cat', eval=mean_absolute_error)
 
@@ -130,7 +142,7 @@ def test_experiment_without_test_data():
         'max_depth': 8
     }
 
-    with tempfile.TemporaryDirectory() as temp_path:
+    with _get_temp_directory() as temp_path:
         result = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train)
 
         assert roc_auc_score(y_train, result.predicted_oof) >= 0.85
@@ -149,7 +161,7 @@ def test_experiment_fit_params():
         'n_estimators': 1000
     }
 
-    with tempfile.TemporaryDirectory() as temp_path:
+    with _get_temp_directory() as temp_path:
         result1 = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, X_test,
                                   fit_params={'early_stopping_rounds': None})
         result2 = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, X_test,
@@ -169,7 +181,7 @@ def test_experiment_seed_split():
         'max_depth': 8
     }
 
-    with tempfile.TemporaryDirectory() as temp_path:
+    with _get_temp_directory() as temp_path:
         result1 = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, X_test, seed_split=1)
         result2 = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, X_test, seed_split=1)
         result3 = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, X_test, seed_split=2)
@@ -189,7 +201,7 @@ def test_experiment_mlflow():
         'max_depth': 8
     }
 
-    with tempfile.TemporaryDirectory() as temp_path:
+    with _get_temp_directory() as temp_path:
         experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, with_mlflow=True)
 
         _check_file_exists(temp_path, ('oof.npy', 'scores.txt', 'mlflow.json'))
@@ -214,7 +226,7 @@ def test_experiment_already_exists():
         'max_depth': 8
     }
 
-    with tempfile.TemporaryDirectory() as temp_path:
+    with _get_temp_directory() as temp_path:
         experiment_gbdt(temp_path, params, 'user_id', X_train, y_train)
 
         # result is overwrited by default
@@ -235,7 +247,7 @@ def test_submission_filename():
         'max_depth': 8
     }
 
-    with tempfile.TemporaryDirectory() as temp_path:
+    with _get_temp_directory() as temp_path:
         experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, X_test, submission_filename='sub.csv')
 
         df = pd.read_csv(os.path.join(temp_path, 'sub.csv'))
@@ -253,7 +265,7 @@ def test_stratified():
         'max_depth': 8
     }
 
-    with tempfile.TemporaryDirectory() as temp_path:
+    with _get_temp_directory() as temp_path:
         result1 = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, X_test, stratified=True)
         result2 = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, X_test, stratified=False)
 
