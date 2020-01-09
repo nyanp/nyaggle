@@ -164,10 +164,11 @@ def test_experiment_fit_params():
     with _get_temp_directory() as temp_path:
         result1 = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, X_test,
                                   fit_params={'early_stopping_rounds': None})
+    with _get_temp_directory() as temp_path:
         result2 = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, X_test,
                                   fit_params={'early_stopping_rounds': 10})
 
-        assert result1.scores[-1] != result2.scores[-1]
+    assert result1.scores[-1] != result2.scores[-1]
 
 
 def test_experiment_seed_split():
@@ -183,11 +184,13 @@ def test_experiment_seed_split():
 
     with _get_temp_directory() as temp_path:
         result1 = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, X_test, seed_split=1)
+    with _get_temp_directory() as temp_path:
         result2 = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, X_test, seed_split=1)
+    with _get_temp_directory() as temp_path:
         result3 = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, X_test, seed_split=2)
 
-        assert result1.scores[-1] == result2.scores[-1]
-        assert result1.scores[-1] != result3.scores[-1]
+    assert result1.scores[-1] == result2.scores[-1]
+    assert result1.scores[-1] != result3.scores[-1]
 
 
 def test_experiment_mlflow():
@@ -227,10 +230,10 @@ def test_experiment_already_exists():
     }
 
     with _get_temp_directory() as temp_path:
-        experiment_gbdt(temp_path, params, 'user_id', X_train, y_train)
+        experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, overwrite=True)
 
         # result is overwrited by default
-        experiment_gbdt(temp_path, params, 'user_id', X_train, y_train)
+        experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, overwrite=True)
 
         with pytest.raises(Exception):
             experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, overwrite=False)
@@ -267,6 +270,7 @@ def test_stratified():
 
     with _get_temp_directory() as temp_path:
         result1 = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, X_test, stratified=True)
+    with _get_temp_directory() as temp_path:
         result2 = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, X_test, stratified=False)
 
-        assert result1.scores[-1] != result2.scores[-1]
+    assert result1.scores[-1] != result2.scores[-1]
