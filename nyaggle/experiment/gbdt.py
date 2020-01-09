@@ -1,18 +1,20 @@
 import os
 import time
 from collections import namedtuple
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 import pandas as pd
 import sklearn.utils.multiclass as multiclass
 from catboost import CatBoostClassifier, CatBoostRegressor
 from lightgbm import LGBMClassifier, LGBMRegressor
 from more_itertools import first_true
+from sklearn.model_selection import KFold, StratifiedKFold
 from sklearn.metrics import roc_auc_score, mean_squared_error
 
 from nyaggle.experiment.experiment import Experiment
 from nyaggle.util import plot_importance
 from nyaggle.validation.cross_validate import cross_validate
+from nyaggle.validation.split import check_cv
 
 GBDTResult = namedtuple('LGBResult', ['predicted_oof', 'predicted_test', 'scores', 'models', 'importance', 'time'])
 
@@ -23,9 +25,10 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
                     eval: Optional[Callable] = None,
                     gbdt_type: str = 'lgbm',
                     fit_params: Optional[Dict[str, Any]] = None,
-                    nfolds: int = 5,
-                    overwrite: bool = False,
+                    cv: Optional[Union[int, Iterable, KFold, StratifiedKFold]] = None,
+                    groups: Optional[pd.Series] = None,
                     stratified: bool = False,
+                    overwrite: bool = False,
                     seed_split: int = 42,
                     seed_model: int = 0,
                     categorical_feature: Optional[List[str]] = None,
@@ -80,12 +83,19 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
             This parameter isn't passed to GBDT, so you should set objective and eval_metric separately if needed.
         gbdt_type:
             Type of gradient boosting library used. "lgbm" (lightgbm) or "cat" (catboost)
-        nfolds:
-            Number of splits
-        overwrite:
-            If True, contents in ``logging_directory`` will be overwritten.
+        cv:
+            int, cross-validation generator or an iterable which determines the cross-validation splitting strategy.
+
+            - None, to use the default ``KFold(5, random_state=42, shuffle=True)``,
+            - integer, to specify the number of folds in a ``(Stratified)KFold``,
+            - CV splitter (the instance of ``KFold``, ``StratifiedKFold``, ``GroupKFold``, etc.),
+            - An iterable yielding (train, test) splits as arrays of indices.
+        groups:
+            Group labels for the samples. Only used in conjunction with a “Group” cv instance (e.g., ``GroupKFold``).
         stratified:
             If true, use stratified K-Fold
+        overwrite:
+            If True, contents in ``logging_directory`` will be overwritten.
         seed_split:
             Seed used by the random number generator in ``KFold``
         seed_model:
@@ -127,6 +137,7 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
             Training time in seconds.
     """
     start_time = time.time()
+    cv = check_cv(cv, y, stratified, seed_split)
 
     if id_column in X_train.columns:
         if X_test is not None:
@@ -157,7 +168,7 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
         if type_of_target == 'auto':
             type_of_target = multiclass.type_of_target(y)
         model, eval, cat_param_name = _dispatch_gbdt(gbdt_type, type_of_target, eval)
-        models = [model(**model_params) for _ in range(nfolds)]
+        models = [model(**model_params) for _ in range(cv.get_n_splits())]
     
         if type_of_target not in ('binary', 'multiclass'):
             stratified = False
@@ -167,10 +178,11 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
         if cat_param_name is not None and cat_param_name not in fit_params:
             fit_params[cat_param_name] = categorical_feature
     
-        result = cross_validate(models, X_train=X_train, y=y, X_test=X_test, nfolds=nfolds, logger=exp.get_logger(),
-                                eval=eval, stratified=stratified, seed=seed_split, fit_params=fit_params)
+        result = cross_validate(models, X_train=X_train, y=y, X_test=X_test, cv=cv, groups=groups,
+                                logger=exp.get_logger(), eval=eval, stratified=stratified, seed=seed_split,
+                                fit_params=fit_params)
 
-        for i in range(nfolds):
+        for i in range(cv.get_n_splits()):
             exp.log_metric('Fold {}'.format(i + 1), result.scores[i])
         exp.log_metric('Overall', result.scores[-1])
     
