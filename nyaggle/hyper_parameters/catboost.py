@@ -1,6 +1,4 @@
-import nyaggle.hyper_parameters.util as util
-
-_parameters = [
+parameters = [
     {
         "name": "ieee-2019-17th",
         "url": "https://nbviewer.jupyter.org/github/tmheo/IEEE-Fraud-Detection-17th-Place-Solution/blob/master/notebook/IEEE-17th-Place-Solution-CatBoost-Ensemble.ipynb",
@@ -45,14 +43,3 @@ _parameters = [
     },
 ]
 
-
-def list_param_names():
-    return util.list_param_names(_parameters)
-
-
-def get_hyperparam_byname(name: str, with_metadata: bool = False):
-    return util.get_hyperparam_byname(_parameters, name, with_metadata)
-
-
-def get_all_hyperparams():
-    return _parameters

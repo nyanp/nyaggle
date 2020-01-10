@@ -1,7 +1,4 @@
-import nyaggle.hyper_parameters.util as util
-
-
-_parameters = [
+parameters = [
     {
         "name": "ieee-2019-1st",
         "url": "https://www.kaggle.com/cdeotte/xgb-fraud-with-magic-0-9600",
@@ -238,15 +235,3 @@ _parameters = [
         }
     },
 ]
-
-
-def list_param_names():
-    return util.list_param_names(_parameters)
-
-
-def get_hyperparam_byname(name: str, with_metadata: bool = False):
-    return util.get_hyperparam_byname(_parameters, name, with_metadata)
-
-
-def get_all_hyperparams():
-    return _parameters

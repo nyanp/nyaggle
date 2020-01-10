@@ -44,3 +44,11 @@ nyaggle.experiment module
     :members:
     :imported-members:
     :show-inheritance:
+
+nyaggle.hyper_parameters module
+--------------------------
+
+.. automodule:: nyaggle.hyper_parameters
+    :members:
+    :imported-members:
+    :show-inheritance:

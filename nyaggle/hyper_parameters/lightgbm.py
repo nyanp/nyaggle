@@ -1,9 +1,7 @@
-import nyaggle.hyper_parameters.util as util
-
 # seed, verbosity, num_boosting_rounds, num_class, num_thread are removed from original code
 # (too specific to the competition or environment)
 
-_parameters = [
+parameters = [
     # 2019, ASHRAE - Great Energy Predictor III
 
     # 2019, IEEE-CIS Fraud Detection
@@ -526,15 +524,3 @@ _parameters = [
         }
     },
 ]
-
-
-def list_param_names():
-    return util.list_param_names(_parameters)
-
-
-def get_hyperparam_byname(name: str, with_metadata: bool = False):
-    return util.get_hyperparam_byname(_parameters, name, with_metadata)
-
-
-def get_all_hyperparams():
-    return _parameters
