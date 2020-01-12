@@ -94,12 +94,13 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
 
         >>> X, y = make_regression(n_samples=8)
         >>> model = Ridge(alpha=1.0)
-        >>> pred_oof, pred_test, scores, _ = cross_validate(model,
-        >>>                                                 X_train=X[:3, :],
-        >>>                                                 y=y[:3],
-        >>>                                                 X_test=X[3:, :],
-        >>>                                                 cv=3,
-        >>>                                                 eval=mean_squared_error)
+        >>> pred_oof, pred_test, scores, _ = \
+        >>>     cross_validate(model,
+        >>>                    X_train=X[:3, :],
+        >>>                    y=y[:3],
+        >>>                    X_test=X[3:, :],
+        >>>                    cv=3,
+        >>>                    eval=mean_squared_error)
         >>> print(pred_oof)
         [-101.1123267 ,   26.79300693,   17.72635528]
         >>> print(pred_test)

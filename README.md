@@ -12,6 +12,7 @@ See [the documentation](https://nyaggle.readthedocs.io/en/latest/index.html) for
 - Model Validation
     - CV with OOF
     - Adversarial Validation
+    - sklearn compatible time series splitter
 - Experiment
     - Minimal experiment logging which can be combined with mlflow
     - GBDT experiment wrapper

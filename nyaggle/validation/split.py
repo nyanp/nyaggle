@@ -29,7 +29,7 @@ class TimeSeriesSplit(object):
 
     def __init__(self, source: Union[pd.Series, str],
                  times: List[Tuple[datepair, datepair]] = None):
-        """
+        """ Time Series cross-validator
         Time Series cross-validator which provides train/test indices to split variable interval time series data.
         This class provides low-level API for time series validation strategy.
 
@@ -140,7 +140,7 @@ class SlidingWindowSplit(TimeSeriesSplit):
                  test_to: date_or_str,
                  n_windows: int,
                  stride: timedelta):
-        """
+        """ Sliding window time series cross-validator
         Time Series cross-validator which provides train/test indices based on the sliding window to split
         variable interval time series data.
         Splitting for each fold will be as follows:
