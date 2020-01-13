@@ -28,6 +28,29 @@ $pip install nyaggle
 
 ## Examples
 
+### Experiment Logging
+`experiment_gbdt()` is an API for cross validation with logging
+parameters, metrics, out of fold predictions, test predictions, 
+feature importances and generating submission.csv.
+
+```python
+from nyaggle.experiment import experiment_gbdt
+
+params = {
+    'n_estimators': 1000
+}
+
+result = experiment_gbdt('output/',
+                         params,
+                         'user_id',
+                         X_train,
+                         y,
+                         X_test)
+
+```
+
+
+
 ### Feature Engineering
 
 #### Target Encoding with K-Fold
@@ -95,7 +118,7 @@ japanese_text_vector = bv.fit_transform(train)
 ```
 
 ### Model Validation
-`cross_validate()` provides handy API to calculate K-fold CV, Out-of-Fold prediction and test prediction at one time.
+`cross_validate()` is a handy API to calculate K-fold CV, Out-of-Fold prediction and test prediction at one time.
 You can pass LGBMClassifier/LGBMRegressor and any other sklearn models.
 
 ```python
@@ -110,6 +133,8 @@ X, y = make_classification(n_samples=1024, n_features=20, class_sep=0.98, random
 
 models = [LGBMClassifier(n_estimators=300) for _ in range(5)]
 
-pred_oof, pred_test, scores = cross_validate(models, X[:512, :], y[:512], X[512:, :], nfolds=5,
-                                             eval=roc_auc_score)
+pred_oof, pred_test, scores, importance = \
+    cross_validate(models, X[:512, :], y[:512], X[512:, :], 
+                   nfolds=5, eval=roc_auc_score)
 ```
+
