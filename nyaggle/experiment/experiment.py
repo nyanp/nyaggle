@@ -32,13 +32,13 @@ class Experiment(object):
         overwrite:
             If True, contents in ``logging_directory`` will be overwritten.
         log_filename:
-            The name of debug log file created under logging_directory.
+            The name of the debug log file created under logging_directory.
         metrics_filename:
-            The name of score log file created under logging_directory.
+            The name of the score log file created under logging_directory.
         custom_logger:
-            Custom logger to be used instead of default logger.
+            A custom logger to be used instead of default logger.
         with_mlflow:
-            If True, [mlflow tracking](https://www.mlflow.org/docs/latest/tracking.html) is used.
+            If True, `mlflow tracking <https://www.mlflow.org/docs/latest/tracking.html>`_ is used.
             One instance of ``nyaggle.experiment.Experiment`` corresponds to one run in mlflow.
             Note that all output files are located both ``logging_directory`` and
             mlflow's directory (``mlruns`` by default).

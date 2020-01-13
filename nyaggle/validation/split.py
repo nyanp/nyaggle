@@ -52,17 +52,22 @@ class TimeSeriesSplit(object):
         >>>                         [(('2018-01-01', '2018-01-02'), ('2018-01-02', '2018-01-04')),
         >>>                          (('2018-01-02', '2018-01-03'), ('2018-01-04', '2018-01-06'))])
 
-        >>> assert folds.get_n_splits() == 2
+        >>> folds.get_n_splits()
+        2
 
         >>> splits = folds.split(df)
 
         >>> train_index, test_index = next(splits)
-        >>> assert np.array_equal(train_index, np.array([0]))
-        >>> assert np.array_equal(test_index, np.array([1, 2]))
+        >>> train_index
+        [0]
+        >>> test_index
+        [1, 2]
 
         >>> train_index, test_index = next(splits)
-        >>> assert np.array_equal(train_index, np.array([1]))
-        >>> assert np.array_equal(test_index, np.array([3, 4]))
+        >>> train_index
+        [1]
+        >>> test_index
+        [3, 4]
     """
 
     datepair = Tuple[Union[datetime, str], Union[datetime, str]]

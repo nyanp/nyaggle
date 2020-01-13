@@ -40,6 +40,7 @@ def _get_table(gbdt_type: str = 'lgb'):
 def list_hyperparams(gbdt_type: str = 'lgb', with_metadata: bool = False) -> List[Dict]:
     """
     List all hyperparameters
+
     Args:
         gbdt_type:
             The type of gbdt library. ``lgb``, ``cat``, ``xgb`` can be used.
@@ -55,6 +56,7 @@ def list_hyperparams(gbdt_type: str = 'lgb', with_metadata: bool = False) -> Lis
 def get_hyperparam_byname(name: str, gbdt_type: str = 'lgb', with_metadata: bool = False) -> Dict:
     """
     Get a hyperparameter by parameter name
+
     Args:
         name:
             The name of parameter (e.g. "ieee-2019-10th").

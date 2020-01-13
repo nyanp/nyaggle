@@ -71,16 +71,16 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
     Returns:
         Namedtuple with following members
 
-        * predicted_oof:
-            numpy array, shape (len(X_train),) Predicted value on Out-of-Fold validation data.
-        * test_prediction:
-            numpy array, shape (len(X_test),) Predicted value on test data. ``None`` if X_test is ``None``.
-        * scores:
-            list of float, shape(nfolds+1) ``scores[i]`` denotes validation score in i-th fold.
-            ``scores[-1]`` is overall score. `None` if eval is not specified.
-        * importance:
-            list of pandas DataFrame, shape(nfolds,) ``importance[i]`` denotes feature importance in i-th fold.
-            If estimator is not GBDT, empty array is returned.
+        * oof_prediction (numpy array, shape (len(X_train),)):
+            The predicted value on put-of-Fold validation data.
+        * test_prediction (numpy array, hape (len(X_test),)):
+            The predicted value on test data. ``None`` if X_test is ``None``.
+        * scores (list of float, shape (nfolds+1,)):
+            ``scores[i]`` denotes validation score in i-th fold.
+            ``scores[-1]`` is the overall score. `None` if eval is not specified.
+        * importance (list of pandas DataFrame, shape (nfolds,)):
+            ``importance[i]`` denotes feature importance in i-th fold model.
+            If the estimator is not GBDT, empty array is returned.
 
     Example:
         >>> from sklearn.datasets import make_regression

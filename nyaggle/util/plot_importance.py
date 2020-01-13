@@ -12,15 +12,15 @@ def plot_importance(importance: pd.DataFrame, path: str, top_n: int = 100, figsi
 
     Args:
         importance:
-            Dataframe which has "feature" and "importance" column
+            The dataframe which has "feature" and "importance" column
         path:
-            File path to be saved
+            The file path to be saved
         top_n:
-            Number of features visualized
+            The number of features to be visualized
         figsize:
-            Size of figure
+            The size of the figure
         title:
-            Title of plot
+            The title of the plot
     Example:
         >>> import pandas as pd
         >>> import lightgbm as lgb
