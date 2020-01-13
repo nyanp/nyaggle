@@ -75,7 +75,7 @@ def adversarial_validate(X_train: pd.DataFrame,
         nfolds_evaluate = 1
     else:
         nfolds_evaluate = None
-    result = cross_validate(estimator, concat, y, None, cv=5, stratified=True, predict_proba=True,
+    result = cross_validate(estimator, concat, y, None, cv=5, predict_proba=True,
                             eval=roc_auc_score, fit_params={'verbose': -1}, importance_type=importance_type,
                             nfolds_evaluate=nfolds_evaluate)
 
