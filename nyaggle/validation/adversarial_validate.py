@@ -1,5 +1,5 @@
 from collections import namedtuple
-from typing import Dict, Optional
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -76,7 +76,7 @@ def adversarial_validate(X_train: pd.DataFrame,
     else:
         nfolds_evaluate = None
     result = cross_validate(estimator, concat, y, None, cv=5, predict_proba=True,
-                            eval=roc_auc_score, fit_params={'verbose': -1}, importance_type=importance_type,
+                            eval_func=roc_auc_score, fit_params={'verbose': -1}, importance_type=importance_type,
                             nfolds_evaluate=nfolds_evaluate)
 
     importance = pd.concat(result.importance)

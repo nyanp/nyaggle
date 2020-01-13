@@ -10,12 +10,14 @@ def get_long_description():
         long_description = f.read()
     return long_description
 
+
 def get_version():
     version_filepath = path.join(path.dirname(__file__), 'nyaggle', 'version.py')
     with open(version_filepath) as f:
         for line in f:
             if line.startswith('__version__'):
                 return line.strip().split()[-1][1:-1]
+
 
 setup(
     name='nyaggle',
@@ -50,5 +52,5 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7'
-    ], # パッケージ(プロジェクト)の分類。https://pypi.org/classifiers/に掲載されているものを指定可能。
+    ]
 )

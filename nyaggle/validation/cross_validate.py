@@ -22,7 +22,7 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
                    X_test: Union[pd.DataFrame, np.ndarray] = None,
                    cv: Optional[Union[int, Iterable, BaseCrossValidator]] = None,
                    groups: Optional[pd.Series] = None,
-                   predict_proba: bool = False, eval: Optional[Callable] = None, logger: Optional[Logger] = None,
+                   predict_proba: bool = False, eval_func: Optional[Callable] = None, logger: Optional[Logger] = None,
                    on_each_fold: Optional[Callable[[int, BaseEstimator, pd.DataFrame, pd.Series], None]] = None,
                    fit_params: Optional[Dict] = None,
                    importance_type: str = 'gain',
@@ -51,7 +51,7 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
             Group labels for the samples. Only used in conjunction with a “Group” cv instance (e.g., ``GroupKFold``).
         predict_proba:
             If true, call ``predict_proba`` instead of ``predict`` for calculating prediction for test data.
-        eval:
+        eval_func:
             Function used for logging and returning scores
         logger:
             logger
@@ -60,7 +60,8 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
         fit_params:
             Parameters passed to the fit method of the estimator
         importance_type:
-            The type of feature importance to be used to calculate result. Used only in ``LGBMClassifier`` and ``LGBMRegressor``.
+            The type of feature importance to be used to calculate result.
+            Used only in ``LGBMClassifier`` and ``LGBMRegressor``.
         nfolds_evaluate:
             If not ``None``, and ``nfolds_evaluate`` < ``nfolds``, only ``nfolds_evaluate`` folds are evaluated.
             For example, if ``nfolds = 5`` and ``nfolds_evaluate = 2``, only the first 2 folds out of 5 are evaluated.
@@ -95,7 +96,7 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
         >>>                    y=y[:3],
         >>>                    X_test=X[3:, :],
         >>>                    cv=3,
-        >>>                    eval=mean_squared_error)
+        >>>                    eval_func=mean_squared_error)
         >>> print(pred_oof)
         [-101.1123267 ,   26.79300693,   17.72635528]
         >>> print(pred_test)
@@ -121,14 +122,15 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
     if logger is None:
         logger = getLogger(__name__)
 
-    def _predict(model: BaseEstimator, x: pd.DataFrame, predict_proba: bool):
-        if predict_proba:
+    def _predict(model: BaseEstimator, x: pd.DataFrame, _predict_proba: bool):
+        if _predict_proba:
             return model.predict_proba(x)[:, 1]
         else:
             return model.predict(x)
 
     oof = np.zeros(len(X_train))
     evaluated = np.full(len(X_train), False)
+    test = None
     if X_test is not None:
         test = np.zeros((len(X_test), cv.get_n_splits()))
 
@@ -174,8 +176,8 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
         if isinstance(estimator[n], (LGBMModel, CatBoost)):
             importance.append(_get_gbdt_importance(estimator[n], list(X_train.columns), importance_type))
 
-        if eval is not None:
-            score = eval(valid_y, oof[valid_idx])
+        if eval_func is not None:
+            score = eval_func(valid_y, oof[valid_idx])
             scores.append(score)
             logger.info('Fold {} score: {}'.format(n, score))
 
@@ -183,8 +185,8 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
         eta_all.append(elapsed)
         logger.debug('{:.3f} sec / fold'.format(elapsed))
 
-    if eval is not None:
-        score = eval(y.loc[evaluated], oof[evaluated])
+    if eval_func is not None:
+        score = eval_func(y.loc[evaluated], oof[evaluated])
         scores.append(score)
         logger.info('Overall score: {}'.format(score))
 

@@ -22,11 +22,13 @@ def _check_file_exists(directory, files):
 
 @contextmanager
 def _get_temp_directory() -> str:
+    path = None
     try:
         path = os.path.join(tempfile.gettempdir(), uuid.uuid4().hex)
         yield path
     finally:
-        shutil.rmtree(path, ignore_errors=True)
+        if path:
+            shutil.rmtree(path, ignore_errors=True)
 
 
 def test_experiment_lgb_classifier():
@@ -125,7 +127,7 @@ def test_experiment_cat_custom_eval():
 
     with _get_temp_directory() as temp_path:
         result = experiment_gbdt(temp_path, params, 'user_id',
-                                 X_train, y_train, X_test, gbdt_type='cat', eval=mean_absolute_error)
+                                 X_train, y_train, X_test, gbdt_type='cat', eval_func=mean_absolute_error)
 
         assert mean_absolute_error(y_train, result.oof_prediction) == result.scores[-1]
         _check_file_exists(temp_path, ('submission.csv', 'oof_prediction.npy', 'test_prediction.npy', 'scores.txt'))

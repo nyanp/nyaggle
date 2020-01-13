@@ -36,10 +36,13 @@ def plot_importance(importance: pd.DataFrame, path: str, top_n: int = 100, figsi
         >>> })
         >>> plot_importance(importance, 'importance.png')
     """
-    sorted = importance.groupby('feature')['importance'].mean().reset_index().sort_values(by='importance', ascending=False)
+    importance = importance.groupby('feature')['importance']\
+        .mean()\
+        .reset_index()\
+        .sort_values(by='importance', ascending=False)
 
-    if len(sorted) > top_n:
-        sorted = sorted.iloc[:top_n, :]
+    if len(importance) > top_n:
+        importance = importance.iloc[:top_n, :]
 
     if figsize is None:
         figsize = (10, 16)
@@ -48,7 +51,7 @@ def plot_importance(importance: pd.DataFrame, path: str, top_n: int = 100, figsi
         title = 'Feature Importance'
 
     plt.figure(figsize=figsize)
-    sns.barplot(x="importance", y="feature", data=sorted)
+    sns.barplot(x="importance", y="feature", data=importance)
     plt.title(title)
     plt.tight_layout()
     plt.savefig(path)

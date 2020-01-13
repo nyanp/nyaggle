@@ -44,7 +44,7 @@ class BertSentenceVectorizer(BaseFeaturizer):
     def __init__(self, lang: str = 'en', n_components: Optional[int] = None,
                  text_columns: List[str] = None, pooling_strategy: str = 'reduce_mean',
                  use_cuda: bool = False, tokenizer: transformers.PreTrainedTokenizer = None,
-                 model = None, return_same_type: bool = True, column_format: str = '{col}_{idx}'):
+                 model=None, return_same_type: bool = True, column_format: str = '{col}_{idx}'):
         if tokenizer is not None:
             assert model is not None
             self.tokenizer = tokenizer
@@ -173,4 +173,3 @@ class BertSentenceVectorizer(BaseFeaturizer):
                 Ignored
         """
         return self._process(X, self._fit_transform_one)
-

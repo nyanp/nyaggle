@@ -45,6 +45,6 @@ experiment_gbdt(logging_directory='baseline_kaggledays_tokyo',
                 X_train=X_train,
                 y=y_train,
                 X_test=X_test,
-                eval=mean_squared_error,
+                eval_func=mean_squared_error,
                 type_of_target='continuous',
                 overwrite=True)

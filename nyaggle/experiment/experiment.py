@@ -190,24 +190,25 @@ class Experiment(object):
             import mlflow
             mlflow.log_artifact(path + '.npy')
 
-    def log_dataframe(self, name: str, df: pd.DataFrame, format: str = 'feather'):
+    def log_dataframe(self, name: str, df: pd.DataFrame, file_format: str = 'feather'):
         """
         Log a pandas dataframe under the logging directory.
 
         Args:
             name:
-                Name of the file. A .f or .csv extension will be appended to the file name if it does not already have one.
+                Name of the file. A .f or .csv extension will be appended to the file name if it does not already
+                have one.
             df:
                 A dataframe to be saved.
-            format:
+            file_format:
                 A format of output file. ``csv`` and ``feather`` are supported.
         """
         path = os.path.join(self.logging_directory, name)
-        if format == 'feather':
+        if file_format == 'feather':
             if not path.endswith('.f'):
                 path += '.f'
             df.to_feather(path)
-        elif format == 'csv':
+        elif file_format == 'csv':
             if not path.endswith('.csv'):
                 path += '.csv'
             df.to_csv(path, index=False)

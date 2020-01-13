@@ -22,7 +22,7 @@ GBDTResult = namedtuple('LGBResult', ['oof_prediction', 'test_prediction', 'scor
 def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_column: str,
                     X_train: pd.DataFrame, y: pd.Series,
                     X_test: Optional[pd.DataFrame] = None,
-                    eval: Optional[Callable] = None,
+                    eval_func: Optional[Callable] = None,
                     gbdt_type: str = 'lgbm',
                     fit_params: Optional[Dict[str, Any]] = None,
                     cv: Optional[Union[int, Iterable, BaseCrossValidator]] = None,
@@ -78,7 +78,7 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
             Target
         X_test:
             Test data (Optional). If specified, prediction on the test data is performed using ensemble of models.
-        eval:
+        eval_func:
             Function used for logging and calculation of returning scores.
             This parameter isn't passed to GBDT, so you should set objective and eval_metric separately if needed.
         gbdt_type:
@@ -122,7 +122,7 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
             numpy array, shape (len(X_test),) Predicted value on test data. ``None`` if X_test is ``None``
         * scores:
             list of float, shape(nfolds+1) ``scores[i]`` denotes validation score in i-th fold.
-            ``scores[-1]`` is overall score. `None` if eval is not specified
+            ``scores[-1]`` is overall score. `None` if eval_func is not specified
         * models:
             list of objects, shape(nfolds) Trained models for each folds.
         * importance:
@@ -155,7 +155,7 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
 
         if type_of_target == 'auto':
             type_of_target = multiclass.type_of_target(y)
-        model, eval, cat_param_name = _dispatch_gbdt(gbdt_type, type_of_target, eval)
+        model, eval_func, cat_param_name = _dispatch_gbdt(gbdt_type, type_of_target, eval_func)
         models = [model(**model_params) for _ in range(cv.get_n_splits())]
 
         if fit_params is None:
@@ -164,7 +164,7 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
             fit_params[cat_param_name] = categorical_feature
     
         result = cross_validate(models, X_train=X_train, y=y, X_test=X_test, cv=cv, groups=groups,
-                                logger=exp.get_logger(), eval=eval, fit_params=fit_params)
+                                logger=exp.get_logger(), eval_func=eval_func, fit_params=fit_params)
 
         for i in range(cv.get_n_splits()):
             exp.log_metric('Fold {}'.format(i + 1), result.scores[i])
@@ -192,7 +192,8 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
 
         elapsed_time = time.time() - start_time
 
-        return GBDTResult(result.oof_prediction, result.test_prediction, result.scores, models, importance, elapsed_time)
+        return GBDTResult(result.oof_prediction, result.test_prediction,
+                          result.scores, models, importance, elapsed_time)
 
 
 def _dispatch_gbdt(gbdt_type: str, target_type: str, custom_eval: Optional[Callable] = None):
@@ -206,11 +207,11 @@ def _dispatch_gbdt(gbdt_type: str, target_type: str, custom_eval: Optional[Calla
     if found is None:
         raise RuntimeError('Not supported gbdt_type ({}) or type_of_target ({}).'.format(gbdt_type, target_type))
 
-    model, eval, cat_param = found[2], found[3], found[4]
+    model, eval_func, cat_param = found[2], found[3], found[4]
     if custom_eval is not None:
-        eval = custom_eval
+        eval_func = custom_eval
 
-    return model, eval, cat_param
+    return model, eval_func, cat_param
 
 
 def _save_model(gbdt_type: str, model: Union[CatBoost, LGBMModel], logging_directory: str, fold: int):
