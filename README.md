@@ -35,19 +35,31 @@ feature importance and submission.csv under the specified directory.
 It can be combined with mlflow tracking.
 
 ```python
+from sklearn.model_selection import train_test_split
+
 from nyaggle.experiment import experiment_gbdt
+from nyaggle.testing import make_classification_df
+
+X, y = make_classification_df()
+X_train, X_test, y_train, y_test = train_test_split(X, y)
 
 params = {
-    'n_estimators': 1000
+    'n_estimators': 1000,
+    'max_depth': 8
 }
 
 result = experiment_gbdt('output/',
                          params,
                          'user_id',
                          X_train,
-                         y,
+                         y_train,
                          X_test)
 
+print(result.test_prediction)  # Test prediction in numpy array
+print(result.oof_prediction)   # Out-of-fold prediction in numpy array
+print(result.models)           # Trained models for each fold
+print(result.importance)       # Feature importance for each fold
+print(result.scores)           # Evalulation metrics for each fold
 ```
 
 
@@ -136,6 +148,6 @@ models = [LGBMClassifier(n_estimators=300) for _ in range(5)]
 
 pred_oof, pred_test, scores, importance = \
     cross_validate(models, X[:512, :], y[:512], X[512:, :], 
-                   nfolds=5, eval=roc_auc_score)
+                   nfolds=5, eval_func=roc_auc_score)
 ```
 

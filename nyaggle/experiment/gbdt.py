@@ -71,7 +71,7 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
             Parameters passed to the fit method of the estimator.
         id_column:
             The name of index or column which is used as index.
-            If `X_test` is not None, submission file is created along with this column.
+            If ``X_test`` is not None, submission file is created along with this column.
         X_train:
             Training data. Categorical feature should be casted to pandas categorical type or encoded to integer.
         y:
@@ -81,6 +81,7 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
         eval_func:
             Function used for logging and calculation of returning scores.
             This parameter isn't passed to GBDT, so you should set objective and eval_metric separately if needed.
+            If ``eval_func`` is None, ``roc_auc_score`` or ``mean_squared_error`` is used by default.
         gbdt_type:
             Type of gradient boosting library used. "lgbm" (lightgbm) or "cat" (catboost)
         cv:
@@ -122,11 +123,11 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
             numpy array, shape (len(X_test),) Predicted value on test data. ``None`` if X_test is ``None``
         * scores:
             list of float, shape(nfolds+1) ``scores[i]`` denotes validation score in i-th fold.
-            ``scores[-1]`` is overall score. `None` if eval_func is not specified
+            ``scores[-1]`` is overall score.
         * models:
             list of objects, shape(nfolds) Trained models for each folds.
         * importance:
-            pd.DataFrame, feature importance (average over folds, type="gain").
+            list of pd.DataFrame, feature importance for each fold (type="gain").
         * time:
             Training time in seconds.
     """
@@ -193,7 +194,7 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
         elapsed_time = time.time() - start_time
 
         return GBDTResult(result.oof_prediction, result.test_prediction,
-                          result.scores, models, importance, elapsed_time)
+                          result.scores, models, result.importance, elapsed_time)
 
 
 def _dispatch_gbdt(gbdt_type: str, target_type: str, custom_eval: Optional[Callable] = None):
