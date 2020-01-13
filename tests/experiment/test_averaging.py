@@ -32,4 +32,4 @@ def test_averaging():
         score = roc_auc_score(y_test, df[df.columns[-1]])
         assert score >= 0.85
 
-        assert score >= roc_auc_score(y_test, ret_single.predicted_test)
+        assert score >= roc_auc_score(y_test, ret_single.test_prediction)

@@ -6,7 +6,7 @@ import pandas as pd
 import category_encoders as ce
 from category_encoders.utils import convert_input, convert_input_vector
 from sklearn.base import BaseEstimator, clone
-from sklearn.model_selection import KFold, StratifiedKFold
+from sklearn.model_selection import BaseCrossValidator
 
 from nyaggle.feature.base import BaseFeaturizer
 from nyaggle.validation.split import check_cv
@@ -26,7 +26,7 @@ class KFoldEncoderWrapper(BaseFeaturizer):
 
             - None, to use the default ``KFold(5, random_state=42, shuffle=True)``,
             - integer, to specify the number of folds in a ``(Stratified)KFold``,
-            - CV splitter (the instance of ``KFold``, ``StratifiedKFold``, ``GroupKFold``, etc.),
+            - CV splitter (the instance of ``BaseCrossValidator``),
             - An iterable yielding (train, test) splits as arrays of indices.
         groups:
             Group labels for the samples. Only used in conjunction with a “Group” cv instance (e.g., ``GroupKFold``).
@@ -35,7 +35,7 @@ class KFoldEncoderWrapper(BaseFeaturizer):
             If False, these APIs always return a numpy array, similar to sklearn's API.
     """
     def __init__(self, base_transformer: BaseEstimator,
-                 cv: Optional[Union[int, Iterable, KFold, StratifiedKFold]] = None, return_same_type: bool = True,
+                 cv: Optional[Union[int, Iterable, BaseCrossValidator]] = None, return_same_type: bool = True,
                  groups: Optional[pd.Series] = None):
         self.cv = cv
         self.base_transformer = base_transformer
@@ -147,7 +147,7 @@ class TargetEncoder(KFoldEncoderWrapper):
 
             - None, to use the default ``KFold(5, random_state=42, shuffle=True)``,
             - integer, to specify the number of folds in a ``(Stratified)KFold``,
-            - CV splitter (the instance of ``KFold``, ``StratifiedKFold``, ``GroupKFold``, etc.),
+            - CV splitter (the instance of ``BaseCrossValidator``),
             - An iterable yielding (train, test) splits as arrays of indices.
         groups:
             Group labels for the samples. Only used in conjunction with a “Group” cv instance (e.g., ``GroupKFold``).
@@ -168,7 +168,7 @@ class TargetEncoder(KFoldEncoderWrapper):
             If True, ``transform`` and ``fit_transform`` return the same type as X.
             If False, these APIs always return a numpy array, similar to sklearn's API.
     """
-    def __init__(self, cv: Optional[Union[Iterable, KFold, StratifiedKFold]] = None,
+    def __init__(self, cv: Optional[Union[Iterable, BaseCrossValidator]] = None,
                  groups: Optional[pd.Series] = None,
                  cols: List[str] = None,
                  drop_invariant: bool = False, handle_missing: str = 'value', handle_unknown: str = 'value',

@@ -44,10 +44,10 @@ def test_experiment_lgb_classifier():
         result = experiment_gbdt(temp_path, params, 'user_id',
                                  X_train, y_train, X_test, roc_auc_score)
 
-        assert roc_auc_score(y_train, result.predicted_oof) >= 0.85
-        assert roc_auc_score(y_test, result.predicted_test) >= 0.85
+        assert roc_auc_score(y_train, result.oof_prediction) >= 0.85
+        assert roc_auc_score(y_test, result.test_prediction) >= 0.85
 
-        _check_file_exists(temp_path, ('submission.csv', 'oof.npy', 'test.npy', 'scores.txt'))
+        _check_file_exists(temp_path, ('submission.csv', 'oof_prediction.npy', 'test_prediction.npy', 'scores.txt'))
 
 
 def test_experiment_lgb_regressor():
@@ -65,9 +65,9 @@ def test_experiment_lgb_regressor():
         result = experiment_gbdt(temp_path, params, 'user_id',
                                  X_train, y_train, X_test)
 
-        assert mean_squared_error(y_train, result.predicted_oof) == result.scores[-1]
+        assert mean_squared_error(y_train, result.oof_prediction) == result.scores[-1]
 
-        _check_file_exists(temp_path, ('submission.csv', 'oof.npy', 'test.npy', 'scores.txt'))
+        _check_file_exists(temp_path, ('submission.csv', 'oof_prediction.npy', 'test_prediction.npy', 'scores.txt'))
 
 
 def test_experiment_cat_classifier():
@@ -85,11 +85,11 @@ def test_experiment_cat_classifier():
         result = experiment_gbdt(temp_path, params, 'user_id',
                                  X_train, y_train, X_test, roc_auc_score, gbdt_type='cat')
 
-        assert roc_auc_score(y_train, result.predicted_oof) >= 0.85
-        assert roc_auc_score(y_test, result.predicted_test) >= 0.85
+        assert roc_auc_score(y_train, result.oof_prediction) >= 0.85
+        assert roc_auc_score(y_test, result.test_prediction) >= 0.85
         assert list(pd.read_csv(os.path.join(temp_path, 'submission.csv')).columns) == ['user_id', 'tgt']
 
-        _check_file_exists(temp_path, ('submission.csv', 'oof.npy', 'test.npy', 'scores.txt'))
+        _check_file_exists(temp_path, ('submission.csv', 'oof_prediction.npy', 'test_prediction.npy', 'scores.txt'))
 
 
 def test_experiment_cat_regressor():
@@ -107,8 +107,8 @@ def test_experiment_cat_regressor():
         result = experiment_gbdt(temp_path, params, 'user_id',
                                  X_train, y_train, X_test, gbdt_type='cat')
 
-        assert mean_squared_error(y_train, result.predicted_oof) == result.scores[-1]
-        _check_file_exists(temp_path, ('submission.csv', 'oof.npy', 'test.npy', 'scores.txt'))
+        assert mean_squared_error(y_train, result.oof_prediction) == result.scores[-1]
+        _check_file_exists(temp_path, ('submission.csv', 'oof_prediction.npy', 'test_prediction.npy', 'scores.txt'))
 
 
 def test_experiment_cat_custom_eval():
@@ -127,8 +127,8 @@ def test_experiment_cat_custom_eval():
         result = experiment_gbdt(temp_path, params, 'user_id',
                                  X_train, y_train, X_test, gbdt_type='cat', eval=mean_absolute_error)
 
-        assert mean_absolute_error(y_train, result.predicted_oof) == result.scores[-1]
-        _check_file_exists(temp_path, ('submission.csv', 'oof.npy', 'test.npy', 'scores.txt'))
+        assert mean_absolute_error(y_train, result.oof_prediction) == result.scores[-1]
+        _check_file_exists(temp_path, ('submission.csv', 'oof_prediction.npy', 'test_prediction.npy', 'scores.txt'))
 
 
 def test_experiment_without_test_data():
@@ -145,8 +145,8 @@ def test_experiment_without_test_data():
     with _get_temp_directory() as temp_path:
         result = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train)
 
-        assert roc_auc_score(y_train, result.predicted_oof) >= 0.85
-        _check_file_exists(temp_path, ('oof.npy', 'scores.txt'))
+        assert roc_auc_score(y_train, result.oof_prediction) >= 0.85
+        _check_file_exists(temp_path, ('oof_prediction.npy', 'scores.txt'))
 
 
 def test_experiment_fit_params():
@@ -186,7 +186,7 @@ def test_experiment_mlflow():
     with _get_temp_directory() as temp_path:
         experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, with_mlflow=True)
 
-        _check_file_exists(temp_path, ('oof.npy', 'scores.txt', 'mlflow.json'))
+        _check_file_exists(temp_path, ('oof_prediction.npy', 'scores.txt', 'mlflow.json'))
 
         # test if output files are also stored in the mlflow artifact uri
         with open(os.path.join(temp_path, 'mlflow.json'), 'r') as f:
@@ -194,7 +194,7 @@ def test_experiment_mlflow():
             p = unquote(urlparse(mlflow_meta['artifact_uri']).path)
             if os.name == 'nt' and p.startswith("/"):
                 p = p[1:]
-            _check_file_exists(p, ('oof.npy', 'scores.txt'))
+            _check_file_exists(p, ('oof_prediction.npy', 'scores.txt'))
 
 
 def test_experiment_already_exists():

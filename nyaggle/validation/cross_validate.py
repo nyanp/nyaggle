@@ -10,17 +10,17 @@ from category_encoders.utils import convert_input, convert_input_vector
 from catboost import CatBoost
 from lightgbm import LGBMModel
 from sklearn.base import BaseEstimator
-from sklearn.model_selection import KFold, StratifiedKFold
+from sklearn.model_selection import BaseCrossValidator
 from nyaggle.validation.split import check_cv
 
 
-CVResult = namedtuple('CVResult', ['predicted_oof', 'predicted_test', 'scores', 'importance'])
+CVResult = namedtuple('CVResult', ['oof_prediction', 'test_prediction', 'scores', 'importance'])
 
 
 def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
                    X_train: Union[pd.DataFrame, np.ndarray], y: Union[pd.Series, np.ndarray],
                    X_test: Union[pd.DataFrame, np.ndarray] = None,
-                   cv: Optional[Union[int, Iterable, KFold, StratifiedKFold]] = None,
+                   cv: Optional[Union[int, Iterable, BaseCrossValidator]] = None,
                    groups: Optional[pd.Series] = None,
                    predict_proba: bool = False, eval: Optional[Callable] = None, logger: Optional[Logger] = None,
                    on_each_fold: Optional[Callable[[int, BaseEstimator, pd.DataFrame, pd.Series], None]] = None,
@@ -45,7 +45,7 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
 
             - None, to use the default ``KFold(5, random_state=42, shuffle=True)``,
             - integer, to specify the number of folds in a ``(Stratified)KFold``,
-            - CV splitter (the instance of ``KFold``, ``StratifiedKFold``, ``GroupKFold``, etc.),
+            - CV splitter (the instance of ``BaseCrossValidator``),
             - An iterable yielding (train, test) splits as arrays of indices.
         groups:
             Group labels for the samples. Only used in conjunction with a “Group” cv instance (e.g., ``GroupKFold``).
@@ -72,7 +72,7 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
 
         * predicted_oof:
             numpy array, shape (len(X_train),) Predicted value on Out-of-Fold validation data.
-        * predicted_test:
+        * test_prediction:
             numpy array, shape (len(X_test),) Predicted value on test data. ``None`` if X_test is ``None``.
         * scores:
             list of float, shape(nfolds+1) ``scores[i]`` denotes validation score in i-th fold.

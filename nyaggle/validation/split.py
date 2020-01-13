@@ -5,11 +5,11 @@ from typing import Iterable, List, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 import sklearn.model_selection as model_selection
-from sklearn.model_selection import KFold, StratifiedKFold
+from sklearn.model_selection import BaseCrossValidator, KFold, StratifiedKFold
 from sklearn.utils.multiclass import type_of_target
 
 
-def check_cv(cv: Union[int, Iterable, KFold, StratifiedKFold] = 5,
+def check_cv(cv: Union[int, Iterable, BaseCrossValidator] = 5,
              y: Optional[Union[pd.Series, np.ndarray]] = None,
              stratified: bool = False,
              random_state: int = 0):
