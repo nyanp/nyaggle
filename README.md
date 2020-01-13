@@ -14,9 +14,8 @@ See [the documentation](https://nyaggle.readthedocs.io/en/latest/index.html) for
     - Adversarial Validation
     - sklearn compatible time series splitter
 - Experiment
-    - Minimal experiment logging which can be combined with mlflow
-    - GBDT experiment wrapper
-        - Output CV score, submission.csv, OOF, importance plot at once
+    - Experiment logging
+    - High-level API for logging gradient boosting experiment
 - Ensemble
     - Blending
 
@@ -29,9 +28,11 @@ $pip install nyaggle
 ## Examples
 
 ### Experiment Logging
-`experiment_gbdt()` is an API for cross validation with logging
-parameters, metrics, out of fold predictions, test predictions, 
-feature importances and generating submission.csv.
+`experiment_gbdt()` is an high-level API for cross validation using 
+gradient boosting algorithm. It outputs parameters, metrics, out of fold predictions, test predictions, 
+feature importance and submission.csv under the specified directory.
+
+It can be combined with mlflow tracking.
 
 ```python
 from nyaggle.experiment import experiment_gbdt
