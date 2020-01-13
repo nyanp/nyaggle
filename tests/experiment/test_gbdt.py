@@ -9,7 +9,7 @@ from urllib.parse import urlparse, unquote
 
 import pandas as pd
 from sklearn.metrics import roc_auc_score, mean_squared_error, mean_absolute_error
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import KFold, GroupKFold, train_test_split
 
 from nyaggle.experiment import experiment_gbdt
 from nyaggle.testing import make_classification_df, make_regression_df
@@ -42,7 +42,7 @@ def test_experiment_lgb_classifier():
 
     with _get_temp_directory() as temp_path:
         result = experiment_gbdt(temp_path, params, 'user_id',
-                                 X_train, y_train, X_test, roc_auc_score, stratified=True)
+                                 X_train, y_train, X_test, roc_auc_score)
 
         assert roc_auc_score(y_train, result.predicted_oof) >= 0.85
         assert roc_auc_score(y_test, result.predicted_test) >= 0.85
@@ -63,7 +63,7 @@ def test_experiment_lgb_regressor():
 
     with _get_temp_directory() as temp_path:
         result = experiment_gbdt(temp_path, params, 'user_id',
-                                 X_train, y_train, X_test, stratified=True)
+                                 X_train, y_train, X_test)
 
         assert mean_squared_error(y_train, result.predicted_oof) == result.scores[-1]
 
@@ -83,7 +83,7 @@ def test_experiment_cat_classifier():
 
     with _get_temp_directory() as temp_path:
         result = experiment_gbdt(temp_path, params, 'user_id',
-                                 X_train, y_train, X_test, roc_auc_score, stratified=True, gbdt_type='cat')
+                                 X_train, y_train, X_test, roc_auc_score, gbdt_type='cat')
 
         assert roc_auc_score(y_train, result.predicted_oof) >= 0.85
         assert roc_auc_score(y_test, result.predicted_test) >= 0.85
@@ -105,7 +105,7 @@ def test_experiment_cat_regressor():
 
     with _get_temp_directory() as temp_path:
         result = experiment_gbdt(temp_path, params, 'user_id',
-                                 X_train, y_train, X_test, stratified=True, gbdt_type='cat')
+                                 X_train, y_train, X_test, gbdt_type='cat')
 
         assert mean_squared_error(y_train, result.predicted_oof) == result.scores[-1]
         _check_file_exists(temp_path, ('submission.csv', 'oof.npy', 'test.npy', 'scores.txt'))
@@ -125,7 +125,7 @@ def test_experiment_cat_custom_eval():
 
     with _get_temp_directory() as temp_path:
         result = experiment_gbdt(temp_path, params, 'user_id',
-                                 X_train, y_train, X_test, stratified=True, gbdt_type='cat', eval=mean_absolute_error)
+                                 X_train, y_train, X_test, gbdt_type='cat', eval=mean_absolute_error)
 
         assert mean_absolute_error(y_train, result.predicted_oof) == result.scores[-1]
         _check_file_exists(temp_path, ('submission.csv', 'oof.npy', 'test.npy', 'scores.txt'))
@@ -170,28 +170,6 @@ def test_experiment_fit_params():
 
     assert result1.models[-1].booster_.num_trees() == params['n_estimators']
     assert result2.models[-1].booster_.num_trees() < params['n_estimators']
-
-
-def test_experiment_seed_split():
-    X, y = make_classification_df(n_samples=1024, n_num_features=10, n_cat_features=2,
-                                  class_sep=0.98, random_state=0, id_column='user_id')
-
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
-
-    params = {
-        'objective': 'binary',
-        'max_depth': 8
-    }
-
-    with _get_temp_directory() as temp_path:
-        result1 = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, X_test, seed_split=1)
-    with _get_temp_directory() as temp_path:
-        result2 = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, X_test, seed_split=1)
-    with _get_temp_directory() as temp_path:
-        result3 = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, X_test, seed_split=2)
-
-    assert result1.scores[-1] == result2.scores[-1]
-    assert result1.scores[-1] != result3.scores[-1]
 
 
 def test_experiment_mlflow():
@@ -258,7 +236,7 @@ def test_submission_filename():
         assert list(df.columns) == ['user_id', 'target']
 
 
-def test_stratified():
+def test_experiment_manual_cv():
     X, y = make_classification_df(n_samples=1024, n_num_features=10, n_cat_features=2,
                                   class_sep=0.98, random_state=0, id_column='user_id')
 
@@ -270,8 +248,7 @@ def test_stratified():
     }
 
     with _get_temp_directory() as temp_path:
-        result1 = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, X_test, stratified=True)
-    with _get_temp_directory() as temp_path:
-        result2 = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, X_test, stratified=False)
+        result = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, cv=KFold(4))
+        assert len(result.models) == 4
+        assert len(result.scores) == 4 + 1
 
-    assert result1.scores[-1] != result2.scores[-1]

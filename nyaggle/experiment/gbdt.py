@@ -27,10 +27,7 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
                     fit_params: Optional[Dict[str, Any]] = None,
                     cv: Optional[Union[int, Iterable, KFold, StratifiedKFold]] = None,
                     groups: Optional[pd.Series] = None,
-                    stratified: bool = False,
                     overwrite: bool = False,
-                    seed_split: int = 42,
-                    seed_model: int = 0,
                     categorical_feature: Optional[List[str]] = None,
                     submission_filename: str = 'submission.csv',
                     type_of_target: str = 'auto',
@@ -92,14 +89,8 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
             - An iterable yielding (train, test) splits as arrays of indices.
         groups:
             Group labels for the samples. Only used in conjunction with a “Group” cv instance (e.g., ``GroupKFold``).
-        stratified:
-            If true, use stratified K-Fold
         overwrite:
             If True, contents in ``logging_directory`` will be overwritten.
-        seed_split:
-            Seed used by the random number generator in ``KFold``
-        seed_model:
-            Seed used by GBDT training.
         categorical_feature:
             List of categorical column names. If ``None``, categorical columns are automatically determined by dtype.
         submission_filename:
@@ -137,7 +128,7 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
             Training time in seconds.
     """
     start_time = time.time()
-    cv = check_cv(cv, y, stratified, seed_split)
+    cv = check_cv(cv, y)
 
     if id_column in X_train.columns:
         if X_test is not None:
@@ -158,29 +149,19 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
         if categorical_feature is None:
             categorical_feature = [c for c in X_train.columns if X_train[c].dtype.name in ['object', 'category']]
         exp.log('Categorical: {}'.format(categorical_feature))
-    
-        if not any([c in model_params for c in ['seed', 'random_state', 'random_seed']]):
-            model_params['random_state'] = seed_model
-            exp.log('Seed: {}'.format(seed_model))
-        else:
-            exp.log('Seed: (specified in gbdt_params is used)')
 
         if type_of_target == 'auto':
             type_of_target = multiclass.type_of_target(y)
         model, eval, cat_param_name = _dispatch_gbdt(gbdt_type, type_of_target, eval)
         models = [model(**model_params) for _ in range(cv.get_n_splits())]
-    
-        if type_of_target not in ('binary', 'multiclass'):
-            stratified = False
-    
+
         if fit_params is None:
             fit_params = {}
         if cat_param_name is not None and cat_param_name not in fit_params:
             fit_params[cat_param_name] = categorical_feature
     
         result = cross_validate(models, X_train=X_train, y=y, X_test=X_test, cv=cv, groups=groups,
-                                logger=exp.get_logger(), eval=eval, stratified=stratified, seed=seed_split,
-                                fit_params=fit_params)
+                                logger=exp.get_logger(), eval=eval, fit_params=fit_params)
 
         for i in range(cv.get_n_splits()):
             exp.log_metric('Fold {}'.format(i + 1), result.scores[i])

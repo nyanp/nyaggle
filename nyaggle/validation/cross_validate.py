@@ -22,7 +22,6 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
                    X_test: Union[pd.DataFrame, np.ndarray] = None,
                    cv: Optional[Union[int, Iterable, KFold, StratifiedKFold]] = None,
                    groups: Optional[pd.Series] = None,
-                   stratified: bool = False, seed: int = 42,
                    predict_proba: bool = False, eval: Optional[Callable] = None, logger: Optional[Logger] = None,
                    on_each_fold: Optional[Callable[[int, BaseEstimator, pd.DataFrame, pd.Series], None]] = None,
                    fit_params: Optional[Dict] = None,
@@ -50,10 +49,6 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
             - An iterable yielding (train, test) splits as arrays of indices.
         groups:
             Group labels for the samples. Only used in conjunction with a “Group” cv instance (e.g., ``GroupKFold``).
-        stratified:
-            If true, use stratified K-Fold
-        seed:
-            Seed used by the random number generator in ``KFold``
         predict_proba:
             If true, call ``predict_proba`` instead of ``predict`` for calculating prediction for test data.
         eval:
@@ -108,7 +103,7 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
         >>> print(scores)
         [71912.80290003832, 15236.680239881942, 15472.822033121925, 34207.43505768073]
     """
-    cv = check_cv(cv, y, stratified, seed)
+    cv = check_cv(cv, y)
 
     if isinstance(estimator, list):
         assert len(estimator) == cv.get_n_splits(), "Number of estimators should be same to nfolds."

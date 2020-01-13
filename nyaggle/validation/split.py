@@ -26,6 +26,7 @@ def check_cv(cv: Union[int, Iterable, KFold, StratifiedKFold] = 5,
 
 class TimeSeriesSplit(object):
     """ Time Series cross-validator
+
     Time Series cross-validator which provides train/test indices to split variable interval time series data.
     This class provides low-level API for time series validation strategy.
     This class is compatible with sklearn's ``BaseCrossValidator`` (base class of ``KFold``, ``GroupKFold`` etc).
@@ -134,6 +135,7 @@ class TimeSeriesSplit(object):
 
 class SlidingWindowSplit(TimeSeriesSplit):
     """ Sliding window time series cross-validator
+
     Time Series cross-validator which provides train/test indices based on the sliding window to split
     variable interval time series data.
     Splitting for each fold will be as follows:

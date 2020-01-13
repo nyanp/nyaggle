@@ -8,7 +8,7 @@ from nyaggle.experiment import average_results, experiment_gbdt
 from nyaggle.testing import make_classification_df
 
 
-def test_averating():
+def test_averaging():
     X, y = make_classification_df(n_samples=1024, n_num_features=10, n_cat_features=2,
                                   class_sep=0.98, random_state=0, id_column='user_id')
 
@@ -21,8 +21,9 @@ def test_averating():
 
     with tempfile.TemporaryDirectory() as temp_path:
         for i in range(3):
+            params['seed'] = i
             ret_single = experiment_gbdt(os.path.join(temp_path, 'seed{}'.format(i)), params,
-                                         'user_id', X_train, y_train, X_test, seed_model=i)
+                                         'user_id', X_train, y_train, X_test)
 
         df = average_results([
             os.path.join(temp_path, 'seed{}'.format(i)) for i in range(3)
