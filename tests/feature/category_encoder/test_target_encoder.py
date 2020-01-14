@@ -1,12 +1,10 @@
 import copy
-import pytest
 
+import category_encoders as ce
 import numpy.testing as npt
 import pandas as pd
 from pandas.testing import assert_frame_equal
-
 from sklearn.model_selection import KFold
-import category_encoders as ce
 
 from nyaggle.feature.category_encoder import TargetEncoder
 
@@ -65,12 +63,12 @@ def test_target_encoder_fit_transform():
     X = pd.concat([X_train, X_test])
     y = pd.concat([y_train, pd.Series([None]*4)]).astype(float)
 
-    ce = TargetEncoder(cols=['x'])
-    ce.fit(X_train, y_train)
-    ret1 = ce.transform(X_test)
+    ce1 = TargetEncoder(cols=['x'])
+    ce1.fit(X_train, y_train)
+    ret1 = ce1.transform(X_test)
 
-    ce = TargetEncoder(cols=['x'])
-    ret2 = ce.fit_transform(X, y).iloc[6:, :]
+    ce2 = TargetEncoder(cols=['x'])
+    ret2 = ce2.fit_transform(X, y).iloc[6:, :]
 
     assert_frame_equal(ret1, ret2)
 

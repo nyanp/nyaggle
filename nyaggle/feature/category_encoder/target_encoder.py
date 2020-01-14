@@ -1,9 +1,8 @@
-from itertools import tee
 from typing import List, Optional, Iterable, Union
 
+import category_encoders as ce
 import numpy as np
 import pandas as pd
-import category_encoders as ce
 from category_encoders.utils import convert_input, convert_input_vector
 from sklearn.base import BaseEstimator, clone
 from sklearn.model_selection import BaseCrossValidator
@@ -24,7 +23,7 @@ class KFoldEncoderWrapper(BaseFeaturizer):
         cv:
             int, cross-validation generator or an iterable which determines the cross-validation splitting strategy.
 
-            - None, to use the default ``KFold(5, random_state=42, shuffle=True)``,
+            - None, to use the default ``KFold(5, random_state=0, shuffle=True)``,
             - integer, to specify the number of folds in a ``(Stratified)KFold``,
             - CV splitter (the instance of ``BaseCrossValidator``),
             - An iterable yielding (train, test) splits as arrays of indices.
@@ -139,13 +138,14 @@ class KFoldEncoderWrapper(BaseFeaturizer):
 class TargetEncoder(KFoldEncoderWrapper):
     """Target Encoder
 
-    KFold version of category_encoders.TargetEncoder in https://contrib.scikit-learn.org/categorical-encoding/targetencoder.html.
+    KFold version of category_encoders.TargetEncoder in
+    https://contrib.scikit-learn.org/categorical-encoding/targetencoder.html.
 
     Args:
         cv:
             int, cross-validation generator or an iterable which determines the cross-validation splitting strategy.
 
-            - None, to use the default ``KFold(5, random_state=42, shuffle=True)``,
+            - None, to use the default ``KFold(5, random_state=0, shuffle=True)``,
             - integer, to specify the number of folds in a ``(Stratified)KFold``,
             - CV splitter (the instance of ``BaseCrossValidator``),
             - An iterable yielding (train, test) splits as arrays of indices.

@@ -86,7 +86,7 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any],
         cv:
             int, cross-validation generator or an iterable which determines the cross-validation splitting strategy.
 
-            - None, to use the default ``KFold(5, random_state=42, shuffle=True)``,
+            - None, to use the default ``KFold(5, random_state=0, shuffle=True)``,
             - integer, to specify the number of folds in a ``(Stratified)KFold``,
             - CV splitter (the instance of ``BaseCrossValidator``),
             - An iterable yielding (train, test) splits as arrays of indices.

@@ -24,7 +24,7 @@ parameters = [
             "metric": 'auc',
             'reg_alpha': 0.3899927210061127,
             'reg_lambda': 0.6485237330340494
-         }
+        }
     },
     {
         "name": "ieee-2019-17th",
@@ -327,20 +327,20 @@ parameters = [
         "rank": 2,
         "metric": "auc",
         "parameters": {
-             'objective': 'binary',
-             'metric': 'auc',
-             'learning_rate': 0.01,
-             'max_depth': 6,
-             'num_leaves': 63,
-             'max_bin': 255,
-             'min_child_weight': 10,
-             'min_data_in_leaf': 150,
-             'reg_lambda': 0.5,
-             'reg_alpha': 0.5,
-             'colsample_bytree': 0.7,
-             'subsample': 0.9,
-             'bagging_freq': 1,
-         }
+            'objective': 'binary',
+            'metric': 'auc',
+            'learning_rate': 0.01,
+            'max_depth': 6,
+            'num_leaves': 63,
+            'max_bin': 255,
+            'min_child_weight': 10,
+            'min_data_in_leaf': 150,
+            'reg_lambda': 0.5,
+            'reg_alpha': 0.5,
+            'colsample_bytree': 0.7,
+            'subsample': 0.9,
+            'bagging_freq': 1,
+        }
     },
     {
         "name": "home-credit-2018-7th",
@@ -410,11 +410,11 @@ parameters = [
         "parameters": {
             'task': 'train',
             'boosting_type': 'gbdt',
-            'objective' : 'regression',
-            'metric' : 'rmse',
-            'num_leaves' : 1000,
-            'learning_rate' : 0.02,
-            'feature_fraction' : 0.5,
+            'objective': 'regression',
+            'metric': 'rmse',
+            'num_leaves': 1000,
+            'learning_rate': 0.02,
+            'feature_fraction': 0.5,
         }
     },
 
@@ -471,17 +471,17 @@ parameters = [
         "rank": 1,
         "metric": "auc",
         "parameters": {
-          'objective': 'binary',
-          'metric': 'auc',
-          'boosting_type': 'dart',
-          'learning_rate': 0.01,
-          'max_bin': 15,
-          'max_depth': 17,
-          'num_leaves': 63,
-          'subsample': 0.8,
-          'subsample_freq': 5,
-          'colsample_bytree': 0.8,
-          'reg_lambda': 7
+            'objective': 'binary',
+            'metric': 'auc',
+            'boosting_type': 'dart',
+            'learning_rate': 0.01,
+            'max_bin': 15,
+            'max_depth': 17,
+            'num_leaves': 63,
+            'subsample': 0.8,
+            'subsample_freq': 5,
+            'colsample_bytree': 0.8,
+            'reg_lambda': 7
         }
     },
 

@@ -23,7 +23,8 @@ def make_classification_df(n_samples: int = 1024,
         X[id_column] = range(n_samples)
 
     for i in range(n_cat_features):
-        X['cat_{}'.format(i)] = pd.Series(np.random.choice(['A', 'B', None], size=n_samples)).astype(str).astype('category')
+        X['cat_{}'.format(i)] = \
+            pd.Series(np.random.choice(['A', 'B', None], size=n_samples)).astype(str).astype('category')
 
     return X, y
 
@@ -46,6 +47,7 @@ def make_regression_df(n_samples: int = 1024,
         X[id_column] = range(n_samples)
 
     for i in range(n_cat_features):
-        X['cat_{}'.format(i)] = pd.Series(np.random.choice(['A', 'B', None], size=n_samples)).astype(str).astype('category')
+        X['cat_{}'.format(i)] = \
+            pd.Series(np.random.choice(['A', 'B', None], size=n_samples)).astype(str).astype('category')
 
     return X, y

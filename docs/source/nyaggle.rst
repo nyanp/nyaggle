@@ -1,10 +1,7 @@
-nyaggle package
+API Reference
 ===============
 
-Submodules
-----------
-
-nyaggle.feature.category_encoder module
+nyaggle.feature.category_encoder
 ----------------------------------------
 
 .. automodule:: nyaggle.feature.category_encoder
@@ -13,7 +10,7 @@ nyaggle.feature.category_encoder module
     :inherited-members:
     :show-inheritance:
 
-nyaggle.feature.nlp module
+nyaggle.feature.nlp
 ---------------------------
 
 .. automodule:: nyaggle.feature.nlp
@@ -21,7 +18,7 @@ nyaggle.feature.nlp module
     :imported-members:
     :show-inheritance:
 
-nyaggle.validation module
+nyaggle.validation
 --------------------------
 
 .. automodule:: nyaggle.validation
@@ -29,7 +26,7 @@ nyaggle.validation module
     :imported-members:
     :show-inheritance:
 
-nyaggle.util module
+nyaggle.util
 -----------------------
 
 .. automodule:: nyaggle.util
@@ -37,7 +34,7 @@ nyaggle.util module
     :imported-members:
     :show-inheritance:
 
-nyaggle.experiment module
+nyaggle.experiment
 -----------------------
 
 .. automodule:: nyaggle.experiment
@@ -45,7 +42,7 @@ nyaggle.experiment module
     :imported-members:
     :show-inheritance:
 
-nyaggle.hyper_parameters module
+nyaggle.hyper_parameters
 --------------------------
 
 .. automodule:: nyaggle.hyper_parameters

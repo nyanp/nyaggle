@@ -1,6 +1,5 @@
 import json
 import os
-import pytest
 import shutil
 import tempfile
 import uuid
@@ -8,8 +7,9 @@ from contextlib import contextmanager
 from urllib.parse import urlparse, unquote
 
 import pandas as pd
+import pytest
 from sklearn.metrics import roc_auc_score, mean_squared_error, mean_absolute_error
-from sklearn.model_selection import KFold, GroupKFold, train_test_split
+from sklearn.model_selection import KFold, train_test_split
 
 from nyaggle.experiment import experiment_gbdt
 from nyaggle.testing import make_classification_df, make_regression_df

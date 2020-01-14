@@ -1,11 +1,8 @@
-import pytest
-
 import numpy.testing as npt
 import pandas as pd
 from pandas.testing import assert_frame_equal
 
 from nyaggle.feature.nlp import BertSentenceVectorizer
-
 
 _TEST_SENTENCE_EN = [
     'This is a pen.',
