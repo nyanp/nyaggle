@@ -23,7 +23,7 @@ def test_averaging():
         for i in range(3):
             params['seed'] = i
             ret_single = experiment_gbdt(os.path.join(temp_path, 'seed{}'.format(i)), params,
-                                         'user_id', X_train, y_train, X_test)
+                                         X_train, y_train, X_test)
 
         df = average_results([
             os.path.join(temp_path, 'seed{}'.format(i)) for i in range(3)
