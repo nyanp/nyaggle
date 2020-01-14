@@ -6,10 +6,11 @@ import uuid
 from contextlib import contextmanager
 from urllib.parse import urlparse, unquote
 
+import numpy as np
 import pandas as pd
 import pytest
 from sklearn.metrics import roc_auc_score, mean_squared_error, mean_absolute_error
-from sklearn.model_selection import KFold, train_test_split
+from sklearn.model_selection import GroupKFold, KFold, train_test_split
 
 from nyaggle.experiment import experiment_gbdt
 from nyaggle.testing import make_classification_df, make_regression_df
@@ -235,7 +236,7 @@ def test_submission_filename():
         assert list(df.columns) == ['user_id', 'target']
 
 
-def test_experiment_manual_cv():
+def test_experiment_manual_cv_kfold():
     X, y = make_classification_df(n_samples=1024, n_num_features=10, n_cat_features=2,
                                   class_sep=0.98, random_state=0, id_column='user_id')
 
@@ -251,3 +252,49 @@ def test_experiment_manual_cv():
         assert len(result.models) == 4
         assert len(result.scores) == 4 + 1
 
+
+def test_experiment_manual_cv_int():
+    X, y = make_classification_df(n_samples=1024, n_num_features=10, n_cat_features=2,
+                                  class_sep=0.98, random_state=0, id_column='user_id')
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
+
+    params = {
+        'objective': 'binary',
+        'max_depth': 8
+    }
+
+    with _get_temp_directory() as temp_path:
+        result = experiment_gbdt(temp_path, params, X_train, y_train, cv=KFold(2))
+        assert len(result.models) == 2
+        assert len(result.scores) == 2 + 1
+
+
+def test_experiment_manual_cv_group():
+    df1 = pd.DataFrame()
+    df1['x'] = np.random.randint(0, 10, size=1000)
+    df1['y'] = df1['x'] > 5
+    df1['grp'] = 0
+
+    df2 = pd.DataFrame()
+    df2['x'] = np.random.randint(0, 10, size=100)
+    df2['y'] = df2['x'] <= 5
+    df2['grp'] = 1
+
+    X = pd.concat([df1, df2]).reset_index(drop=True)
+    y = X['y']
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
+
+    grp = X_train['grp']
+    X_train = X_train.drop(['y', 'grp'], axis=1)
+    X_test = X_test.drop(['y', 'grp'], axis=1)
+
+    params = {
+        'objective': 'binary',
+        'max_depth': 8
+    }
+
+    with _get_temp_directory() as temp_path:
+        result = experiment_gbdt(temp_path, params, X_train, y_train, X_test, cv=GroupKFold(2), groups=grp)
+        assert result.scores[-1] < 0.7
