@@ -175,21 +175,22 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any],
         for i in range(cv.get_n_splits()):
             exp.log_metric('Fold {}'.format(i + 1), result.scores[i])
         exp.log_metric('Overall', result.scores[-1])
-    
-        importance = pd.concat(result.importance)
-        importance = importance.groupby('feature')['importance'].mean().reset_index()
-        importance.sort_values(by='importance', ascending=False, inplace=True)
-        importance.reset_index(drop=True, inplace=True)
-    
-        plot_importance(importance, os.path.join(logging_directory, 'importance.png'))
 
+        # save importance plot
+        importance = pd.concat(result.importance)
+        plot_file_path = os.path.join(logging_directory, 'importance.png')
+        plot_importance(importance, plot_file_path)
+        exp.log_artifact(plot_file_path)
+
+        # save trained model
         for i, model in enumerate(models):
-            _save_model(gbdt_type, model, logging_directory, i + 1)
+            _save_model(gbdt_type, model, logging_directory, i + 1, exp)
     
         # save oof
         exp.log_numpy('oof_prediction', result.oof_prediction)
         exp.log_numpy('test_prediction', result.test_prediction)
 
+        # save submission.csv
         if X_test is not None:
             if id_column is None:
                 warnings.warn('Cannot estimate the name of id column. Default "id" is used.')
@@ -223,7 +224,7 @@ def _dispatch_gbdt(gbdt_type: str, target_type: str, custom_eval: Optional[Calla
     return model, eval_func, cat_param
 
 
-def _save_model(gbdt_type: str, model: Union[CatBoost, LGBMModel], logging_directory: str, fold: int):
+def _save_model(gbdt_type: str, model: Union[CatBoost, LGBMModel], logging_directory: str, fold: int, exp: Experiment):
     model_dir = os.path.join(logging_directory, 'models')
     os.makedirs(model_dir, exist_ok=True)
     path = os.path.join(model_dir, 'fold{}'.format(fold))
@@ -234,3 +235,5 @@ def _save_model(gbdt_type: str, model: Union[CatBoost, LGBMModel], logging_direc
     else:
         assert isinstance(model, LGBMModel)
         model.booster_.save_model(path)
+
+    exp.log_artifact(path)

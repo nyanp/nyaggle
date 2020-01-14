@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import uuid
 from logging import getLogger, FileHandler, DEBUG, Logger
 from typing import Optional, Union
@@ -196,8 +197,8 @@ class Experiment(object):
 
         Args:
             name:
-                Name of the file. A .f or .csv extension will be appended to the file name if it does not already
-                have one.
+                Name of the file. A ``.f`` or ``.csv`` extension will be appended to the file name
+                if it does not already have one.
             df:
                 A dataframe to be saved.
             file_format:
@@ -218,3 +219,24 @@ class Experiment(object):
         if self.with_mlflow:
             import mlflow
             mlflow.log_artifact(path)
+
+    def log_artifact(self, src_file_path: str):
+        """
+        Make a copy of the file under the logging directory.
+
+        Args:
+            src_file_path:
+                Path of the file. If path is not a child of the logging directory, the file will be copied.
+                If ``with_mlflow`` is True, ``mlflow.log_artifact`` will be called (then another copy will be made).
+        """
+        logging_path = os.path.abspath(self.logging_directory)
+        src_file_path = os.path.abspath(src_file_path)
+
+        if os.path.commonpath([logging_path]) != os.path.commonpath([logging_path, src_file_path]):
+            src_file = os.path.basename(src_file_path)
+            shutil.copy(src_file, self.logging_directory)
+
+        if self.with_mlflow:
+            import mlflow
+            mlflow.log_artifact(src_file_path)
+
