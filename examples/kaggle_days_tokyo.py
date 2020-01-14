@@ -32,7 +32,7 @@ def transform(te: TargetEncoder, df: pd.DataFrame, y: pd.Series):
 
     df = df.groupby('user_id').agg(['mean', 'min', 'max'])
     df.columns = [e[0] + '_' + e[1] for e in df.columns]
-    return df.reset_index(), y
+    return df, y
 
 
 X_train, y_train = transform(te, X_train, y_train)
@@ -41,7 +41,6 @@ X_test, _ = transform(te, X_test, None)
 # generated submission.csv scores 11.61445 in private LB (35th)
 experiment_gbdt(logging_directory='baseline_kaggledays_tokyo',
                 model_params=lgb_params,
-                id_column='user_id',
                 X_train=X_train,
                 y=y_train,
                 X_test=X_test,

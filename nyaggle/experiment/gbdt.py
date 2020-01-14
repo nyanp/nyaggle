@@ -1,5 +1,6 @@
 import os
 import time
+import warnings
 from collections import namedtuple
 from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
@@ -19,7 +20,7 @@ from nyaggle.validation.split import check_cv
 GBDTResult = namedtuple('LGBResult', ['oof_prediction', 'test_prediction', 'scores', 'models', 'importance', 'time'])
 
 
-def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_column: str,
+def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any],
                     X_train: pd.DataFrame, y: pd.Series,
                     X_test: Optional[pd.DataFrame] = None,
                     eval_func: Optional[Callable] = None,
@@ -27,6 +28,7 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
                     fit_params: Optional[Dict[str, Any]] = None,
                     cv: Optional[Union[int, Iterable, BaseCrossValidator]] = None,
                     groups: Optional[pd.Series] = None,
+                    id_column: Optional[str] = None,
                     overwrite: bool = False,
                     categorical_feature: Optional[List[str]] = None,
                     submission_filename: str = 'submission.csv',
@@ -69,9 +71,6 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
             Parameters passed to the constructor of the classifier/regressor object (i.e. LGBMRegressor).
         fit_params:
             Parameters passed to the fit method of the estimator.
-        id_column:
-            The name of index or column which is used as index.
-            If ``X_test`` is not None, submission file is created along with this column.
         X_train:
             Training data. Categorical feature should be casted to pandas categorical type or encoded to integer.
         y:
@@ -93,6 +92,9 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
             - An iterable yielding (train, test) splits as arrays of indices.
         groups:
             Group labels for the samples. Only used in conjunction with a “Group” cv instance (e.g., ``GroupKFold``).
+        id_column:
+            The name of index or column which is used as index.
+            If ``X_test`` is not None, submission file is created along with this column.
         overwrite:
             If True, contents in ``logging_directory`` will be overwritten.
         categorical_feature:
@@ -133,6 +135,9 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
     """
     start_time = time.time()
     cv = check_cv(cv, y)
+
+    if id_column is None:
+        id_column = X_train.index.name
 
     if id_column in X_train.columns:
         if X_test is not None:
@@ -186,6 +191,9 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any], id_col
         exp.log_numpy('test_prediction', result.test_prediction)
 
         if X_test is not None:
+            if id_column is None:
+                warnings.warn('Cannot estimate the name of id column. Default "id" is used.')
+                id_column = 'id'
             submit = pd.DataFrame()
             submit[id_column] = X_test.index
             submit[y.name] = result.test_prediction

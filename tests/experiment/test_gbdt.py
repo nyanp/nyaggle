@@ -43,8 +43,7 @@ def test_experiment_lgb_classifier():
     }
 
     with _get_temp_directory() as temp_path:
-        result = experiment_gbdt(temp_path, params, 'user_id',
-                                 X_train, y_train, X_test, roc_auc_score)
+        result = experiment_gbdt(temp_path, params, X_train, y_train, X_test, roc_auc_score)
 
         assert roc_auc_score(y_train, result.oof_prediction) >= 0.85
         assert roc_auc_score(y_test, result.test_prediction) >= 0.85
@@ -64,8 +63,7 @@ def test_experiment_lgb_regressor():
     }
 
     with _get_temp_directory() as temp_path:
-        result = experiment_gbdt(temp_path, params, 'user_id',
-                                 X_train, y_train, X_test)
+        result = experiment_gbdt(temp_path, params, X_train, y_train, X_test)
 
         assert mean_squared_error(y_train, result.oof_prediction) == result.scores[-1]
 
@@ -84,8 +82,8 @@ def test_experiment_cat_classifier():
     }
 
     with _get_temp_directory() as temp_path:
-        result = experiment_gbdt(temp_path, params, 'user_id',
-                                 X_train, y_train, X_test, roc_auc_score, gbdt_type='cat')
+        result = experiment_gbdt(temp_path, params, X_train, y_train, X_test, roc_auc_score, gbdt_type='cat',
+                                 id_column='user_id')
 
         assert roc_auc_score(y_train, result.oof_prediction) >= 0.85
         assert roc_auc_score(y_test, result.test_prediction) >= 0.85
@@ -106,8 +104,7 @@ def test_experiment_cat_regressor():
     }
 
     with _get_temp_directory() as temp_path:
-        result = experiment_gbdt(temp_path, params, 'user_id',
-                                 X_train, y_train, X_test, gbdt_type='cat')
+        result = experiment_gbdt(temp_path, params, X_train, y_train, X_test, gbdt_type='cat')
 
         assert mean_squared_error(y_train, result.oof_prediction) == result.scores[-1]
         _check_file_exists(temp_path, ('submission.csv', 'oof_prediction.npy', 'test_prediction.npy', 'scores.txt'))
@@ -126,7 +123,7 @@ def test_experiment_cat_custom_eval():
     }
 
     with _get_temp_directory() as temp_path:
-        result = experiment_gbdt(temp_path, params, 'user_id',
+        result = experiment_gbdt(temp_path, params,
                                  X_train, y_train, X_test, gbdt_type='cat', eval_func=mean_absolute_error)
 
         assert mean_absolute_error(y_train, result.oof_prediction) == result.scores[-1]
@@ -145,7 +142,7 @@ def test_experiment_without_test_data():
     }
 
     with _get_temp_directory() as temp_path:
-        result = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train)
+        result = experiment_gbdt(temp_path, params, X_train, y_train)
 
         assert roc_auc_score(y_train, result.oof_prediction) >= 0.85
         _check_file_exists(temp_path, ('oof_prediction.npy', 'scores.txt'))
@@ -164,10 +161,10 @@ def test_experiment_fit_params():
     }
 
     with _get_temp_directory() as temp_path:
-        result1 = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, X_test,
+        result1 = experiment_gbdt(temp_path, params, X_train, y_train, X_test,
                                   fit_params={'early_stopping_rounds': None})
     with _get_temp_directory() as temp_path:
-        result2 = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, X_test,
+        result2 = experiment_gbdt(temp_path, params, X_train, y_train, X_test,
                                   fit_params={'early_stopping_rounds': 5})
 
     assert result1.models[-1].booster_.num_trees() == params['n_estimators']
@@ -186,7 +183,7 @@ def test_experiment_mlflow():
     }
 
     with _get_temp_directory() as temp_path:
-        experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, with_mlflow=True)
+        experiment_gbdt(temp_path, params, X_train, y_train, with_mlflow=True)
 
         _check_file_exists(temp_path, ('oof_prediction.npy', 'scores.txt', 'mlflow.json'))
 
@@ -211,13 +208,13 @@ def test_experiment_already_exists():
     }
 
     with _get_temp_directory() as temp_path:
-        experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, overwrite=True)
+        experiment_gbdt(temp_path, params, X_train, y_train, overwrite=True)
 
         # result is overwrited by default
-        experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, overwrite=True)
+        experiment_gbdt(temp_path, params, X_train, y_train, overwrite=True)
 
         with pytest.raises(Exception):
-            experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, overwrite=False)
+            experiment_gbdt(temp_path, params, X_train, y_train, overwrite=False)
 
 
 def test_submission_filename():
@@ -232,7 +229,7 @@ def test_submission_filename():
     }
 
     with _get_temp_directory() as temp_path:
-        experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, X_test, submission_filename='sub.csv')
+        experiment_gbdt(temp_path, params, X_train, y_train, X_test, submission_filename='sub.csv', id_column='user_id')
 
         df = pd.read_csv(os.path.join(temp_path, 'sub.csv'))
         assert list(df.columns) == ['user_id', 'target']
@@ -250,7 +247,7 @@ def test_experiment_manual_cv():
     }
 
     with _get_temp_directory() as temp_path:
-        result = experiment_gbdt(temp_path, params, 'user_id', X_train, y_train, cv=KFold(4))
+        result = experiment_gbdt(temp_path, params, X_train, y_train, cv=KFold(4))
         assert len(result.models) == 4
         assert len(result.scores) == 4 + 1
 

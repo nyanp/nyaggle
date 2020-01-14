@@ -50,7 +50,6 @@ params = {
 
 result = experiment_gbdt('output/',
                          params,
-                         'user_id',
                          X_train,
                          y_train,
                          X_test)
