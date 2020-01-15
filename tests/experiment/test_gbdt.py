@@ -71,6 +71,26 @@ def test_experiment_lgb_regressor():
         _check_file_exists(temp_path, ('submission.csv', 'oof_prediction.npy', 'test_prediction.npy', 'scores.txt'))
 
 
+def test_experiment_lgb_multiclass():
+    X, y = make_classification_df(n_samples=1024, n_num_features=10, n_cat_features=2,
+                                  n_classes=5, random_state=0, id_column='user_id')
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
+
+    params = {
+        'objective': 'multiclass',
+        'max_depth': 8
+    }
+
+    with _get_temp_directory() as temp_path:
+        result = experiment_gbdt(temp_path, params, X_train, y_train, X_test)
+
+        assert result.oof_prediction.shape == (len(y_train), 5)
+        assert result.test_prediction.shape == (len(y_test), 5)
+
+        _check_file_exists(temp_path, ('submission.csv', 'oof_prediction.npy', 'test_prediction.npy', 'scores.txt'))
+
+
 def test_experiment_cat_classifier():
     X, y = make_classification_df(n_samples=1024, n_num_features=10, n_cat_features=2,
                                   class_sep=0.98, random_state=0, id_column='user_id', target_name='tgt')
@@ -84,7 +104,7 @@ def test_experiment_cat_classifier():
 
     with _get_temp_directory() as temp_path:
         result = experiment_gbdt(temp_path, params, X_train, y_train, X_test, roc_auc_score, gbdt_type='cat',
-                                 id_column='user_id')
+                                 id_name='user_id')
 
         assert roc_auc_score(y_train, result.oof_prediction) >= 0.85
         assert roc_auc_score(y_test, result.test_prediction) >= 0.85
@@ -108,6 +128,29 @@ def test_experiment_cat_regressor():
         result = experiment_gbdt(temp_path, params, X_train, y_train, X_test, gbdt_type='cat')
 
         assert mean_squared_error(y_train, result.oof_prediction) == result.scores[-1]
+        _check_file_exists(temp_path, ('submission.csv', 'oof_prediction.npy', 'test_prediction.npy', 'scores.txt'))
+
+
+def test_experiment_cat_multiclass():
+    X, y = make_classification_df(n_samples=1024, n_num_features=10, n_cat_features=2, n_classes=5,
+                                  class_sep=0.98, random_state=0, id_column='user_id', target_name='tgt')
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
+
+    params = {
+        'max_depth': 8,
+        'num_boost_round': 100
+    }
+
+    with _get_temp_directory() as temp_path:
+        result = experiment_gbdt(temp_path, params, X_train, y_train, X_test, gbdt_type='cat',
+                                 id_name='user_id', type_of_target='multiclass', target_name=['a', 'b', 'c', 'd', 'e'])
+
+        assert result.oof_prediction.shape == (len(y_train), 5)
+        assert result.test_prediction.shape == (len(y_test), 5)
+
+        assert list(pd.read_csv(os.path.join(temp_path, 'submission.csv')).columns) == ['user_id', 'a', 'b', 'c', 'd', 'e']
+
         _check_file_exists(temp_path, ('submission.csv', 'oof_prediction.npy', 'test_prediction.npy', 'scores.txt'))
 
 
@@ -230,7 +273,7 @@ def test_submission_filename():
     }
 
     with _get_temp_directory() as temp_path:
-        experiment_gbdt(temp_path, params, X_train, y_train, X_test, submission_filename='sub.csv', id_column='user_id')
+        experiment_gbdt(temp_path, params, X_train, y_train, X_test, submission_filename='sub.csv', id_name='user_id')
 
         df = pd.read_csv(os.path.join(temp_path, 'sub.csv'))
         assert list(df.columns) == ['user_id', 'target']

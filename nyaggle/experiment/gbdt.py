@@ -10,7 +10,7 @@ from catboost import CatBoost, CatBoostClassifier, CatBoostRegressor
 from lightgbm import LGBMModel, LGBMClassifier, LGBMRegressor
 from more_itertools import first_true
 from sklearn.model_selection import BaseCrossValidator
-from sklearn.metrics import roc_auc_score, mean_squared_error
+from sklearn.metrics import roc_auc_score, mean_squared_error, log_loss
 
 from nyaggle.experiment.experiment import Experiment
 from nyaggle.util import plot_importance
@@ -28,7 +28,8 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any],
                     fit_params: Optional[Dict[str, Any]] = None,
                     cv: Optional[Union[int, Iterable, BaseCrossValidator]] = None,
                     groups: Optional[pd.Series] = None,
-                    id_column: Optional[str] = None,
+                    id_name: Optional[str] = None,
+                    target_name: Optional[Union[str, List[str]]] = None,
                     overwrite: bool = False,
                     categorical_feature: Optional[List[str]] = None,
                     submission_filename: str = 'submission.csv',
@@ -92,9 +93,12 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any],
             - An iterable yielding (train, test) splits as arrays of indices.
         groups:
             Group labels for the samples. Only used in conjunction with a “Group” cv instance (e.g., ``GroupKFold``).
-        id_column:
+        id_name:
             The name of index or column which is used as index.
             If ``X_test`` is not None, submission file is created along with this column.
+        target_name:
+            The name of the target variable used in the submission file.
+            It should be list of string if target is multiclass. If None, y.name will be used.
         overwrite:
             If True, contents in ``logging_directory`` will be overwritten.
         categorical_feature:
@@ -103,7 +107,7 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any],
             The name of submission file created under logging directory.
         type_of_target:
             The type of target variable. If ``auto``, type is inferred by ``sklearn.utils.multiclass.type_of_target``.
-            Otherwise, ``binary`` or ``continuous`` are supported for binary-classification and regression.
+            Otherwise, ``binary``, ``continuous``, or ``multiclass`` are supported.
         with_mlflow:
             If True, [mlflow tracking](https://www.mlflow.org/docs/latest/tracking.html) is used.
             One instance of ``nyaggle.experiment.Experiment`` corresponds to one run in mlflow.
@@ -136,17 +140,20 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any],
     start_time = time.time()
     cv = check_cv(cv, y)
 
-    if id_column is None:
-        id_column = X_train.index.name
+    if id_name is None:
+        id_name = X_train.index.name
 
-    if id_column in X_train.columns:
+    if id_name in X_train.columns:
         if X_test is not None:
             assert list(X_train.columns) == list(X_test.columns)
-            X_test.set_index(id_column, inplace=True)
-        X_train.set_index(id_column, inplace=True)
+            X_test.set_index(id_name, inplace=True)
+        X_train.set_index(id_name, inplace=True)
         
-    assert X_train.index.name == id_column, "index does not match"
-    
+    assert X_train.index.name == id_name, "index does not match"
+
+    if target_name is None:
+        target_name = y.name
+
     with Experiment(logging_directory, overwrite, metrics_filename='scores.txt',
                     with_mlflow=with_mlflow, mlflow_tracking_uri=mlflow_tracking_uri,
                     mlflow_experiment_id=mlflow_experiment_id, mlflow_run_name=mlflow_run_name) as exp:
@@ -168,9 +175,11 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any],
             fit_params = {}
         if cat_param_name is not None and cat_param_name not in fit_params:
             fit_params[cat_param_name] = categorical_feature
-    
+
+        predict_proba = type_of_target == 'multiclass'
         result = cross_validate(models, X_train=X_train, y=y, X_test=X_test, cv=cv, groups=groups,
-                                logger=exp.get_logger(), eval_func=eval_func, fit_params=fit_params)
+                                logger=exp.get_logger(), eval_func=eval_func, fit_params=fit_params,
+                                predict_proba=predict_proba)
 
         for i in range(cv.get_n_splits()):
             exp.log_metric('Fold {}'.format(i + 1), result.scores[i])
@@ -192,12 +201,19 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any],
 
         # save submission.csv
         if X_test is not None:
-            if id_column is None:
+            if id_name is None:
                 warnings.warn('Cannot estimate the name of id column. Default "id" is used.')
-                id_column = 'id'
+                id_name = 'id'
             submit = pd.DataFrame()
-            submit[id_column] = X_test.index
-            submit[y.name] = result.test_prediction
+            submit[id_name] = X_test.index
+            if type_of_target == 'multiclass':
+                if not isinstance(target_name, list):
+                    warnings.warn('target_name in multiclass should be list. Default "target[i]" is used.')
+                    target_name = ['target{}'.format(i) for i in range(result.test_prediction.shape[1])]
+                for i, t in enumerate(target_name):
+                    submit[t] = result.test_prediction[:, i]
+            else:
+                submit[target_name] = result.test_prediction
             exp.log_dataframe(submission_filename, submit, 'csv')
 
         elapsed_time = time.time() - start_time
@@ -209,8 +225,10 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any],
 def _dispatch_gbdt(gbdt_type: str, target_type: str, custom_eval: Optional[Callable] = None):
     gbdt_table = [
         ('binary', 'lgbm', LGBMClassifier, roc_auc_score, 'categorical_feature'),
+        ('multiclass', 'lgbm', LGBMClassifier, log_loss, 'categorical_feature'),
         ('continuous', 'lgbm', LGBMRegressor, mean_squared_error, 'categorical_feature'),
         ('binary', 'cat', CatBoostClassifier, roc_auc_score, 'cat_features'),
+        ('multiclass', 'cat', CatBoostClassifier, log_loss, 'cat_features'),
         ('continuous', 'cat', CatBoostRegressor, mean_squared_error, 'cat_features'),
     ]
     found = first_true(gbdt_table, pred=lambda x: x[0] == target_type and x[1] == gbdt_type)

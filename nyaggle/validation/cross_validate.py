@@ -6,6 +6,7 @@ from typing import Callable, Dict, Iterable, List, Optional, Union
 
 import numpy as np
 import pandas as pd
+import sklearn.utils.multiclass as multiclass
 from category_encoders.utils import convert_input, convert_input_vector
 from catboost import CatBoost
 from lightgbm import LGBMModel
@@ -27,7 +28,8 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
                    fit_params: Optional[Dict] = None,
                    importance_type: str = 'gain',
                    nfolds_evaluate: Optional[int] = None,
-                   early_stopping: bool = True) -> CVResult:
+                   early_stopping: bool = True,
+                   type_of_target: str = 'auto') -> CVResult:
     """
     Evaluate metrics by cross-validation. It also records out-of-fold prediction and test prediction.
 
@@ -105,6 +107,11 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
         [71912.80290003832, 15236.680239881942, 15472.822033121925, 34207.43505768073]
     """
     cv = check_cv(cv, y)
+    n_output_cols = 1
+    if type_of_target == 'auto':
+        type_of_target = multiclass.type_of_target(y)
+    if type_of_target == 'multiclass':
+        n_output_cols = y.nunique(dropna=True)
 
     if isinstance(estimator, list):
         assert len(estimator) == cv.get_n_splits(), "Number of estimators should be same to nfolds."
@@ -124,15 +131,16 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
 
     def _predict(model: BaseEstimator, x: pd.DataFrame, _predict_proba: bool):
         if _predict_proba:
-            return model.predict_proba(x)[:, 1]
+            proba = model.predict_proba(x)
+            return proba[:, 1] if proba.shape[1] == 2 else proba
         else:
             return model.predict(x)
 
-    oof = np.zeros(len(X_train))
+    oof = np.zeros((len(X_train), n_output_cols))
     evaluated = np.full(len(X_train), False)
     test = None
     if X_test is not None:
-        test = np.zeros((len(X_test), cv.get_n_splits()))
+        test = np.zeros((len(X_test), n_output_cols))
 
     scores = []
     eta_all = []
@@ -168,7 +176,7 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
         evaluated[valid_idx] = True
 
         if X_test is not None:
-            test[:, n] = _predict(estimator[n], X_test, predict_proba)
+            test += _predict(estimator[n], X_test, predict_proba)
 
         if on_each_fold is not None:
             on_each_fold(n, estimator[n], train_x, train_y)
@@ -191,7 +199,7 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
         logger.info('Overall score: {}'.format(score))
 
     if X_test is not None:
-        predicted = np.mean(test, axis=1)
+        predicted = test / cv.get_n_splits(X_train, y, groups)
     else:
         predicted = None
 

@@ -1,20 +1,21 @@
 from typing import Tuple
 import numpy as np
 import pandas as pd
-from sklearn.datasets import make_classification, make_regression
+from sklearn.datasets import make_classification, make_regression, make_multilabel_classification
 
 
 def make_classification_df(n_samples: int = 1024,
                            n_num_features: int = 20,
                            n_cat_features: int = 0,
                            class_sep: float = 1.0,
+                           n_classes: int = 2,
                            feature_name: str = 'col_{}',
                            target_name: str = 'target',
                            random_state: int = 0,
                            id_column: str = None) -> Tuple[pd.DataFrame, pd.Series]:
     np.random.seed(random_state)
     X, y = make_classification(n_samples=n_samples, n_features=n_num_features, class_sep=class_sep,
-                               random_state=random_state)
+                               random_state=random_state, n_classes=n_classes, n_informative=max(n_classes, 2))
 
     X = pd.DataFrame(X, columns=[feature_name.format(i) for i in range(n_num_features)])
     y = pd.Series(y, name=target_name)
