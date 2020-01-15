@@ -136,11 +136,11 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
         else:
             return model.predict(x)
 
-    oof = np.zeros((len(X_train), n_output_cols))
+    oof = np.zeros((len(X_train), n_output_cols)) if n_output_cols > 1 else np.zeros(len(X_train))
     evaluated = np.full(len(X_train), False)
     test = None
     if X_test is not None:
-        test = np.zeros((len(X_test), n_output_cols))
+        test = np.zeros((len(X_test), n_output_cols)) if n_output_cols > 1 else np.zeros(len(X_test))
 
     scores = []
     eta_all = []
