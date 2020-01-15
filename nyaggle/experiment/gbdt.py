@@ -4,6 +4,7 @@ import warnings
 from collections import namedtuple
 from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
+import numpy as np
 import pandas as pd
 import sklearn.utils.multiclass as multiclass
 from catboost import CatBoost, CatBoostClassifier, CatBoostRegressor
@@ -28,8 +29,7 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any],
                     fit_params: Optional[Dict[str, Any]] = None,
                     cv: Optional[Union[int, Iterable, BaseCrossValidator]] = None,
                     groups: Optional[pd.Series] = None,
-                    id_name: Optional[str] = None,
-                    target_name: Optional[Union[str, List[str]]] = None,
+                    sample_submission_filename: Optional[str] = None,
                     overwrite: bool = False,
                     categorical_feature: Optional[List[str]] = None,
                     submission_filename: str = 'submission.csv',
@@ -93,12 +93,8 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any],
             - An iterable yielding (train, test) splits as arrays of indices.
         groups:
             Group labels for the samples. Only used in conjunction with a “Group” cv instance (e.g., ``GroupKFold``).
-        id_name:
-            The name of index or column which is used as index.
-            If ``X_test`` is not None, submission file is created along with this column.
-        target_name:
-            The name of the target variable used in the submission file.
-            It should be list of string if target is multiclass. If None, y.name will be used.
+        sample_submission_filename:
+            The name of the sample_submission.csv
         overwrite:
             If True, contents in ``logging_directory`` will be overwritten.
         categorical_feature:
@@ -139,20 +135,6 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any],
     """
     start_time = time.time()
     cv = check_cv(cv, y)
-
-    if id_name is None:
-        id_name = X_train.index.name
-
-    if id_name in X_train.columns:
-        if X_test is not None:
-            assert list(X_train.columns) == list(X_test.columns)
-            X_test.set_index(id_name, inplace=True)
-        X_train.set_index(id_name, inplace=True)
-        
-    assert X_train.index.name == id_name, "index does not match"
-
-    if target_name is None:
-        target_name = y.name
 
     with Experiment(logging_directory, overwrite, metrics_filename='scores.txt',
                     with_mlflow=with_mlflow, mlflow_tracking_uri=mlflow_tracking_uri,
@@ -201,20 +183,18 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any],
 
         # save submission.csv
         if X_test is not None:
-            if id_name is None:
-                warnings.warn('Cannot estimate the name of id column. Default "id" is used.')
-                id_name = 'id'
-            submit = pd.DataFrame()
-            submit[id_name] = X_test.index
-            if type_of_target == 'multiclass':
-                if not isinstance(target_name, list):
-                    warnings.warn('target_name in multiclass should be list. Default "target[i]" is used.')
-                    target_name = ['target{}'.format(i) for i in range(result.test_prediction.shape[1])]
-                for i, t in enumerate(target_name):
-                    submit[t] = result.test_prediction[:, i]
+            if sample_submission_filename:
+                submit_df = pd.read_csv(sample_submission_filename)
             else:
-                submit[target_name] = result.test_prediction
-            exp.log_dataframe(submission_filename, submit, 'csv')
+                submit_df = pd.DataFrame()
+                submit_df['id'] = np.arange(len(X_test))
+
+                if type_of_target == 'multiclass':
+                    for i, y in enumerate(sorted(y.unique())):
+                        submit_df[y] = result.test_prediction[:, i]
+                else:
+                    submit_df[y.name] = result.test_prediction
+            exp.log_dataframe(submission_filename, submit_df, 'csv')
 
         elapsed_time = time.time() - start_time
 

@@ -103,12 +103,11 @@ def test_experiment_cat_classifier():
     }
 
     with _get_temp_directory() as temp_path:
-        result = experiment_gbdt(temp_path, params, X_train, y_train, X_test, roc_auc_score, gbdt_type='cat',
-                                 id_name='user_id')
+        result = experiment_gbdt(temp_path, params, X_train, y_train, X_test, roc_auc_score, gbdt_type='cat')
 
         assert roc_auc_score(y_train, result.oof_prediction) >= 0.85
         assert roc_auc_score(y_test, result.test_prediction) >= 0.85
-        assert list(pd.read_csv(os.path.join(temp_path, 'submission.csv')).columns) == ['user_id', 'tgt']
+        assert list(pd.read_csv(os.path.join(temp_path, 'submission.csv')).columns) == ['id', 'tgt']
 
         _check_file_exists(temp_path, ('submission.csv', 'oof_prediction.npy', 'test_prediction.npy', 'scores.txt'))
 
@@ -144,12 +143,12 @@ def test_experiment_cat_multiclass():
 
     with _get_temp_directory() as temp_path:
         result = experiment_gbdt(temp_path, params, X_train, y_train, X_test, gbdt_type='cat',
-                                 id_name='user_id', type_of_target='multiclass', target_name=['a', 'b', 'c', 'd', 'e'])
+                                 type_of_target='multiclass')
 
         assert result.oof_prediction.shape == (len(y_train), 5)
         assert result.test_prediction.shape == (len(y_test), 5)
 
-        assert list(pd.read_csv(os.path.join(temp_path, 'submission.csv')).columns) == ['user_id', 'a', 'b', 'c', 'd', 'e']
+        assert list(pd.read_csv(os.path.join(temp_path, 'submission.csv')).columns) == ['id', '0', '1', '2', '3', '4']
 
         _check_file_exists(temp_path, ('submission.csv', 'oof_prediction.npy', 'test_prediction.npy', 'scores.txt'))
 
@@ -273,10 +272,10 @@ def test_submission_filename():
     }
 
     with _get_temp_directory() as temp_path:
-        experiment_gbdt(temp_path, params, X_train, y_train, X_test, submission_filename='sub.csv', id_name='user_id')
+        experiment_gbdt(temp_path, params, X_train, y_train, X_test, submission_filename='sub.csv')
 
         df = pd.read_csv(os.path.join(temp_path, 'sub.csv'))
-        assert list(df.columns) == ['user_id', 'target']
+        assert list(df.columns) == ['id', 'target']
 
 
 def test_experiment_manual_cv_kfold():
