@@ -29,7 +29,7 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any],
                     fit_params: Optional[Dict[str, Any]] = None,
                     cv: Optional[Union[int, Iterable, BaseCrossValidator]] = None,
                     groups: Optional[pd.Series] = None,
-                    sample_submission_filename: Optional[str] = None,
+                    sample_submission: Optional[pd.DataFrame] = None,
                     overwrite: bool = False,
                     categorical_feature: Optional[List[str]] = None,
                     submission_filename: str = 'submission.csv',
@@ -93,8 +93,9 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any],
             - An iterable yielding (train, test) splits as arrays of indices.
         groups:
             Group labels for the samples. Only used in conjunction with a “Group” cv instance (e.g., ``GroupKFold``).
-        sample_submission_filename:
-            The name of the sample_submission.csv
+        sample_submission:
+            A sample dataframe alined with test data (Usually in Kaggle, it is available as sample_submission.csv).
+            The submission file will be created with the same schema as this dataframe.
         overwrite:
             If True, contents in ``logging_directory`` will be overwritten.
         categorical_feature:
@@ -183,8 +184,8 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any],
 
         # save submission.csv
         if X_test is not None:
-            if sample_submission_filename:
-                submit_df = pd.read_csv(sample_submission_filename)
+            if sample_submission:
+                submit_df = sample_submission.copy()
             else:
                 submit_df = pd.DataFrame()
                 submit_df['id'] = np.arange(len(X_test))
