@@ -169,7 +169,7 @@ def experiment_gbdt(model_params: Dict[str, Any],
         predict_proba = type_of_target == 'multiclass'
         result = cross_validate(models, X_train=X_train, y=y, X_test=X_test, cv=cv, groups=groups,
                                 logger=exp.get_logger(), eval_func=eval_func, fit_params=fit_params,
-                                predict_proba=predict_proba)
+                                predict_proba=predict_proba, type_of_target=type_of_target)
 
         for i in range(cv.get_n_splits()):
             exp.log_metric('Fold {}'.format(i + 1), result.scores[i])
