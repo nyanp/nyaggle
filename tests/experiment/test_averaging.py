@@ -22,8 +22,8 @@ def test_averaging():
     with tempfile.TemporaryDirectory() as temp_path:
         for i in range(3):
             params['seed'] = i
-            ret_single = experiment_gbdt(os.path.join(temp_path, 'seed{}'.format(i)), params,
-                                         X_train, y_train, X_test)
+            ret_single = experiment_gbdt(params, X_train, y_train, X_test,
+                                         os.path.join(temp_path, 'seed{}'.format(i)))
 
         df = average_results([
             os.path.join(temp_path, 'seed{}'.format(i)) for i in range(3)

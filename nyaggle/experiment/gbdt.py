@@ -2,6 +2,7 @@ import os
 import time
 import warnings
 from collections import namedtuple
+from datetime import datetime
 from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 import numpy as np
@@ -21,17 +22,18 @@ from nyaggle.validation.split import check_cv
 GBDTResult = namedtuple('LGBResult', ['oof_prediction', 'test_prediction', 'scores', 'models', 'importance', 'time'])
 
 
-def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any],
+def experiment_gbdt(model_params: Dict[str, Any],
                     X_train: pd.DataFrame, y: pd.Series,
                     X_test: Optional[pd.DataFrame] = None,
+                    logging_directory: str = 'output/{time}',
+                    overwrite: bool = False,
                     eval_func: Optional[Callable] = None,
                     gbdt_type: str = 'lgbm',
                     fit_params: Optional[Dict[str, Any]] = None,
                     cv: Optional[Union[int, Iterable, BaseCrossValidator]] = None,
                     groups: Optional[pd.Series] = None,
-                    sample_submission: Optional[pd.DataFrame] = None,
-                    overwrite: bool = False,
                     categorical_feature: Optional[List[str]] = None,
+                    sample_submission: Optional[pd.DataFrame] = None,
                     submission_filename: str = 'submission.csv',
                     type_of_target: str = 'auto',
                     with_mlflow: bool = False,
@@ -66,18 +68,20 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any],
               ...
 
     Args:
-        logging_directory:
-            Path to directory where output of experiment is stored.
         model_params:
             Parameters passed to the constructor of the classifier/regressor object (i.e. LGBMRegressor).
-        fit_params:
-            Parameters passed to the fit method of the estimator.
         X_train:
             Training data. Categorical feature should be casted to pandas categorical type or encoded to integer.
         y:
             Target
         X_test:
             Test data (Optional). If specified, prediction on the test data is performed using ensemble of models.
+        logging_directory:
+            Path to directory where output of experiment is stored.
+        overwrite:
+            If True, contents in ``logging_directory`` will be overwritten.
+        fit_params:
+            Parameters passed to the fit method of the estimator.
         eval_func:
             Function used for logging and calculation of returning scores.
             This parameter isn't passed to GBDT, so you should set objective and eval_metric separately if needed.
@@ -96,12 +100,10 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any],
         sample_submission:
             A sample dataframe alined with test data (Usually in Kaggle, it is available as sample_submission.csv).
             The submission file will be created with the same schema as this dataframe.
-        overwrite:
-            If True, contents in ``logging_directory`` will be overwritten.
-        categorical_feature:
-            List of categorical column names. If ``None``, categorical columns are automatically determined by dtype.
         submission_filename:
             The name of submission file created under logging directory.
+        categorical_feature:
+            List of categorical column names. If ``None``, categorical columns are automatically determined by dtype.
         type_of_target:
             The type of target variable. If ``auto``, type is inferred by ``sklearn.utils.multiclass.type_of_target``.
             Otherwise, ``binary``, ``continuous``, or ``multiclass`` are supported.
@@ -136,6 +138,8 @@ def experiment_gbdt(logging_directory: str, model_params: Dict[str, Any],
     """
     start_time = time.time()
     cv = check_cv(cv, y)
+
+    logging_directory = logging_directory.format(time=datetime.now().strftime('%Y%m%d_%H%M%S'))
 
     with Experiment(logging_directory, overwrite, metrics_filename='scores.txt',
                     with_mlflow=with_mlflow, mlflow_tracking_uri=mlflow_tracking_uri,
