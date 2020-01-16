@@ -109,7 +109,7 @@ def experiment_gbdt(model_params: Dict[str, Any],
             The type of target variable. If ``auto``, type is inferred by ``sklearn.utils.multiclass.type_of_target``.
             Otherwise, ``binary``, ``continuous``, or ``multiclass`` are supported.
         with_mlflow:
-            If True, [mlflow tracking](https://www.mlflow.org/docs/latest/tracking.html) is used.
+            If True, `mlflow tracking <https://www.mlflow.org/docs/latest/tracking.html>`_ is used.
             One instance of ``nyaggle.experiment.Experiment`` corresponds to one run in mlflow.
             Note that all output
             mlflow's directory (``mlruns`` by default).
