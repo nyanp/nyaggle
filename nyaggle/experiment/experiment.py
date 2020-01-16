@@ -3,7 +3,7 @@ import os
 import shutil
 import uuid
 from logging import getLogger, FileHandler, DEBUG, Logger
-from typing import Optional, Union
+from typing import Dict, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -156,6 +156,19 @@ class Experiment(object):
                 The message to be written.
         """
         self.logger.info(text)
+
+
+    def log_param(self, key, value):
+        if self.with_mlflow:
+            import mlflow
+            mlflow.log_param(key, value)
+
+
+    def log_params(self, params: Dict):
+        if self.with_mlflow:
+            import mlflow
+            mlflow.log_params(params)
+
 
     def log_metric(self, name: str, score: float):
         """

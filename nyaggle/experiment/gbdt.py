@@ -151,6 +151,9 @@ def experiment_gbdt(model_params: Dict[str, Any],
         exp.log('Experiment: {}'.format(logging_directory))
         exp.log('Params: {}'.format(model_params))
         exp.log('Features: {}'.format(list(X_train.columns)))
+        exp.log_param('gbdt_type', gbdt_type)
+        exp.log_param('features', list(X_train.columns))
+        exp.log_params(model_params)
     
         if categorical_feature is None:
             categorical_feature = [c for c in X_train.columns if X_train[c].dtype.name in ['object', 'category']]
@@ -165,6 +168,8 @@ def experiment_gbdt(model_params: Dict[str, Any],
             fit_params = {}
         if cat_param_name is not None and cat_param_name not in fit_params:
             fit_params[cat_param_name] = categorical_feature
+
+        exp.log_params(fit_params)
 
         predict_proba = type_of_target == 'multiclass'
         result = cross_validate(models, X_train=X_train, y=y, X_test=X_test, cv=cv, groups=groups,
