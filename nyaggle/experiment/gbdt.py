@@ -19,7 +19,8 @@ from nyaggle.util import plot_importance
 from nyaggle.validation.cross_validate import cross_validate
 from nyaggle.validation.split import check_cv
 
-GBDTResult = namedtuple('LGBResult', ['oof_prediction', 'test_prediction', 'scores', 'models', 'importance', 'time'])
+GBDTResult = namedtuple('LGBResult', ['oof_prediction', 'test_prediction', 'scores', 'models', 'importance', 'time',
+                                      'submission_df'])
 
 
 def experiment_gbdt(model_params: Dict[str, Any],
@@ -135,6 +136,8 @@ def experiment_gbdt(model_params: Dict[str, Any],
             list of pd.DataFrame, feature importance for each fold (type="gain").
         * time:
             Training time in seconds.
+        * submit_df:
+            The dataframe saved as submission.csv
     """
     start_time = time.time()
     cv = check_cv(cv, y)
@@ -187,6 +190,7 @@ def experiment_gbdt(model_params: Dict[str, Any],
         exp.log_numpy('test_prediction', result.test_prediction)
 
         # save submission.csv
+        submit_df = None
         if X_test is not None:
             if sample_submission:
                 submit_df = sample_submission.copy()
@@ -204,7 +208,7 @@ def experiment_gbdt(model_params: Dict[str, Any],
         elapsed_time = time.time() - start_time
 
         return GBDTResult(result.oof_prediction, result.test_prediction,
-                          result.scores, models, result.importance, elapsed_time)
+                          result.scores, models, result.importance, elapsed_time, submit_df)
 
 
 def _dispatch_gbdt(gbdt_type: str, target_type: str, custom_eval: Optional[Callable] = None):

@@ -48,19 +48,31 @@ params = {
     'max_depth': 8
 }
 
-result = experiment_gbdt('output/',
-                         params,
+result = experiment_gbdt(params,
                          X_train,
                          y_train,
                          X_test)
+                         
+# You can get outputs that needed in data science competitions with 1 API
 
 print(result.test_prediction)  # Test prediction in numpy array
 print(result.oof_prediction)   # Out-of-fold prediction in numpy array
 print(result.models)           # Trained models for each fold
 print(result.importance)       # Feature importance for each fold
 print(result.scores)           # Evalulation metrics for each fold
-```
+print(result.time)             # Elapsed time
+print(result.submission_df)    # The output dataframe saved as submission.csv
 
+# ...and all outputs have been saved under the logging directory (default: output/yyyymmdd_HHMMSS).
+
+
+# You can use it with mlflow and track your experiments throught mlflow-ui
+result = experiment_gbdt(params,
+                         X_train,
+                         y_train,
+                         X_test,
+                         with_mlflow=True)
+```
 
 
 ### Feature Engineering
