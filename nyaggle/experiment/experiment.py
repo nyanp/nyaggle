@@ -22,6 +22,7 @@ class Experiment(object):
       <logging_directory>/
           <log_filename>            <== output of log()
           <metrics_filename>        <== output of log_metrics(), format: name,score
+          <params_filename>         <== output of log_param(), format: key,value
           mlflow.json               <== (optional) corresponding mlflow's run_id, experiment_id are logged.
 
 
@@ -36,6 +37,8 @@ class Experiment(object):
             The name of the debug log file created under logging_directory.
         metrics_filename:
             The name of the score log file created under logging_directory.
+        params_filename:
+            The name of the parameter log file created under logging_directory.
         custom_logger:
             A custom logger to be used instead of default logger.
         with_mlflow:
@@ -57,6 +60,7 @@ class Experiment(object):
                  overwrite: bool = False,
                  log_filename: str = 'log.txt',
                  metrics_filename: str = 'metrics.txt',
+                 params_filename: str = 'params.txt',
                  custom_logger: Optional[Logger] = None,
                  with_mlflow: bool = False,
                  mlflow_experiment_id: Optional[Union[int, str]] = None,
@@ -78,6 +82,7 @@ class Experiment(object):
             self.is_custom = False
         self.metrics_path = os.path.join(logging_directory, metrics_filename)
         self.metrics = open(self.metrics_path, mode='w')
+        self.params = open(os.path.join(logging_directory, params_filename), mode='w')
 
         if self.with_mlflow:
             requires_mlflow()
@@ -115,6 +120,7 @@ class Experiment(object):
         Stop current experiment.
         """
         self.metrics.close()
+        self.params.close()
 
         if not self.is_custom:
             for h in self.logger.handlers:
@@ -157,14 +163,32 @@ class Experiment(object):
         """
         self.logger.info(text)
 
-
     def log_param(self, key, value):
+        """
+        Logs a key-value pair for the experiment.
+
+        Args:
+            key: parameter name
+            value: parameter value
+        """
+        self.params.write('{},{}\n'.format(key, value))
+        self.params.flush()
+
         if self.with_mlflow:
             import mlflow
             mlflow.log_param(key, value)
 
-
     def log_params(self, params: Dict):
+        """
+        Logs a batch of params for the experiments.
+
+        Args:
+            params: dictionary of parameters
+        """
+        for k, v in params.items():
+            self.params.write('{},{}\n'.format(k, v))
+        self.params.flush()
+
         if self.with_mlflow:
             import mlflow
             mlflow.log_params(params)
