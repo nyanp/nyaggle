@@ -24,7 +24,55 @@ def check_cv(cv: Union[int, Iterable, BaseCrossValidator] = 5,
     return model_selection.check_cv(cv, y, stratified)
 
 
-class TimeSeriesSplit(object):
+class TakeFirst(BaseCrossValidator):
+    """ Returns the first N folds of the base validator
+
+    This validator wraps the base validator to take first n folds.
+
+    Args:
+        n:
+            The number of folds.
+        base_validator:
+            The base validator to be wrapped.
+    Example:
+        >>> import numpy as np
+        >>> import pandas as pd
+        >>> from sklearn.model_selection import KFold
+        >>> from nyaggle.validation import TakeFirst
+
+        >>> # take the first 3 folds out of 5
+        >>> split = TakeFirst(3, KFold(5))
+        >>> folds.get_n_splits()
+        3
+    """
+    def __init__(self, n: int, base_validator: BaseCrossValidator):
+        self.base_validator = base_validator
+        self.n = n
+
+    def get_n_splits(self, X=None, y=None, groups=None):
+        return self.n
+
+    def split(self, X, y=None, groups=None):
+        """
+        Generate indices to split data into training and test set.
+
+        Args:
+            X:
+                Training data.
+            y:
+                Target.
+            groups:
+                Group indices.
+
+        Yields:
+            The training set and the testing set indices for that split.
+        """
+        generator = self.base_validator.split(X, y, groups)
+        for i in range(min(self.n, self.base_validator.get_n_splits(X, y, groups))):
+            yield next(generator)
+
+
+class TimeSeriesSplit(BaseCrossValidator):
     """ Time Series cross-validator
 
     Time Series cross-validator which provides train/test indices to split variable interval time series data.
@@ -69,7 +117,6 @@ class TimeSeriesSplit(object):
         >>> test_index
         [3, 4]
     """
-
     datepair = Tuple[Union[datetime, str], Union[datetime, str]]
 
     def __init__(self, source: Union[pd.Series, str],
