@@ -142,6 +142,8 @@ def experiment_gbdt(model_params: Dict[str, Any],
     start_time = time.time()
     cv = check_cv(cv, y)
 
+    _check_input(X_train, y, X_test)
+
     logging_directory = logging_directory.format(time=datetime.now().strftime('%Y%m%d_%H%M%S'))
 
     with Experiment(logging_directory, overwrite, metrics_filename='scores.txt',
@@ -249,3 +251,13 @@ def _save_model(gbdt_type: str, model: Union[CatBoost, LGBMModel], logging_direc
         model.booster_.save_model(path)
 
     exp.log_artifact(path)
+
+
+def _check_input(X_train: pd.DataFrame, y: pd.Series,
+                 X_test: Optional[pd.DataFrame] = None):
+    assert len(X_train) == len(y), "length of X_train and y are different. len(X_train) = {}, len(y) = {}".format(
+        len(X_train), len(y)
+    )
+
+    if X_test is not None:
+        assert list(X_train.columns) == list(X_test.columns), "columns are different between X_train and X_test"
