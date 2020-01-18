@@ -3,11 +3,46 @@ from datetime import datetime
 import pytest
 import numpy as np
 import pandas as pd
+from sklearn.model_selection import KFold
+
 import nyaggle.validation.split as split
 
 
 def _random_uniform_dates(start_date: str, n_days: int, size: int):
     return pd.to_datetime(start_date) + pd.to_timedelta(np.random.randint(0, n_days, size=size), 'd')
+
+
+def test_take():
+    df = pd.DataFrame()
+    df['id'] = np.arange(10)
+
+    folds = split.Take(2, KFold(5)).split(df)
+
+    train_index, test_index = next(folds)
+    assert np.array_equal(test_index, np.array([0, 1]))
+
+    train_index, test_index = next(folds)
+    assert np.array_equal(test_index, np.array([2, 3]))
+
+    with pytest.raises(StopIteration):
+        next(folds)
+
+
+def test_take_over():
+    df = pd.DataFrame()
+    df['id'] = np.arange(10)
+
+    # k > base_validator.n_splits
+    folds = split.Take(3, KFold(2)).split(df)
+
+    train_index, test_index = next(folds)
+    assert np.array_equal(test_index, np.array([0, 1, 2, 3, 4]))
+
+    train_index, test_index = next(folds)
+    assert np.array_equal(test_index, np.array([5, 6, 7, 8, 9]))
+
+    with pytest.raises(StopIteration):
+        next(folds)
 
 
 def test_time_series_split():

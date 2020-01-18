@@ -24,7 +24,7 @@ def check_cv(cv: Union[int, Iterable, BaseCrossValidator] = 5,
     return model_selection.check_cv(cv, y, stratified)
 
 
-class TakeFirst(BaseCrossValidator):
+class Take(BaseCrossValidator):
     """ Returns the first N folds of the base validator
 
     This validator wraps the base validator to take first n folds.
@@ -38,10 +38,10 @@ class TakeFirst(BaseCrossValidator):
         >>> import numpy as np
         >>> import pandas as pd
         >>> from sklearn.model_selection import KFold
-        >>> from nyaggle.validation import TakeFirst
+        >>> from nyaggle.validation import Take
 
         >>> # take the first 3 folds out of 5
-        >>> split = TakeFirst(3, KFold(5))
+        >>> split = Take(3, KFold(5))
         >>> folds.get_n_splits()
         3
     """
