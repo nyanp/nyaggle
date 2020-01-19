@@ -8,7 +8,6 @@ nyaggle.feature.category_encoder
     :members:
     :imported-members:
     :inherited-members:
-    :show-inheritance:
 
 nyaggle.feature.nlp
 ---------------------------
@@ -16,7 +15,13 @@ nyaggle.feature.nlp
 .. automodule:: nyaggle.feature.nlp
     :members:
     :imported-members:
-    :show-inheritance:
+
+nyaggle.feature_store
+---------------------------
+
+.. automodule:: nyaggle.feature_store
+    :members:
+    :imported-members:
 
 nyaggle.validation
 --------------------------
@@ -24,7 +29,6 @@ nyaggle.validation
 .. automodule:: nyaggle.validation
     :members:
     :imported-members:
-    :show-inheritance:
 
 nyaggle.util
 -----------------------
@@ -32,7 +36,6 @@ nyaggle.util
 .. automodule:: nyaggle.util
     :members:
     :imported-members:
-    :show-inheritance:
 
 nyaggle.experiment
 -----------------------
@@ -40,7 +43,6 @@ nyaggle.experiment
 .. automodule:: nyaggle.experiment
     :members:
     :imported-members:
-    :show-inheritance:
 
 nyaggle.hyper_parameters
 --------------------------
@@ -48,4 +50,3 @@ nyaggle.hyper_parameters
 .. automodule:: nyaggle.hyper_parameters
     :members:
     :imported-members:
-    :show-inheritance:
