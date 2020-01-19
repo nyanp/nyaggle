@@ -3,10 +3,10 @@ from lightgbm import LGBMClassifier
 from sklearn.datasets import make_classification, make_regression
 from sklearn.linear_model import RidgeClassifier, Ridge
 from sklearn.metrics import roc_auc_score, r2_score
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, KFold
 
 from nyaggle.testing import make_classification_df
-from nyaggle.validation.cross_validate import cross_validate
+from nyaggle.validation import cross_validate, Take
 
 
 def test_cv_sklean_binary():
@@ -114,8 +114,10 @@ def test_cv_partial_evaluate():
         nonlocal n
         n += 1
 
-    pred_oof, pred_test, scores, _ = cross_validate(model, X_train, y_train, X_test, cv=5, eval_func=roc_auc_score,
-                                                    nfolds_evaluate=2, on_each_fold=_fold_count)
+    cv = Take(2, KFold(5))
+
+    pred_oof, pred_test, scores, _ = cross_validate(model, X_train, y_train, X_test, cv=cv, eval_func=roc_auc_score,
+                                                    on_each_fold=_fold_count)
 
     assert len(scores) == 2 + 1
     assert scores[-1] >= 0.8  # overall auc
