@@ -27,7 +27,6 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
                    on_each_fold: Optional[Callable[[int, BaseEstimator, pd.DataFrame, pd.Series], None]] = None,
                    fit_params: Optional[Dict] = None,
                    importance_type: str = 'gain',
-                   nfolds_evaluate: Optional[int] = None,
                    early_stopping: bool = True,
                    type_of_target: str = 'auto') -> CVResult:
     """
@@ -64,9 +63,6 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
         importance_type:
             The type of feature importance to be used to calculate result.
             Used only in ``LGBMClassifier`` and ``LGBMRegressor``.
-        nfolds_evaluate:
-            If not ``None``, and ``nfolds_evaluate`` < ``nfolds``, only ``nfolds_evaluate`` folds are evaluated.
-            For example, if ``nfolds = 5`` and ``nfolds_evaluate = 2``, only the first 2 folds out of 5 are evaluated.
         early_stopping:
             If ``True``, ``eval_set`` will be added to ``fit_params`` for each fold.
             ``early_stopping_rounds = 100`` will also be appended to fit_params if it does not already have one.
@@ -147,9 +143,6 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
     importance = []
 
     for n, (train_idx, valid_idx) in enumerate(cv.split(X_train, y, groups)):
-        if nfolds_evaluate is not None and nfolds_evaluate == n:
-            break
-
         start_time = time.time()
 
         train_x, train_y = X_train.iloc[train_idx], y.iloc[train_idx]
