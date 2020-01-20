@@ -76,8 +76,7 @@ def adversarial_validate(X_train: pd.DataFrame,
         cv = Take(1, KFold(5))
 
     result = cross_validate(estimator, concat, y, None, cv=cv, predict_proba=True,
-                            eval_func=roc_auc_score, fit_params={'verbose': -1}, importance_type=importance_type,
-                            nfolds_evaluate=nfolds_evaluate)
+                            eval_func=roc_auc_score, fit_params={'verbose': -1}, importance_type=importance_type)
 
     importance = pd.concat(result.importance)
     importance = importance.groupby('feature')['importance'].mean().reset_index()
