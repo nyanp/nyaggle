@@ -7,8 +7,10 @@ from catboost import CatBoostClassifier
 from lightgbm import LGBMClassifier
 from sklearn.base import BaseEstimator
 from sklearn.metrics import roc_auc_score
+from sklearn.model_selection import KFold
 
 from nyaggle.validation.cross_validate import cross_validate
+from nyaggle.validation.split import Take
 
 ADVResult = namedtuple('CVResult', ['auc', 'importance'])
 
@@ -17,7 +19,7 @@ def adversarial_validate(X_train: pd.DataFrame,
                          X_test: pd.DataFrame,
                          importance_type: str = 'gain',
                          estimator: Optional[BaseEstimator] = None,
-                         single_fold: bool = True) -> ADVResult:
+                         cv = None) -> ADVResult:
     """
     Perform adversarial validation between X_train and X_test.
 
@@ -30,9 +32,8 @@ def adversarial_validate(X_train: pd.DataFrame,
             The type of feature importance calculated.
         estimator:
             The custom estimator. If None, LGBMClassifier is automatically used.
-        single_fold:
-            If True, validation score is calculated on 20% of data.
-            If False, validation score is calculated by 5-fold cross-validation.
+        cv:
+            Cross validation split.
 
     Returns:
         Namedtuple with following members
@@ -71,11 +72,10 @@ def adversarial_validate(X_train: pd.DataFrame,
         assert isinstance(estimator, (LGBMClassifier, CatBoostClassifier)), \
             'Only CatBoostClassifier or LGBMClassifier is allowed'
 
-    if single_fold:
-        nfolds_evaluate = 1
-    else:
-        nfolds_evaluate = None
-    result = cross_validate(estimator, concat, y, None, cv=5, predict_proba=True,
+    if cv is None:
+        cv = Take(1, KFold(5))
+
+    result = cross_validate(estimator, concat, y, None, cv=cv, predict_proba=True,
                             eval_func=roc_auc_score, fit_params={'verbose': -1}, importance_type=importance_type,
                             nfolds_evaluate=nfolds_evaluate)
 
