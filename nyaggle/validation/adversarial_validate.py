@@ -33,8 +33,7 @@ def adversarial_validate(X_train: pd.DataFrame,
         estimator:
             The custom estimator. If None, LGBMClassifier is automatically used.
         cv:
-            Cross validation split.
-
+            Cross validation split. If ``None``, the first fold out of 5 fold is used as validation.
     Returns:
         Namedtuple with following members
 
@@ -73,7 +72,7 @@ def adversarial_validate(X_train: pd.DataFrame,
             'Only CatBoostClassifier or LGBMClassifier is allowed'
 
     if cv is None:
-        cv = Take(1, KFold(5))
+        cv = Take(1, KFold(5, shuffle=True, random_state=0))
 
     result = cross_validate(estimator, concat, y, None, cv=cv, predict_proba=True,
                             eval_func=roc_auc_score, fit_params={'verbose': -1}, importance_type=importance_type)
