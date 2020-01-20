@@ -180,6 +180,10 @@ def experiment_gbdt(model_params: Dict[str, Any],
                                 logger=exp.get_logger(), eval_func=eval_func, fit_params=fit_params,
                                 predict_proba=predict_proba, type_of_target=type_of_target)
 
+        # save oof
+        exp.log_numpy('oof_prediction', result.oof_prediction)
+        exp.log_numpy('test_prediction', result.test_prediction)
+
         for i in range(cv.get_n_splits()):
             exp.log_metric('Fold {}'.format(i + 1), result.scores[i])
         exp.log_metric('Overall', result.scores[-1])
@@ -193,10 +197,6 @@ def experiment_gbdt(model_params: Dict[str, Any],
         # save trained model
         for i, model in enumerate(models):
             _save_model(gbdt_type, model, logging_directory, i + 1, exp)
-    
-        # save oof
-        exp.log_numpy('oof_prediction', result.oof_prediction)
-        exp.log_numpy('test_prediction', result.test_prediction)
 
         # save submission.csv
         submit_df = None
