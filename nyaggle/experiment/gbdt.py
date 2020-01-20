@@ -35,7 +35,7 @@ def experiment_gbdt(model_params: Dict[str, Any],
                     groups: Optional[pd.Series] = None,
                     categorical_feature: Optional[List[str]] = None,
                     sample_submission: Optional[pd.DataFrame] = None,
-                    submission_filename: str = 'submission.csv',
+                    submission_filename: Optional[str] = None,
                     type_of_target: str = 'auto',
                     with_mlflow: bool = False,
                     mlflow_experiment_id: Optional[Union[int, str]] = None,
@@ -102,7 +102,8 @@ def experiment_gbdt(model_params: Dict[str, Any],
             A sample dataframe alined with test data (Usually in Kaggle, it is available as sample_submission.csv).
             The submission file will be created with the same schema as this dataframe.
         submission_filename:
-            The name of submission file created under logging directory.
+            The name of submission file created under logging directory. If ``None``, the basename of the logging
+            directory will be used as a filename.
         categorical_feature:
             List of categorical column names. If ``None``, categorical columns are automatically determined by dtype.
         type_of_target:
@@ -155,6 +156,7 @@ def experiment_gbdt(model_params: Dict[str, Any],
         exp.log('Features: {}'.format(list(X_train.columns)))
         exp.log_param('gbdt_type', gbdt_type)
         exp.log_param('features', list(X_train.columns))
+        exp.log_param('fit_params', fit_params)
         exp.log_params(model_params)
     
         if categorical_feature is None:
@@ -210,6 +212,10 @@ def experiment_gbdt(model_params: Dict[str, Any],
                         submit_df[y] = result.test_prediction[:, i]
                 else:
                     submit_df[y.name] = result.test_prediction
+
+            if submission_filename is None:
+                submission_filename = os.path.basename(logging_directory)
+
             exp.log_dataframe(submission_filename, submit_df, 'csv')
 
         elapsed_time = time.time() - start_time

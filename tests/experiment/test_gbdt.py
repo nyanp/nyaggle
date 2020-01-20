@@ -49,7 +49,7 @@ def test_experiment_lgb_classifier():
         assert roc_auc_score(y_train, result.oof_prediction) >= 0.85
         assert roc_auc_score(y_test, result.test_prediction) >= 0.85
 
-        _check_file_exists(temp_path, ('submission.csv', 'oof_prediction.npy', 'test_prediction.npy', 'scores.txt'))
+        _check_file_exists(temp_path, ('oof_prediction.npy', 'test_prediction.npy', 'scores.txt'))
 
 
 def test_experiment_lgb_regressor():
@@ -68,7 +68,7 @@ def test_experiment_lgb_regressor():
 
         assert mean_squared_error(y_train, result.oof_prediction) == result.scores[-1]
 
-        _check_file_exists(temp_path, ('submission.csv', 'oof_prediction.npy', 'test_prediction.npy', 'scores.txt'))
+        _check_file_exists(temp_path, ('oof_prediction.npy', 'test_prediction.npy', 'scores.txt'))
 
 
 def test_experiment_lgb_multiclass():
@@ -88,7 +88,7 @@ def test_experiment_lgb_multiclass():
         assert result.oof_prediction.shape == (len(y_train), 5)
         assert result.test_prediction.shape == (len(y_test), 5)
 
-        _check_file_exists(temp_path, ('submission.csv', 'oof_prediction.npy', 'test_prediction.npy', 'scores.txt'))
+        _check_file_exists(temp_path, ('oof_prediction.npy', 'test_prediction.npy', 'scores.txt'))
 
 
 def test_experiment_cat_classifier():
@@ -103,7 +103,8 @@ def test_experiment_cat_classifier():
     }
 
     with _get_temp_directory() as temp_path:
-        result = experiment_gbdt(params, X_train, y_train, X_test, temp_path, eval_func=roc_auc_score, gbdt_type='cat')
+        result = experiment_gbdt(params, X_train, y_train, X_test, temp_path, eval_func=roc_auc_score, gbdt_type='cat',
+                                 submission_filename='submission.csv')
 
         assert roc_auc_score(y_train, result.oof_prediction) >= 0.85
         assert roc_auc_score(y_test, result.test_prediction) >= 0.85
@@ -127,7 +128,7 @@ def test_experiment_cat_regressor():
         result = experiment_gbdt(params, X_train, y_train, X_test, temp_path, gbdt_type='cat')
 
         assert mean_squared_error(y_train, result.oof_prediction) == result.scores[-1]
-        _check_file_exists(temp_path, ('submission.csv', 'oof_prediction.npy', 'test_prediction.npy', 'scores.txt'))
+        _check_file_exists(temp_path, ('oof_prediction.npy', 'test_prediction.npy', 'scores.txt'))
 
 
 def test_experiment_cat_multiclass():
@@ -143,7 +144,7 @@ def test_experiment_cat_multiclass():
 
     with _get_temp_directory() as temp_path:
         result = experiment_gbdt(params, X_train, y_train, X_test, temp_path, gbdt_type='cat',
-                                 type_of_target='multiclass')
+                                 type_of_target='multiclass', submission_filename='submission.csv')
 
         assert result.oof_prediction.shape == (len(y_train), 5)
         assert result.test_prediction.shape == (len(y_test), 5)
@@ -170,7 +171,7 @@ def test_experiment_cat_custom_eval():
                                  gbdt_type='cat', eval_func=mean_absolute_error)
 
         assert mean_absolute_error(y_train, result.oof_prediction) == result.scores[-1]
-        _check_file_exists(temp_path, ('submission.csv', 'oof_prediction.npy', 'test_prediction.npy', 'scores.txt'))
+        _check_file_exists(temp_path, ('oof_prediction.npy', 'test_prediction.npy', 'scores.txt'))
 
 
 def test_experiment_without_test_data():
