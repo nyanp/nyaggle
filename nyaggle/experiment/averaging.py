@@ -1,3 +1,4 @@
+import glob
 import os
 from typing import List
 
@@ -31,9 +32,10 @@ def average_results(source_files: List[str], output_filename: str, weight: List[
     for i, s in enumerate(source_files):
         if os.path.isdir(s):
             if input_format == 'csv':
-                s = os.path.join(s, 'submission.csv')
+                pattern = os.path.join(s, '*.csv')
             elif input_format == 'npy':
-                s = os.path.join(s, 'test.npy')
+                pattern = os.path.join(s, 'test.npy')
+            s = glob.glob(pattern)[0]
 
         assert os.path.exists(s), 'File not found: {}'.format(s)
 
@@ -58,7 +60,7 @@ def average_results(source_files: List[str], output_filename: str, weight: List[
             dir = source_files[0]
         else:
             dir = os.path.dirname(source_files[0])
-        path = os.path.join(dir, 'submission.csv')
+        path = glob.glob(os.path.join(dir, '*.csv'))[0]
         df = pd.read_csv(path)
 
     df[df.columns[-1]] = v
