@@ -33,12 +33,6 @@ class Experiment(object):
             Path to directory where output is stored.
         overwrite:
             If True, contents in ``logging_directory`` will be overwritten.
-        log_filename:
-            The name of the debug log file created under logging_directory.
-        metrics_filename:
-            The name of the score log file created under logging_directory.
-        params_filename:
-            The name of the parameter log file created under logging_directory.
         custom_logger:
             A custom logger to be used instead of default logger.
         with_mlflow:
@@ -58,14 +52,13 @@ class Experiment(object):
     def __init__(self,
                  logging_directory: str,
                  overwrite: bool = False,
-                 log_filename: str = 'log.txt',
-                 metrics_filename: str = 'metrics.txt',
-                 params_filename: str = 'params.txt',
                  custom_logger: Optional[Logger] = None,
                  with_mlflow: bool = False,
                  mlflow_experiment_id: Optional[Union[int, str]] = None,
+                 mlflow_run_id: Optional[str] = None,
                  mlflow_run_name: Optional[str] = None,
-                 mlflow_tracking_uri: Optional[str] = None
+                 mlflow_tracking_uri: Optional[str] = None,
+                 logging_mode: str = 'w'
                  ):
         os.makedirs(logging_directory, exist_ok=overwrite)
         self.logging_directory = logging_directory
@@ -76,19 +69,26 @@ class Experiment(object):
             self.is_custom = True
         else:
             self.logger = getLogger(str(uuid.uuid4()))
-            self.log_path = os.path.join(logging_directory, log_filename)
+            self.log_path = os.path.join(logging_directory, 'log.txt')
             self.logger.addHandler(FileHandler(self.log_path))
             self.logger.setLevel(DEBUG)
             self.is_custom = False
-        self.metrics_path = os.path.join(logging_directory, metrics_filename)
-        self.metrics = open(self.metrics_path, mode='w')
-        self.params = open(os.path.join(logging_directory, params_filename), mode='w')
+        self.metrics_path = os.path.join(logging_directory, 'metrics.txt')
+        self.metrics = open(self.metrics_path, mode=logging_mode)
+        self.params = open(os.path.join(logging_directory, 'params.txt'), mode=logging_mode)
 
         if self.with_mlflow:
             requires_mlflow()
-            self.mlflow_experiment_id = mlflow_experiment_id
-            self.mlflow_run_name = mlflow_run_name or logging_directory
-            self.mlflow_tracking_uri = mlflow_tracking_uri
+
+            self.mlflow_run_id = mlflow_run_id
+            if mlflow_run_id is not None:
+                self.mlflow_experiment_id = None
+                self.mlflow_run_name = None
+                self.mlflow_tracking_uri = None
+            else:
+                self.mlflow_experiment_id = mlflow_experiment_id
+                self.mlflow_run_name = mlflow_run_name or logging_directory
+                self.mlflow_tracking_uri = mlflow_tracking_uri
 
     def __enter__(self):
         self.start()
@@ -96,6 +96,24 @@ class Experiment(object):
 
     def __exit__(self, ex_type, ex_value, trace):
         self.stop()
+
+    @classmethod
+    def continue_from(cls, logging_directory: str):
+        params = {
+            'logging_directory': logging_directory,
+            'overwrite': True,
+            'logging_mode': 'a'
+        }
+
+        mlflow_path = os.path.join(logging_directory, 'mlflow.json')
+        if os.path.exists(mlflow_path):
+            with open(mlflow_path, 'r') as f:
+                mlflow_metadata = json.load(f)
+
+                params['with_mlflow'] = True
+                params['mlflow_run_id'] = mlflow_metadata['run_id']
+
+        return cls(**params)
 
     def start(self):
         """
@@ -105,8 +123,8 @@ class Experiment(object):
             import mlflow
             if self.mlflow_tracking_uri is not None:
                 mlflow.set_tracking_uri(self.mlflow_tracking_uri)
-            active_run = mlflow.start_run(experiment_id=self.mlflow_experiment_id, run_name=self.mlflow_run_name)
-
+            active_run = mlflow.start_run(experiment_id=self.mlflow_experiment_id, run_name=self.mlflow_run_name,
+                                          run_id=self.mlflow_run_id)
             mlflow_metadata = {
                 'artifact_uri': active_run.info.artifact_uri,
                 'experiment_id': active_run.info.experiment_id,
@@ -126,10 +144,11 @@ class Experiment(object):
             for h in self.logger.handlers:
                 h.close()
 
-            if self.with_mlflow:
-                import mlflow
-                mlflow.log_artifact(self.log_path)
-                mlflow.log_artifact(self.metrics_path)
+        if self.with_mlflow:
+            import mlflow
+            mlflow.log_artifact(self.log_path)
+            mlflow.log_artifact(self.metrics_path)
+            mlflow.end_run()
 
     def get_logger(self) -> Logger:
         """
@@ -192,7 +211,6 @@ class Experiment(object):
         if self.with_mlflow:
             import mlflow
             mlflow.log_params(params)
-
 
     def log_metric(self, name: str, score: float):
         """
