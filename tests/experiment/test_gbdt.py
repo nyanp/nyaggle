@@ -1,9 +1,5 @@
 import json
 import os
-import shutil
-import tempfile
-import uuid
-from contextlib import contextmanager
 from urllib.parse import urlparse, unquote
 
 import numpy as np
@@ -13,23 +9,12 @@ from sklearn.metrics import roc_auc_score, mean_squared_error, mean_absolute_err
 from sklearn.model_selection import GroupKFold, KFold, train_test_split
 
 from nyaggle.experiment import experiment_gbdt
-from nyaggle.testing import make_classification_df, make_regression_df
+from nyaggle.testing import make_classification_df, make_regression_df, get_temp_directory
 
 
 def _check_file_exists(directory, files):
     for f in files:
         assert os.path.exists(os.path.join(directory, f)), 'File not found: {}'.format(f)
-
-
-@contextmanager
-def _get_temp_directory() -> str:
-    path = None
-    try:
-        path = os.path.join(tempfile.gettempdir(), uuid.uuid4().hex)
-        yield path
-    finally:
-        if path:
-            shutil.rmtree(path, ignore_errors=True)
 
 
 def test_experiment_lgb_classifier():
@@ -43,13 +28,13 @@ def test_experiment_lgb_classifier():
         'max_depth': 8
     }
 
-    with _get_temp_directory() as temp_path:
+    with get_temp_directory() as temp_path:
         result = experiment_gbdt(params, X_train, y_train, X_test, temp_path, eval_func=roc_auc_score)
 
         assert roc_auc_score(y_train, result.oof_prediction) >= 0.85
         assert roc_auc_score(y_test, result.test_prediction) >= 0.85
 
-        _check_file_exists(temp_path, ('oof_prediction.npy', 'test_prediction.npy', 'scores.txt'))
+        _check_file_exists(temp_path, ('oof_prediction.npy', 'test_prediction.npy', 'metrics.txt'))
 
 
 def test_experiment_lgb_regressor():
@@ -63,12 +48,12 @@ def test_experiment_lgb_regressor():
         'max_depth': 8
     }
 
-    with _get_temp_directory() as temp_path:
+    with get_temp_directory() as temp_path:
         result = experiment_gbdt(params, X_train, y_train, X_test, temp_path)
 
-        assert mean_squared_error(y_train, result.oof_prediction) == result.scores[-1]
+        assert mean_squared_error(y_train, result.oof_prediction) == result.metrics[-1]
 
-        _check_file_exists(temp_path, ('oof_prediction.npy', 'test_prediction.npy', 'scores.txt'))
+        _check_file_exists(temp_path, ('oof_prediction.npy', 'test_prediction.npy', 'metrics.txt'))
 
 
 def test_experiment_lgb_multiclass():
@@ -82,13 +67,13 @@ def test_experiment_lgb_multiclass():
         'max_depth': 8
     }
 
-    with _get_temp_directory() as temp_path:
+    with get_temp_directory() as temp_path:
         result = experiment_gbdt(params, X_train, y_train, X_test, temp_path)
 
         assert result.oof_prediction.shape == (len(y_train), 5)
         assert result.test_prediction.shape == (len(y_test), 5)
 
-        _check_file_exists(temp_path, ('oof_prediction.npy', 'test_prediction.npy', 'scores.txt'))
+        _check_file_exists(temp_path, ('oof_prediction.npy', 'test_prediction.npy', 'metrics.txt'))
 
 
 def test_experiment_cat_classifier():
@@ -102,7 +87,7 @@ def test_experiment_cat_classifier():
         'num_boost_round': 100
     }
 
-    with _get_temp_directory() as temp_path:
+    with get_temp_directory() as temp_path:
         result = experiment_gbdt(params, X_train, y_train, X_test, temp_path, eval_func=roc_auc_score, gbdt_type='cat',
                                  submission_filename='submission.csv')
 
@@ -110,7 +95,7 @@ def test_experiment_cat_classifier():
         assert roc_auc_score(y_test, result.test_prediction) >= 0.85
         assert list(pd.read_csv(os.path.join(temp_path, 'submission.csv')).columns) == ['id', 'tgt']
 
-        _check_file_exists(temp_path, ('submission.csv', 'oof_prediction.npy', 'test_prediction.npy', 'scores.txt'))
+        _check_file_exists(temp_path, ('submission.csv', 'oof_prediction.npy', 'test_prediction.npy', 'metrics.txt'))
 
 
 def test_experiment_cat_regressor():
@@ -124,11 +109,11 @@ def test_experiment_cat_regressor():
         'num_boost_round': 100
     }
 
-    with _get_temp_directory() as temp_path:
+    with get_temp_directory() as temp_path:
         result = experiment_gbdt(params, X_train, y_train, X_test, temp_path, gbdt_type='cat')
 
-        assert mean_squared_error(y_train, result.oof_prediction) == result.scores[-1]
-        _check_file_exists(temp_path, ('oof_prediction.npy', 'test_prediction.npy', 'scores.txt'))
+        assert mean_squared_error(y_train, result.oof_prediction) == result.metrics[-1]
+        _check_file_exists(temp_path, ('oof_prediction.npy', 'test_prediction.npy', 'metrics.txt'))
 
 
 def test_experiment_cat_multiclass():
@@ -142,7 +127,7 @@ def test_experiment_cat_multiclass():
         'num_boost_round': 100
     }
 
-    with _get_temp_directory() as temp_path:
+    with get_temp_directory() as temp_path:
         result = experiment_gbdt(params, X_train, y_train, X_test, temp_path, gbdt_type='cat',
                                  type_of_target='multiclass', submission_filename='submission.csv')
 
@@ -151,7 +136,7 @@ def test_experiment_cat_multiclass():
 
         assert list(pd.read_csv(os.path.join(temp_path, 'submission.csv')).columns) == ['id', '0', '1', '2', '3', '4']
 
-        _check_file_exists(temp_path, ('submission.csv', 'oof_prediction.npy', 'test_prediction.npy', 'scores.txt'))
+        _check_file_exists(temp_path, ('submission.csv', 'oof_prediction.npy', 'test_prediction.npy', 'metrics.txt'))
 
 
 def test_experiment_cat_custom_eval():
@@ -166,12 +151,12 @@ def test_experiment_cat_custom_eval():
         'eval_metric': 'MAE'
     }
 
-    with _get_temp_directory() as temp_path:
+    with get_temp_directory() as temp_path:
         result = experiment_gbdt(params, X_train, y_train, X_test, temp_path,
                                  gbdt_type='cat', eval_func=mean_absolute_error)
 
-        assert mean_absolute_error(y_train, result.oof_prediction) == result.scores[-1]
-        _check_file_exists(temp_path, ('oof_prediction.npy', 'test_prediction.npy', 'scores.txt'))
+        assert mean_absolute_error(y_train, result.oof_prediction) == result.metrics[-1]
+        _check_file_exists(temp_path, ('oof_prediction.npy', 'test_prediction.npy', 'metrics.txt'))
 
 
 def test_experiment_without_test_data():
@@ -185,11 +170,11 @@ def test_experiment_without_test_data():
         'max_depth': 8
     }
 
-    with _get_temp_directory() as temp_path:
+    with get_temp_directory() as temp_path:
         result = experiment_gbdt(params, X_train, y_train, None, temp_path)
 
         assert roc_auc_score(y_train, result.oof_prediction) >= 0.85
-        _check_file_exists(temp_path, ('oof_prediction.npy', 'scores.txt'))
+        _check_file_exists(temp_path, ('oof_prediction.npy', 'metrics.txt'))
 
 
 def test_experiment_fit_params():
@@ -204,10 +189,10 @@ def test_experiment_fit_params():
         'n_estimators': 500
     }
 
-    with _get_temp_directory() as temp_path:
+    with get_temp_directory() as temp_path:
         result1 = experiment_gbdt(params, X_train, y_train, X_test,
                                   temp_path, fit_params={'early_stopping_rounds': None})
-    with _get_temp_directory() as temp_path:
+    with get_temp_directory() as temp_path:
         result2 = experiment_gbdt(params, X_train, y_train, X_test,
                                   temp_path, fit_params={'early_stopping_rounds': 5})
 
@@ -226,10 +211,10 @@ def test_experiment_mlflow():
         'max_depth': 8
     }
 
-    with _get_temp_directory() as temp_path:
+    with get_temp_directory() as temp_path:
         experiment_gbdt(params, X_train, y_train, None, temp_path, with_mlflow=True)
 
-        _check_file_exists(temp_path, ('oof_prediction.npy', 'scores.txt', 'mlflow.json'))
+        _check_file_exists(temp_path, ('oof_prediction.npy', 'metrics.txt', 'mlflow.json'))
 
         # test if output files are also stored in the mlflow artifact uri
         with open(os.path.join(temp_path, 'mlflow.json'), 'r') as f:
@@ -237,7 +222,7 @@ def test_experiment_mlflow():
             p = unquote(urlparse(mlflow_meta['artifact_uri']).path)
             if os.name == 'nt' and p.startswith("/"):
                 p = p[1:]
-            _check_file_exists(p, ('oof_prediction.npy', 'scores.txt'))
+            _check_file_exists(p, ('oof_prediction.npy', 'metrics.txt'))
 
 
 def test_experiment_already_exists():
@@ -251,7 +236,7 @@ def test_experiment_already_exists():
         'max_depth': 8
     }
 
-    with _get_temp_directory() as temp_path:
+    with get_temp_directory() as temp_path:
         experiment_gbdt(params, X_train, y_train, None, temp_path, overwrite=True)
 
         # result is overwrited by default
@@ -272,7 +257,7 @@ def test_submission_filename():
         'max_depth': 8
     }
 
-    with _get_temp_directory() as temp_path:
+    with get_temp_directory() as temp_path:
         experiment_gbdt(params, X_train, y_train, X_test, temp_path, submission_filename='sub.csv')
 
         df = pd.read_csv(os.path.join(temp_path, 'sub.csv'))
@@ -290,10 +275,10 @@ def test_experiment_manual_cv_kfold():
         'max_depth': 8
     }
 
-    with _get_temp_directory() as temp_path:
+    with get_temp_directory() as temp_path:
         result = experiment_gbdt(params, X_train, y_train, None, temp_path, cv=KFold(4))
         assert len(result.models) == 4
-        assert len(result.scores) == 4 + 1
+        assert len(result.metrics) == 4 + 1
 
 
 def test_experiment_manual_cv_int():
@@ -307,10 +292,10 @@ def test_experiment_manual_cv_int():
         'max_depth': 8
     }
 
-    with _get_temp_directory() as temp_path:
+    with get_temp_directory() as temp_path:
         result = experiment_gbdt(params, X_train, y_train, None, temp_path, cv=KFold(2))
         assert len(result.models) == 2
-        assert len(result.scores) == 2 + 1
+        assert len(result.metrics) == 2 + 1
 
 
 def test_experiment_manual_cv_group():
@@ -338,6 +323,6 @@ def test_experiment_manual_cv_group():
         'max_depth': 8
     }
 
-    with _get_temp_directory() as temp_path:
+    with get_temp_directory() as temp_path:
         result = experiment_gbdt(params, X_train, y_train, X_test, temp_path, cv=GroupKFold(2), groups=grp)
-        assert result.scores[-1] < 0.7
+        assert result.metrics[-1] < 0.7

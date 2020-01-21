@@ -19,7 +19,7 @@ from nyaggle.util import plot_importance
 from nyaggle.validation.cross_validate import cross_validate
 from nyaggle.validation.split import check_cv
 
-GBDTResult = namedtuple('LGBResult', ['oof_prediction', 'test_prediction', 'scores', 'models', 'importance', 'time',
+GBDTResult = namedtuple('LGBResult', ['oof_prediction', 'test_prediction', 'metrics', 'models', 'importance', 'time',
                                       'submission_df'])
 
 
@@ -64,6 +64,8 @@ def experiment_gbdt(model_params: Dict[str, Any],
           oof_prediction.npy       <== Out of fold prediction in numpy array format
           test_prediction.npy      <== Test prediction in numpy array format
           submission.csv           <== Submission csv file
+          metrics.txt              <== Metrics
+          params.txt               <== Parameters
           models/
               fold1                <== The trained model in fold 1
               ...
@@ -128,7 +130,7 @@ def experiment_gbdt(model_params: Dict[str, Any],
             numpy array, shape (len(X_train),) Predicted value on Out-of-Fold validation data.
         * test_prediction:
             numpy array, shape (len(X_test),) Predicted value on test data. ``None`` if X_test is ``None``
-        * scores:
+        * metrics:
             list of float, shape(nfolds+1) ``scores[i]`` denotes validation score in i-th fold.
             ``scores[-1]`` is overall score.
         * models:
@@ -147,8 +149,7 @@ def experiment_gbdt(model_params: Dict[str, Any],
 
     logging_directory = logging_directory.format(time=datetime.now().strftime('%Y%m%d_%H%M%S'))
 
-    with Experiment(logging_directory, overwrite, metrics_filename='scores.txt',
-                    with_mlflow=with_mlflow, mlflow_tracking_uri=mlflow_tracking_uri,
+    with Experiment(logging_directory, overwrite, with_mlflow=with_mlflow, mlflow_tracking_uri=mlflow_tracking_uri,
                     mlflow_experiment_id=mlflow_experiment_id, mlflow_run_name=mlflow_run_name) as exp:
         exp.log('GBDT: {}'.format(gbdt_type))
         exp.log('Experiment: {}'.format(logging_directory))

@@ -1,7 +1,13 @@
+import os
+import shutil
+import tempfile
+import uuid
+from contextlib import contextmanager
 from typing import Tuple
+
 import numpy as np
 import pandas as pd
-from sklearn.datasets import make_classification, make_regression, make_multilabel_classification
+from sklearn.datasets import make_classification, make_regression
 
 
 def make_classification_df(n_samples: int = 1024,
@@ -52,3 +58,17 @@ def make_regression_df(n_samples: int = 1024,
             pd.Series(np.random.choice(['A', 'B', None], size=n_samples)).astype(str).astype('category')
 
     return X, y
+
+
+
+
+@contextmanager
+def get_temp_directory() -> str:
+    path = None
+    try:
+        path = os.path.join(tempfile.gettempdir(), uuid.uuid4().hex)
+        yield path
+    finally:
+        if path:
+            shutil.rmtree(path, ignore_errors=True)
+
