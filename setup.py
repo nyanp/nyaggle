@@ -34,6 +34,7 @@ setup(
         'matplotlib',
         'more-itertools',
         'numpy',
+        'optuna>=1.0.0',
         'pandas',
         'seaborn',
         'sklearn',
