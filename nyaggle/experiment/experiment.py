@@ -295,3 +295,16 @@ class Experiment(object):
             import mlflow
             mlflow.log_artifact(src_file_path)
 
+
+def add_leaderboard_score(logging_directory: str, score: float):
+    """
+    Record leaderboard score to the existing experiment directory.
+
+    Args:
+        logging_directory:
+            The directory to be added
+        score:
+            Leaderboard score
+    """
+    with Experiment.continue_from(logging_directory) as e:
+        e.log_metric('LB', score)
