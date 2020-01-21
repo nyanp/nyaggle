@@ -248,8 +248,8 @@ def experiment_gbdt(model_params: Dict[str, Any],
         if tuning_time_budget is not None:
             assert gbdt_type == 'lgbm', 'auto-tuning with catboost is not supported'
             model_params = find_best_parameter(model_params, X_train, y, cv=cv, groups=groups,
-                                               time_budget=tuning_time_budget)
-            exp.log_param('model_params(after tuning)', model_params)
+                                               time_budget=tuning_time_budget, type_of_target=type_of_target)
+            exp.log_param('model_params_tuned', model_params)
 
         if categorical_feature is None:
             categorical_feature = [c for c in X_train.columns if X_train[c].dtype.name in ['object', 'category']]
