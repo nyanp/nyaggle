@@ -24,11 +24,11 @@ GBDTResult = namedtuple('LGBResult', ['oof_prediction', 'test_prediction', 'metr
                                       'submission_df'])
 
 
-def find_best_parameter(base_param: Dict, X: pd.DataFrame, y: pd.Series,
-                        cv: Optional[Union[int, Iterable, BaseCrossValidator]] = None,
-                        groups: Optional[pd.Series] = None,
-                        time_budget: Optional[int] = None,
-                        type_of_target: str = 'auto') -> Dict:
+def find_best_lgbm_parameter(base_param: Dict, X: pd.DataFrame, y: pd.Series,
+                             cv: Optional[Union[int, Iterable, BaseCrossValidator]] = None,
+                             groups: Optional[pd.Series] = None,
+                             time_budget: Optional[int] = None,
+                             type_of_target: str = 'auto') -> Dict:
     """
     Search hyperparameter for lightgbm using optuna.
 
@@ -247,8 +247,8 @@ def experiment_gbdt(model_params: Dict[str, Any],
 
         if tuning_time_budget is not None:
             assert gbdt_type == 'lgbm', 'auto-tuning with catboost is not supported'
-            model_params = find_best_parameter(model_params, X_train, y, cv=cv, groups=groups,
-                                               time_budget=tuning_time_budget, type_of_target=type_of_target)
+            model_params = find_best_lgbm_parameter(model_params, X_train, y, cv=cv, groups=groups,
+                                                    time_budget=tuning_time_budget, type_of_target=type_of_target)
             exp.log_param('model_params_tuned', model_params)
 
         if categorical_feature is None:
