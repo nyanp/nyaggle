@@ -237,7 +237,7 @@ def experiment_gbdt(model_params: Dict[str, Any],
 
     _check_input(X_train, y, X_test)
     if with_auto_prep:
-        X_train, X_test = autoprep(X_train, X_test, categorical_feature, gbdt_type)
+        X_train, X_test = autoprep_gbdt(X_train, X_test, categorical_feature, gbdt_type)
 
     logging_directory = logging_directory.format(time=datetime.now().strftime('%Y%m%d_%H%M%S'))
 
@@ -375,9 +375,9 @@ def _check_input(X_train: pd.DataFrame, y: pd.Series,
         assert list(X_train.columns) == list(X_test.columns), "columns are different between X_train and X_test"
 
 
-def autoprep(X_train: pd.DataFrame, X_test: Optional[pd.DataFrame],
-             categorical_feature: Optional[List[str]] = None,
-             gbdt_type: str = 'lgbm') -> Tuple[pd.DataFrame, pd.DataFrame]:
+def autoprep_gbdt(X_train: pd.DataFrame, X_test: Optional[pd.DataFrame],
+                  categorical_feature: Optional[List[str]] = None,
+                  gbdt_type: str = 'lgbm') -> Tuple[pd.DataFrame, pd.DataFrame]:
     if categorical_feature is None:
         categorical_feature = [c for c in X_train.columns if X_train[c].dtype.name in ['object', 'category']]
 
