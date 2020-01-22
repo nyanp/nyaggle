@@ -241,7 +241,7 @@ def experiment_gbdt(model_params: Dict[str, Any],
         exp.log('Params: {}'.format(model_params))
         exp.log('Features: {}'.format(list(X_train.columns)))
         exp.log_param('gbdt_type', gbdt_type)
-        exp.log_param('features', list(X_train.columns))
+        exp.log_param('num_features', X_train.shape[1])
         exp.log_param('fit_params', fit_params)
         exp.log_param('model_params', model_params)
 
