@@ -295,15 +295,22 @@ def experiment_gbdt(model_params: Dict[str, Any],
         if X_test is not None:
             if sample_submission is not None:
                 submit_df = sample_submission.copy()
+
+                if type_of_target == 'multiclass':
+                    n_id_cols = submit_df.shape[1] - result.test_prediction.shape[1]
+                    for i, y in enumerate(sorted(y.unique())):
+                        submit_df.iloc[:, n_id_cols + i] = result.test_prediction[:, i]
+                else:
+                    submit_df.iloc[:, -1] = result.test_prediction
             else:
                 submit_df = pd.DataFrame()
                 submit_df['id'] = np.arange(len(X_test))
 
-            if type_of_target == 'multiclass':
-                for i, y in enumerate(sorted(y.unique())):
-                    submit_df[y] = result.test_prediction[:, i]
-            else:
-                submit_df[y.name] = result.test_prediction
+                if type_of_target == 'multiclass':
+                    for i, y in enumerate(sorted(y.unique())):
+                        submit_df[y] = result.test_prediction[:, i]
+                else:
+                    submit_df[y.name] = result.test_prediction
 
             if submission_filename is None:
                 submission_filename = os.path.basename(logging_directory)

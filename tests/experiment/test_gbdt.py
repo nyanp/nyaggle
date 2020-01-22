@@ -5,7 +5,7 @@ from urllib.parse import urlparse, unquote
 import numpy as np
 import pandas as pd
 import pytest
-from sklearn.metrics import roc_auc_score, mean_squared_error, mean_absolute_error
+from sklearn.metrics import roc_auc_score, mean_squared_error, mean_absolute_error, log_loss
 from sklearn.model_selection import GroupKFold, KFold, train_test_split
 
 from nyaggle.experiment import experiment_gbdt, find_best_lgbm_parameter
@@ -328,6 +328,55 @@ def test_experiment_manual_cv_group():
         assert result.metrics[-1] < 0.7
 
 
+def test_experiment_sample_submission_binary():
+    X, y = make_classification_df()
+    X_train, X_test, y_train, y_test = train_test_split(X, y)
+
+    sample_df = pd.DataFrame()
+    sample_df['target_id_abc'] = np.arange(len(y_test)) + 10000
+    sample_df['target_value_abc'] = 0
+
+    params = {
+        'objective': 'binary',
+        'max_depth': 8
+    }
+
+    with get_temp_directory() as temp_path:
+        result = experiment_gbdt(params, X_train, y_train, X_test, temp_path, sample_submission=sample_df)
+
+        assert list(result.submission_df.columns) == ['target_id_abc', 'target_value_abc']
+        assert roc_auc_score(y_test, result.submission_df['target_value_abc']) > 0.8
+
+
+def test_experiment_sample_submission_multiclass():
+    X, y = make_classification_df(n_classes=5)
+    X_train, X_test, y_train, y_test = train_test_split(X, y)
+
+    sample_df = pd.DataFrame()
+    sample_df['target_id_abc'] = np.arange(len(y_test)) + 10000
+    for i in range(5):
+        sample_df['target_class_{}'.format(i)] = 0
+
+    params = {
+        'objective': 'multiclass',
+        'max_depth': 8
+    }
+
+    with get_temp_directory() as temp_path:
+        result = experiment_gbdt(params, X_train, y_train, X_test, temp_path, sample_submission=sample_df)
+
+        assert list(result.submission_df.columns) == ['target_id_abc',
+                                                      'target_class_0',
+                                                      'target_class_1',
+                                                      'target_class_2',
+                                                      'target_class_3',
+                                                      'target_class_4'
+                                                      ]
+        log_loss_trianed = log_loss(y_test, result.submission_df.drop('target_id_abc', axis=1), labels=[0, 1, 2, 3, 4])
+        log_loss_default = log_loss(y_test, np.full((len(y_test), 5), 0.2), labels=[0, 1, 2, 3, 4])
+        assert log_loss_trianed < log_loss_default
+
+
 def test_find_best_parameter():
     params = {
         'objective': 'binary',
@@ -336,7 +385,6 @@ def test_find_best_parameter():
     }
     X, y = make_classification_df(2048, class_sep=0.7)
     X_train, X_test, y_train, y_test = train_test_split(X, y)
-
 
     best_params = find_best_lgbm_parameter(params, X_train, y_train, cv=5)
 
