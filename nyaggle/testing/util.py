@@ -31,7 +31,7 @@ def make_classification_df(n_samples: int = 1024,
 
     for i in range(n_cat_features):
         X['cat_{}'.format(i)] = \
-            pd.Series(np.random.choice(['A', 'B', None], size=n_samples)).astype(str).astype('category')
+            pd.Series(np.random.choice(['A', 'B', None], size=n_samples)).astype('category')
 
     return X, y
 

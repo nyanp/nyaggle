@@ -376,19 +376,3 @@ def test_experiment_sample_submission_multiclass():
         log_loss_default = log_loss(y_test, np.full((len(y_test), 5), 0.2), labels=[0, 1, 2, 3, 4])
         assert log_loss_trianed < log_loss_default
 
-
-def test_find_best_parameter():
-    params = {
-        'objective': 'binary',
-        'metrics': 'auc',
-        'n_estimators': 1000
-    }
-    X, y = make_classification_df(2048, class_sep=0.7)
-    X_train, X_test, y_train, y_test = train_test_split(X, y)
-
-    best_params = find_best_lgbm_parameter(params, X_train, y_train, cv=5)
-
-    result_base = experiment_gbdt(params, X_train, y_train, eval_func=roc_auc_score)
-    result_opt = experiment_gbdt(best_params, X_train, y_train)
-
-    assert result_opt.metrics[-1] >= result_base.metrics[-1]

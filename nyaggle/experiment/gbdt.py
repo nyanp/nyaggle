@@ -3,7 +3,7 @@ import os
 import time
 from collections import namedtuple
 from datetime import datetime
-from typing import Any, Callable, Dict, Iterable, List, Optional, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 import optuna.integration.lightgbm as optuna_lgb
@@ -12,6 +12,7 @@ import sklearn.utils.multiclass as multiclass
 from catboost import CatBoost, CatBoostClassifier, CatBoostRegressor
 from lightgbm import LGBMModel, LGBMClassifier, LGBMRegressor
 from more_itertools import first_true
+from pandas.api.types import is_integer_dtype, is_categorical
 from sklearn.model_selection import BaseCrossValidator
 from sklearn.metrics import roc_auc_score, mean_squared_error, log_loss
 
@@ -119,6 +120,7 @@ def experiment_gbdt(model_params: Dict[str, Any],
                     submission_filename: Optional[str] = None,
                     type_of_target: str = 'auto',
                     tuning_time_budget: Optional[int] = None,
+                    with_auto_prep: bool = True,
                     with_mlflow: bool = False,
                     mlflow_experiment_id: Optional[Union[int, str]] = None,
                     mlflow_run_name: Optional[str] = None,
@@ -196,6 +198,9 @@ def experiment_gbdt(model_params: Dict[str, Any],
         tuning_time_budget:
             If not ``None``, model parameters will be automatically updated using optuna with the specified time
              budgets in seconds (only available in lightgbm).
+        with_auto_prep:
+            If True, the input datasets will be copied and automatic preprocessing will be performed on them.
+            For example, if ``gbdt_type = 'cat'``, all missing values in categorical features will be filled.
         with_mlflow:
             If True, `mlflow tracking <https://www.mlflow.org/docs/latest/tracking.html>`_ is used.
             One instance of ``nyaggle.experiment.Experiment`` corresponds to one run in mlflow.
@@ -231,6 +236,8 @@ def experiment_gbdt(model_params: Dict[str, Any],
     cv = check_cv(cv, y)
 
     _check_input(X_train, y, X_test)
+    if with_auto_prep:
+        X_train, X_test = autoprep(X_train, X_test, categorical_feature, gbdt_type)
 
     logging_directory = logging_directory.format(time=datetime.now().strftime('%Y%m%d_%H%M%S'))
 
@@ -366,3 +373,34 @@ def _check_input(X_train: pd.DataFrame, y: pd.Series,
 
     if X_test is not None:
         assert list(X_train.columns) == list(X_test.columns), "columns are different between X_train and X_test"
+
+
+def autoprep(X_train: pd.DataFrame, X_test: Optional[pd.DataFrame],
+             categorical_feature: Optional[List[str]] = None,
+             gbdt_type: str = 'lgbm') -> Tuple[pd.DataFrame, pd.DataFrame]:
+    if categorical_feature is None:
+        categorical_feature = [c for c in X_train.columns if X_train[c].dtype.name in ['object', 'category']]
+
+    if gbdt_type == 'cat' and len(categorical_feature) > 0:
+        X_train = X_train.copy()
+        X_all = X_train if X_test is None else pd.concat([X_train, X_test])
+
+        # https://catboost.ai/docs/concepts/faq.html#why-float-and-nan-values-are-forbidden-for-cat-features
+        for c in categorical_feature:
+            if is_integer_dtype(X_train[c].dtype):
+                fillval = X_all[c].min() - 1
+            else:
+                unique_values = X_all[c].unique()
+                fillval = 'na'
+                while fillval in unique_values:
+                    fillval += '-'
+            if is_categorical(X_train[c]):
+                X_train[c] = X_train[c].cat.add_categories(fillval).fillna(fillval)
+                if X_test is not None:
+                    X_test[c] = X_test[c].cat.add_categories(fillval).fillna(fillval)
+            else:
+                X_train[c].fillna(fillval, inplace=True)
+                if X_test is not None:
+                    X_test[c].fillna(fillval, inplace=True)
+
+    return X_train, X_test
