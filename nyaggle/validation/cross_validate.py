@@ -2,7 +2,7 @@ import copy
 import time
 from collections import namedtuple
 from logging import Logger, getLogger
-from typing import Callable, Dict, Iterable, List, Optional, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -25,7 +25,7 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
                    groups: Optional[pd.Series] = None,
                    predict_proba: bool = False, eval_func: Optional[Callable] = None, logger: Optional[Logger] = None,
                    on_each_fold: Optional[Callable[[int, BaseEstimator, pd.DataFrame, pd.Series], None]] = None,
-                   fit_params: Optional[Dict] = None,
+                   fit_params: Optional[Union[Dict[str, Any], Callable]] = None,
                    importance_type: str = 'gain',
                    early_stopping: bool = True,
                    type_of_target: str = 'auto') -> CVResult:
@@ -148,11 +148,14 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
         train_x, train_y = X_train.iloc[train_idx], y.iloc[train_idx]
         valid_x, valid_y = X_train.iloc[valid_idx], y.iloc[valid_idx]
 
+        if fit_params is None:
+            fit_params_fold = {}
+        elif callable(fit_params):
+            fit_params_fold = fit_params(n, train_idx, valid_idx)
+        else:
+            fit_params_fold = copy.copy(fit_params)
+
         if isinstance(estimator[n], (LGBMModel, CatBoost)):
-            if fit_params is None:
-                fit_params_fold = {}
-            else:
-                fit_params_fold = copy.copy(fit_params)
             if early_stopping:
                 if 'eval_set' not in fit_params_fold:
                     fit_params_fold['eval_set'] = [(valid_x, valid_y)]
@@ -160,10 +163,8 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
                     fit_params_fold['early_stopping_rounds'] = 100
 
             estimator[n].fit(train_x, train_y, **fit_params_fold)
-        elif fit_params is not None:
-            estimator[n].fit(train_x, train_y, **fit_params)
         else:
-            estimator[n].fit(train_x, train_y)
+            estimator[n].fit(train_x, train_y, **fit_params)
 
         oof[valid_idx] = _predict(estimator[n], valid_x, predict_proba)
         evaluated[valid_idx] = True

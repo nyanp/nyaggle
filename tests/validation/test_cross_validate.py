@@ -1,3 +1,7 @@
+from typing import List
+
+import numpy as np
+
 from catboost import CatBoostClassifier
 from lightgbm import LGBMClassifier
 from sklearn.datasets import make_classification, make_regression
@@ -124,3 +128,34 @@ def test_cv_partial_evaluate():
     assert len(scores) == 2 + 1
     assert scores[-1] >= 0.8  # overall auc
     assert n == 2
+
+
+def test_fit_params_callback():
+    X, y = make_classification(n_samples=1024, n_features=20, class_sep=0.98, random_state=0)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
+
+    models = [LGBMClassifier(n_estimators=300) for _ in range(5)]
+
+    sample_weights = np.random.randint(1, 10, size=len(X_train))
+    sample_weights = sample_weights / sample_weights.sum()
+
+    def fit_params(n: int, train_index: List[int], valid_index: List[int]):
+        return {
+            'early_stopping_rounds': 100,
+            'sample_weight': list(sample_weights[train_index]),
+            'eval_sample_weight': [list(sample_weights[valid_index])]
+        }
+
+    pred_oof, pred_test, scores, importance = cross_validate(models, X_train, y_train, X_test, cv=5,
+                                                             eval_func=roc_auc_score,
+                                                             fit_params=fit_params)
+
+    print(scores)
+    assert len(scores) == 5 + 1
+    assert scores[-1] >= 0.85  # overall roc_auc
+    assert roc_auc_score(y_train, pred_oof) == scores[-1]
+    assert roc_auc_score(y_test, pred_test) >= 0.85  # test roc_auc
+    assert roc_auc_score(y, models[0].predict_proba(X)[:, 1]) >= 0.85  # make sure models are trained
+    assert len(importance) == 5
+    assert list(importance[0].columns) == ['feature', 'importance']
+    assert len(importance[0]) == 20

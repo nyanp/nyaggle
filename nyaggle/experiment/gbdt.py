@@ -110,7 +110,7 @@ def experiment_gbdt(model_params: Dict[str, Any],
                     overwrite: bool = False,
                     eval_func: Optional[Callable] = None,
                     gbdt_type: str = 'lgbm',
-                    fit_params: Optional[Dict[str, Any]] = None,
+                    fit_params: Optional[Union[Dict[str, Any], Callable]] = None,
                     cv: Optional[Union[int, Iterable, BaseCrossValidator]] = None,
                     groups: Optional[pd.Series] = None,
                     categorical_feature: Optional[List[str]] = None,
@@ -166,7 +166,9 @@ def experiment_gbdt(model_params: Dict[str, Any],
         overwrite:
             If True, contents in ``logging_directory`` will be overwritten.
         fit_params:
-            Parameters passed to the fit method of the estimator.
+            Parameters passed to the fit method of the estimator. If dict is passed, the same parameter except
+            eval_set passed for each fold. If callable is passed,
+            returning value of ``fit_params(fold_id, train_index, test_index)`` will be used for each fold.
         eval_func:
             Function used for logging and calculation of returning scores.
             This parameter isn't passed to GBDT, so you should set objective and eval_metric separately if needed.
@@ -267,7 +269,7 @@ def experiment_gbdt(model_params: Dict[str, Any],
 
         if fit_params is None:
             fit_params = {}
-        if cat_param_name is not None and cat_param_name not in fit_params:
+        if cat_param_name is not None and not callable(fit_params) and cat_param_name not in fit_params:
             fit_params[cat_param_name] = categorical_feature
 
         exp.log_params(fit_params)
