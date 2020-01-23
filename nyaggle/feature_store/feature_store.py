@@ -1,8 +1,9 @@
 import os
-from typing import List, Union
+import warnings
+from typing import List, Optional, Union
 
-from tqdm import tqdm
 import pandas as pd
+from tqdm import tqdm
 
 
 def save_feature(df: pd.DataFrame, feature_name: Union[int, str], directory: str = './features/',
@@ -56,14 +57,16 @@ def load_feature(feature_name: Union[int, str], directory: str = './features/',
         return df
 
 
-def load_features(base_df: pd.DataFrame, feature_names: List[Union[int, str]], directory: str = './features/',
-                  ignore_columns: List[str] = None, create_directory: bool = True) -> pd.DataFrame:
+def load_features(base_df: Optional[pd.DataFrame],
+                  feature_names: List[Union[int, str]], directory: str = './features/',
+                  ignore_columns: List[str] = None, create_directory: bool = True,
+                  rename_duplicate: bool = True) -> pd.DataFrame:
     """
     Load features and returns concatenated dataframe
 
     Args:
         base_df:
-            The base dataframe.
+            The base dataframe. If not None, resulting dataframe will consist of base and loaded feature columns.
         feature_names:
             The list of feature names to be loaded.
         directory:
@@ -72,6 +75,9 @@ def load_features(base_df: pd.DataFrame, feature_names: List[Union[int, str]], d
             The list of columns that will be dropped from the loaded dataframe.
         create_directory:
             If True, create directory if not exists.
+        rename_duplicate:
+            If True, duplicated column name will be renamed automatically (feature name will be used as suffix).
+            If False, duplicated columns will be as-is.
     Returns:
         The merged dataframe
     """
@@ -80,8 +86,27 @@ def load_features(base_df: pd.DataFrame, feature_names: List[Union[int, str]], d
 
     dfs = [load_feature(f, directory=directory, ignore_columns=ignore_columns) for f in tqdm(feature_names)]
 
+    if base_df is None:
+        base_df = dfs[0]
+        dfs = dfs[1:]
+        feature_names = feature_names[1:]
+
+    columns = list(base_df.columns)
+
     for df, feature_name in zip(dfs, feature_names):
         if len(df) != len(base_df):
-            raise RuntimeError('DataFrame length are different. feature_id: {}'.format(feature_name))
+            raise RuntimeError('DataFrame length are different. feature={}'.format(feature_name))
 
-    return pd.concat([base_df] + dfs, axis=1)
+        for c in df.columns:
+            if c in columns:
+                warnings.warn('A feature name {} is duplicated.'.format(c))
+
+                if rename_duplicate:
+                    while c in columns:
+                        c += '_' + str(feature_name)
+                    warnings.warn('The duplicated name in feature={} will be renamed to {}'.format(feature_name, c))
+            columns.append(c)
+
+    concatenated = pd.concat([base_df] + dfs, axis=1)
+    concatenated.columns = columns
+    return concatenated
