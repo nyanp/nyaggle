@@ -13,7 +13,6 @@ cat_params = {
     'eval_metric': 'Logloss',
     'loss_function': 'Logloss',
     'metric_period': 10,
-    'od_wait': 50,
     'depth': 8,
 }
 

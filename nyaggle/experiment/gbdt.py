@@ -97,11 +97,9 @@ def find_best_lgbm_parameter(base_param: Dict, X: pd.DataFrame, y: pd.Series,
     best_params, tuning_history = dict(), list()
     optuna_lgb.train(params, dtrain, valid_sets=[dvalid], verbose_eval=0,
                      best_params=best_params, tuning_history=tuning_history, time_budget=time_budget)
-    print(tuning_history)
 
     result_param = copy.deepcopy(base_param)
-    for p in best_params:
-        result_param[p] = best_params[p]
+    result_param.update(best_params)
     return result_param
 
 
