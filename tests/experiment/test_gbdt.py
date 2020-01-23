@@ -31,8 +31,10 @@ def test_experiment_lgb_classifier():
     with get_temp_directory() as temp_path:
         result = experiment_gbdt(params, X_train, y_train, X_test, temp_path, eval_func=roc_auc_score)
 
-        assert roc_auc_score(y_train, result.oof_prediction) >= 0.85
-        assert roc_auc_score(y_test, result.test_prediction) >= 0.85
+        assert len(np.unique(result.oof_prediction)) > 5  # making sure prediction is not binarized
+        assert len(np.unique(result.test_prediction)) > 5
+        assert roc_auc_score(y_train, result.oof_prediction) >= 0.9
+        assert roc_auc_score(y_test, result.test_prediction) >= 0.9
 
         _check_file_exists(temp_path, ('oof_prediction.npy', 'test_prediction.npy', 'metrics.txt'))
 
@@ -51,6 +53,8 @@ def test_experiment_lgb_regressor():
     with get_temp_directory() as temp_path:
         result = experiment_gbdt(params, X_train, y_train, X_test, temp_path)
 
+        assert len(np.unique(result.oof_prediction)) > 5  # making sure prediction is not binarized
+        assert len(np.unique(result.test_prediction)) > 5
         assert mean_squared_error(y_train, result.oof_prediction) == result.metrics[-1]
 
         _check_file_exists(temp_path, ('oof_prediction.npy', 'test_prediction.npy', 'metrics.txt'))
@@ -70,6 +74,8 @@ def test_experiment_lgb_multiclass():
     with get_temp_directory() as temp_path:
         result = experiment_gbdt(params, X_train, y_train, X_test, temp_path)
 
+        assert len(np.unique(result.oof_prediction[:, 0])) > 5  # making sure prediction is not binarized
+        assert len(np.unique(result.test_prediction[:, 0])) > 5
         assert result.oof_prediction.shape == (len(y_train), 5)
         assert result.test_prediction.shape == (len(y_test), 5)
 
@@ -91,8 +97,10 @@ def test_experiment_cat_classifier():
         result = experiment_gbdt(params, X_train, y_train, X_test, temp_path, eval_func=roc_auc_score, gbdt_type='cat',
                                  submission_filename='submission.csv')
 
-        assert roc_auc_score(y_train, result.oof_prediction) >= 0.85
-        assert roc_auc_score(y_test, result.test_prediction) >= 0.85
+        assert len(np.unique(result.oof_prediction)) > 5  # making sure prediction is not binarized
+        assert len(np.unique(result.test_prediction)) > 5
+        assert roc_auc_score(y_train, result.oof_prediction) >= 0.9
+        assert roc_auc_score(y_test, result.test_prediction) >= 0.9
         assert list(pd.read_csv(os.path.join(temp_path, 'submission.csv')).columns) == ['id', 'tgt']
 
         _check_file_exists(temp_path, ('submission.csv', 'oof_prediction.npy', 'test_prediction.npy', 'metrics.txt'))
@@ -173,7 +181,7 @@ def test_experiment_without_test_data():
     with get_temp_directory() as temp_path:
         result = experiment_gbdt(params, X_train, y_train, None, temp_path)
 
-        assert roc_auc_score(y_train, result.oof_prediction) >= 0.85
+        assert roc_auc_score(y_train, result.oof_prediction) >= 0.9
         _check_file_exists(temp_path, ('oof_prediction.npy', 'metrics.txt'))
 
 
