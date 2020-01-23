@@ -5,7 +5,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-def plot_importance(importance: pd.DataFrame, path: str, top_n: int = 100, figsize: Optional[Tuple[int, int]] = None,
+def plot_importance(importance: pd.DataFrame, path: Optional[str] = None, top_n: int = 100, 
+                    figsize: Optional[Tuple[int, int]] = None,
                     title: Optional[str] = None):
     """
     Plot feature importance and write to image
@@ -54,4 +55,5 @@ def plot_importance(importance: pd.DataFrame, path: str, top_n: int = 100, figsi
     sns.barplot(x="importance", y="feature", data=importance)
     plt.title(title)
     plt.tight_layout()
-    plt.savefig(path)
+    if path is None:
+        plt.savefig(path)
