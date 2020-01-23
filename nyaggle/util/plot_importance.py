@@ -55,5 +55,5 @@ def plot_importance(importance: pd.DataFrame, path: Optional[str] = None, top_n:
     sns.barplot(x="importance", y="feature", data=importance)
     plt.title(title)
     plt.tight_layout()
-    if path is None:
+    if path is not None:
         plt.savefig(path)
