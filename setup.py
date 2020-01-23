@@ -36,6 +36,7 @@ setup(
         'numpy',
         'optuna>=1.0.0',
         'pandas',
+        'pyarrow',
         'seaborn',
         'sklearn',
         'tqdm',
