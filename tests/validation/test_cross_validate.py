@@ -146,16 +146,11 @@ def test_fit_params_callback():
             'eval_sample_weight': [list(sample_weights[valid_index])]
         }
 
-    pred_oof, pred_test, scores, importance = cross_validate(models, X_train, y_train, X_test, cv=5,
-                                                             eval_func=roc_auc_score,
-                                                             fit_params=fit_params)
+    result_w_weight = cross_validate(models, X_train, y_train, X_test, cv=5,
+                                     eval_func=roc_auc_score, fit_params=fit_params)
 
-    print(scores)
-    assert len(scores) == 5 + 1
-    assert scores[-1] >= 0.85  # overall roc_auc
-    assert roc_auc_score(y_train, pred_oof) == scores[-1]
-    assert roc_auc_score(y_test, pred_test) >= 0.85  # test roc_auc
-    assert roc_auc_score(y, models[0].predict_proba(X)[:, 1]) >= 0.85  # make sure models are trained
-    assert len(importance) == 5
-    assert list(importance[0].columns) == ['feature', 'importance']
-    assert len(importance[0]) == 20
+
+    result_wo_weight = cross_validate(models, X_train, y_train, X_test, cv=5,
+                                      eval_func=roc_auc_score, fit_params={'early_stopping_rounds': 50})
+
+    assert result_w_weight.scores[-1] != result_wo_weight.scores[-1]
