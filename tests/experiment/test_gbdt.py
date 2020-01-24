@@ -9,6 +9,7 @@ from sklearn.metrics import roc_auc_score, mean_squared_error, mean_absolute_err
 from sklearn.model_selection import GroupKFold, KFold, train_test_split
 
 from nyaggle.experiment import experiment_gbdt, find_best_lgbm_parameter
+from nyaggle.feature_store import save_feature, load_features
 from nyaggle.testing import make_classification_df, make_regression_df, get_temp_directory
 
 
@@ -384,3 +385,30 @@ def test_experiment_sample_submission_multiclass():
         log_loss_default = log_loss(y_test, np.full((len(y_test), 5), 0.2), labels=[0, 1, 2, 3, 4])
         assert log_loss_trianed < log_loss_default
 
+
+def test_with_feature_attachment():
+    X, y = make_classification_df(n_num_features=5, class_sep=0.7)
+
+    params = {
+        'objective': 'binary',
+        'max_depth': 8
+    }
+
+    with get_temp_directory() as temp_feature_path:
+        cols = list(X.columns)
+        for i, c in enumerate(cols):
+            if X.shape[1] == 1:
+                break
+            save_feature(X[[c]], i, directory=temp_feature_path)
+            X.drop(c, axis=1, inplace=True)
+
+        X_train, X_test, y_train, y_test = train_test_split(X, y, shuffle=False)
+
+        with get_temp_directory() as temp_path:
+            result_wo_feature = experiment_gbdt(params, X_train, y_train, X_test, logging_directory=temp_path)
+
+        with get_temp_directory() as temp_path:
+            result_w_feature = experiment_gbdt(params, X_train, y_train, X_test, logging_directory=temp_path,
+                                               feature_list=[0, 1, 2, 3], feature_directory=temp_feature_path)
+
+        assert result_w_feature.metrics[-1] > result_wo_feature.metrics[-1]

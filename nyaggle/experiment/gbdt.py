@@ -17,6 +17,7 @@ from sklearn.model_selection import BaseCrossValidator
 from sklearn.metrics import roc_auc_score, mean_squared_error, log_loss
 
 from nyaggle.experiment.experiment import Experiment
+from nyaggle.feature_store import load_features
 from nyaggle.util import plot_importance
 from nyaggle.validation.cross_validate import cross_validate
 from nyaggle.validation.split import check_cv
@@ -118,6 +119,9 @@ def experiment_gbdt(model_params: Dict[str, Any],
                     submission_filename: Optional[str] = None,
                     type_of_target: str = 'auto',
                     tuning_time_budget: Optional[int] = None,
+                    feature_list: Optional[List[Union[int, str]]] = None,
+                    feature_directory: Optional[str] = None,
+                    ignore_columns: Optional[List[str]] = None,
                     with_auto_prep: bool = True,
                     with_mlflow: bool = False,
                     mlflow_experiment_id: Optional[Union[int, str]] = None,
@@ -198,6 +202,13 @@ def experiment_gbdt(model_params: Dict[str, Any],
         tuning_time_budget:
             If not ``None``, model parameters will be automatically updated using optuna with the specified time
              budgets in seconds (only available in lightgbm).
+        feature_list:
+            The list of feature ids saved through nyaggle.feature_store module.
+        feature_directory:
+            The location of features stored. Only used if feature_list is not empty.
+        ignore_columns:
+            The list of columns that will be dropped from the loaded dataframe.
+            Only used if feature_list is not empty.
         with_auto_prep:
             If True, the input datasets will be copied and automatic preprocessing will be performed on them.
             For example, if ``gbdt_type = 'cat'``, all missing values in categorical features will be filled.
@@ -235,7 +246,14 @@ def experiment_gbdt(model_params: Dict[str, Any],
     start_time = time.time()
     cv = check_cv(cv, y)
 
+    if feature_list:
+        X = pd.concat([X_train, X_test]) if X_test is not None else X_train
+        X = load_features(X, feature_list, directory=feature_directory, ignore_columns=ignore_columns)
+        ntrain = len(X_train)
+        X_train, X_test = X.iloc[:ntrain, :], X.iloc[ntrain:, :].reset_index(drop=True)
+
     _check_input(X_train, y, X_test)
+
     if with_auto_prep:
         X_train, X_test = autoprep_gbdt(X_train, X_test, categorical_feature, gbdt_type)
 
@@ -251,6 +269,8 @@ def experiment_gbdt(model_params: Dict[str, Any],
         exp.log_param('num_features', X_train.shape[1])
         exp.log_param('fit_params', fit_params)
         exp.log_param('model_params', model_params)
+        if feature_list is not None:
+            exp.log_param('features', feature_list)
 
         if tuning_time_budget is not None:
             assert gbdt_type == 'lgbm', 'auto-tuning with catboost is not supported'
