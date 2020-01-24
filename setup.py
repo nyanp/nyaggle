@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import find_packages, setup
 from codecs import open
 from os import path
 
@@ -21,11 +21,11 @@ def get_version():
 
 setup(
     name='nyaggle',
-    packages=['nyaggle'],
+    packages=find_packages(),
 
     version=get_version(),
 
-    license='BSD 3-Clause',
+    license='MIT',
 
     install_requires=[
         'catboost>=0.17',
