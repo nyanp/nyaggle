@@ -164,7 +164,7 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
 
             estimator[n].fit(train_x, train_y, **fit_params_fold)
         else:
-            estimator[n].fit(train_x, train_y, **fit_params)
+            estimator[n].fit(train_x, train_y, **fit_params_fold)
 
         oof[valid_idx] = _predict(estimator[n], valid_x, predict_proba)
         evaluated[valid_idx] = True
