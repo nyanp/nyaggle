@@ -6,8 +6,28 @@ import pandas as pd
 from tqdm import tqdm
 
 
+def validate_train_test_difference(train: pd.Series, test: pd.Series):
+    # % of nulls
+    if test.isnull().mean() == 1.0:
+        raise RuntimeError('Error in feature {}: all values in test data is null'.format(train.name))
+
+
+def validate_feature(df: pd.DataFrame, y: pd.Series):
+    if len(y) < len(df):
+        # assuming that the first part of the dataframe is train part
+        train = df.iloc[:len(y), :]
+        test = df.iloc[len(y):, :]
+    else:
+        train = df[~y.isnull()]
+        test = df[y.isnull()]
+
+    for c in df.columns:
+        validate_train_test_difference(train[c], test[c])
+
+
 def save_feature(df: pd.DataFrame, feature_name: Union[int, str], directory: str = './features/',
-                 with_csv_dump: bool = False, create_directory: bool = True):
+                 with_csv_dump: bool = False, create_directory: bool = True,
+                 reference_target_variable: Optional[pd.Series] = None):
     """
     Save pandas dataframe as feather-format
 
@@ -22,9 +42,14 @@ def save_feature(df: pd.DataFrame, feature_name: Union[int, str], directory: str
             If True, the first 1000 lines are dumped to csv file for debug.
         create_directory:
             If True, create directory if not exists.
+        reference_target_variable:
+            If not None, instant validation will be made on the feature.
     """
     if create_directory:
         os.makedirs(directory, exist_ok=True)
+
+    if reference_target_variable is not None:
+        validate_feature(df, reference_target_variable)
 
     path = os.path.join(directory, str(feature_name) + '.f')
     df.to_feather(path)

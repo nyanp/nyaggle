@@ -1,4 +1,5 @@
 import os
+import pytest
 
 import numpy as np
 import pandas as pd
@@ -144,3 +145,20 @@ def test_load_features_duplicate_col_name():
 
         df_loaded = fs.load_features(None, [0, 1, 'X'], tmp, rename_duplicate=False)
         assert list(df_loaded.columns) == ['a', 'b', 'b', 'c', 'b', 'a']
+
+
+def test_invalid_feature():
+    df = pd.DataFrame({
+        'a': [1, 2, 3, 4, 5] + [None] * 5,
+        'b': np.random.randint(0, 10, size=10)
+    })
+    y = pd.Series([1, 0, 1, 0, 1])
+
+    with get_temp_directory() as tmp:
+        with pytest.raises(RuntimeError):
+            fs.save_feature(df[['a']], 0, reference_target_variable=y)
+        with pytest.raises(RuntimeError):
+            fs.save_feature(df, 0, reference_target_variable=y)
+
+        # ok
+        fs.save_feature(df[['b']], 0, reference_target_variable=y)
