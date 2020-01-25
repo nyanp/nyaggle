@@ -126,7 +126,8 @@ def experiment_gbdt(model_params: Dict[str, Any],
                     with_mlflow: bool = False,
                     mlflow_experiment_id: Optional[Union[int, str]] = None,
                     mlflow_run_name: Optional[str] = None,
-                    mlflow_tracking_uri: Optional[str] = None
+                    mlflow_tracking_uri: Optional[str] = None,
+                    with_id = True
                     ):
     """
     Evaluate metrics by cross-validation and stores result
@@ -248,6 +249,7 @@ def experiment_gbdt(model_params: Dict[str, Any],
 
     if feature_list:
         X = pd.concat([X_train, X_test]) if X_test is not None else X_train
+        X.reset_index(drop=True, inplace=True)
         X = load_features(X, feature_list, directory=feature_directory, ignore_columns=ignore_columns)
         ntrain = len(X_train)
         X_train, X_test = X.iloc[:ntrain, :], X.iloc[ntrain:, :].reset_index(drop=True)
@@ -342,6 +344,9 @@ def experiment_gbdt(model_params: Dict[str, Any],
             if submission_filename is None:
                 submission_filename = os.path.basename(logging_directory)
 
+            if not with_id:
+                submit_df.drop(submit_df.columns[0], axis=1, inplace=True)
+
             exp.log_dataframe(submission_filename, submit_df, 'csv')
 
         elapsed_time = time.time() - start_time
@@ -403,7 +408,7 @@ def autoprep_gbdt(X_train: pd.DataFrame, X_test: Optional[pd.DataFrame],
 
     if gbdt_type == 'cat' and len(categorical_feature) > 0:
         X_train = X_train.copy()
-        X_all = X_train if X_test is None else pd.concat([X_train, X_test])
+        X_all = X_train if X_test is None else pd.concat([X_train, X_test]).copy()
 
         # https://catboost.ai/docs/concepts/faq.html#why-float-and-nan-values-are-forbidden-for-cat-features
         for c in categorical_feature:
