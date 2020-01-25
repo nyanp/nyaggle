@@ -19,6 +19,7 @@ def adversarial_validate(X_train: pd.DataFrame,
                          X_test: pd.DataFrame,
                          importance_type: str = 'gain',
                          estimator: Optional[BaseEstimator] = None,
+                         cat_cols = None,
                          cv = None) -> ADVResult:
     """
     Perform adversarial validation between X_train and X_test.
@@ -74,8 +75,12 @@ def adversarial_validate(X_train: pd.DataFrame,
     if cv is None:
         cv = Take(1, KFold(5, shuffle=True, random_state=0))
 
+    fit_params = {'verbose': -1}
+    if cat_cols:
+        fit_params['categorical_feature'] = cat_cols
+
     result = cross_validate(estimator, concat, y, None, cv=cv, predict_proba=True,
-                            eval_func=roc_auc_score, fit_params={'verbose': -1}, importance_type=importance_type)
+                            eval_func=roc_auc_score, fit_params=fit_params, importance_type=importance_type)
 
     importance = pd.concat(result.importance)
     importance = importance.groupby('feature')['importance'].mean().reset_index()
