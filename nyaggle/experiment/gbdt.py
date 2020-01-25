@@ -192,7 +192,7 @@ def experiment_gbdt(model_params: Dict[str, Any],
             A sample dataframe alined with test data (Usually in Kaggle, it is available as sample_submission.csv).
             The submission file will be created with the same schema as this dataframe.
         submission_filename:
-            The name of submission file created under logging directory. If ``None``, the basename of the logging
+            The name of submission file will be created under logging directory. If ``None``, the basename of the logging
             directory will be used as a filename.
         categorical_feature:
             List of categorical column names. If ``None``, categorical columns are automatically determined by dtype.
@@ -201,7 +201,7 @@ def experiment_gbdt(model_params: Dict[str, Any],
             Otherwise, ``binary``, ``continuous``, or ``multiclass`` are supported.
         tuning_time_budget:
             If not ``None``, model parameters will be automatically updated using optuna with the specified time
-             budgets in seconds (only available in lightgbm).
+            budgets in seconds (only available in lightgbm).
         feature_list:
             The list of feature ids saved through nyaggle.feature_store module.
         feature_directory:
