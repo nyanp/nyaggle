@@ -156,9 +156,20 @@ def test_invalid_feature():
 
     with get_temp_directory() as tmp:
         with pytest.raises(RuntimeError):
-            fs.save_feature(df[['a']], 0, reference_target_variable=y)
+            fs.save_feature(df[['a']], 0, reference_target_variable=y, directory=tmp)
         with pytest.raises(RuntimeError):
-            fs.save_feature(df, 0, reference_target_variable=y)
+            fs.save_feature(df, 0, reference_target_variable=y, directory=tmp)
 
         # ok
-        fs.save_feature(df[['b']], 0, reference_target_variable=y)
+        fs.save_feature(df[['b']], 0, reference_target_variable=y, directory=tmp)
+
+
+def test_feature_exists():
+    df = pd.DataFrame({
+        'a': [1, 2, 3, 4, 5] + [None] * 5
+    })
+
+    with get_temp_directory() as tmp:
+        fs.save_feature(df[['a']], 0, directory=tmp)
+        with pytest.raises(RuntimeError):
+            fs.save_feature(df, 0, overwrite=False, directory=tmp)
