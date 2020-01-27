@@ -27,7 +27,7 @@ def validate_feature(df: pd.DataFrame, y: pd.Series):
 
 def save_feature(df: pd.DataFrame, feature_name: Union[int, str], directory: str = './features/',
                  with_csv_dump: bool = False, create_directory: bool = True,
-                 reference_target_variable: Optional[pd.Series] = None):
+                 reference_target_variable: Optional[pd.Series] = None, overwrite: bool = True):
     """
     Save pandas dataframe as feather-format
 
@@ -44,6 +44,8 @@ def save_feature(df: pd.DataFrame, feature_name: Union[int, str], directory: str
             If True, create directory if not exists.
         reference_target_variable:
             If not None, instant validation will be made on the feature.
+        overwrite:
+            If False and file already exists, RuntimeError will be raised.
     """
     if create_directory:
         os.makedirs(directory, exist_ok=True)
@@ -52,6 +54,10 @@ def save_feature(df: pd.DataFrame, feature_name: Union[int, str], directory: str
         validate_feature(df, reference_target_variable)
 
     path = os.path.join(directory, str(feature_name) + '.f')
+
+    if not overwrite and os.path.exists(path):
+        raise RuntimeError('File already exists')
+
     df.to_feather(path)
 
     if with_csv_dump:
