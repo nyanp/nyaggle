@@ -412,3 +412,19 @@ def test_with_feature_attachment():
                                                feature_list=[0, 1, 2, 3], feature_directory=temp_feature_path)
 
         assert result_w_feature.metrics[-1] > result_wo_feature.metrics[-1]
+
+
+def test_with_long_params():
+    X, y = make_classification_df(1024, n_num_features=5, n_cat_features=400)
+
+    params = {
+        'objective': 'binary',
+        'max_depth': 8
+    }
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, shuffle=False)
+
+    with get_temp_directory() as temp_path:
+        # just to make sure experiment finish
+        experiment_gbdt(params, X_train, y_train, X_test,
+                        logging_directory=temp_path, with_mlflow=True)

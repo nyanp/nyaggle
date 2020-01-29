@@ -2,6 +2,7 @@ import json
 import os
 import shutil
 import uuid
+import warnings
 from logging import getLogger, FileHandler, DEBUG, Logger
 from typing import Dict, Optional, Union
 
@@ -9,6 +10,17 @@ import numpy as np
 import pandas as pd
 
 from nyaggle.environment import requires_mlflow
+
+
+MLFLOW_KEY_LENGTH_LIMIT = 250
+MLFLOW_VALUE_LENGTH_LIMIT = 250
+
+
+def _sanitize_mlflow_param(param, limit):
+    if len(str(param)) > limit:
+        warnings.warn('Length of param exceeds limit {}. It will be truncated. value: {}'.format(limit, param))
+        param = str(param)[:limit]
+    return param
 
 
 class Experiment(object):
@@ -195,7 +207,9 @@ class Experiment(object):
 
         if self.with_mlflow:
             import mlflow
-            mlflow.log_param(key, value)
+            key_mlflow = _sanitize_mlflow_param(key, MLFLOW_KEY_LENGTH_LIMIT)
+            value_mlflow = _sanitize_mlflow_param(value, MLFLOW_VALUE_LENGTH_LIMIT)
+            mlflow.log_param(key_mlflow, value_mlflow)
 
     def log_params(self, params: Dict):
         """
@@ -205,12 +219,7 @@ class Experiment(object):
             params: dictionary of parameters
         """
         for k, v in params.items():
-            self.params.write('{},{}\n'.format(k, v))
-        self.params.flush()
-
-        if self.with_mlflow:
-            import mlflow
-            mlflow.log_params(params)
+            self.log_param(k, v)
 
     def log_metric(self, name: str, score: float):
         """
