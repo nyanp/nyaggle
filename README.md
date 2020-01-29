@@ -59,14 +59,14 @@ print(result.test_prediction)  # Test prediction in numpy array
 print(result.oof_prediction)   # Out-of-fold prediction in numpy array
 print(result.models)           # Trained models for each fold
 print(result.importance)       # Feature importance for each fold
-print(result.scores)           # Evalulation metrics for each fold
+print(result.metrics)          # Evalulation metrics for each fold
 print(result.time)             # Elapsed time
 print(result.submission_df)    # The output dataframe saved as submission.csv
 
 # ...and all outputs have been saved under the logging directory (default: output/yyyymmdd_HHMMSS).
 
 
-# You can use it with mlflow and track your experiments throught mlflow-ui
+# You can use it with mlflow and track your experiments through mlflow-ui
 result = experiment_gbdt(params,
                          X_train,
                          y_train,
