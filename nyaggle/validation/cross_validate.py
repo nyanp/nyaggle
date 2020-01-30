@@ -10,6 +10,7 @@ import sklearn.utils.multiclass as multiclass
 from category_encoders.utils import convert_input, convert_input_vector
 from catboost import CatBoost
 from lightgbm import LGBMModel
+from xgboost import XGBModel
 from sklearn.base import BaseEstimator
 from sklearn.model_selection import BaseCrossValidator
 from nyaggle.validation.split import check_cv
@@ -155,7 +156,7 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
         else:
             fit_params_fold = copy.copy(fit_params)
 
-        if isinstance(estimator[n], (LGBMModel, CatBoost)):
+        if isinstance(estimator[n], (LGBMModel, CatBoost, XGBModel)):
             if early_stopping:
                 if 'eval_set' not in fit_params_fold:
                     fit_params_fold['eval_set'] = [(valid_x, valid_y)]
@@ -175,7 +176,7 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
         if on_each_fold is not None:
             on_each_fold(n, estimator[n], train_x, train_y)
 
-        if isinstance(estimator[n], (LGBMModel, CatBoost)):
+        if isinstance(estimator[n], (LGBMModel, CatBoost, XGBModel)):
             importance.append(_get_gbdt_importance(estimator[n], list(X_train.columns), importance_type))
 
         if eval_func is not None:
@@ -200,7 +201,7 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
     return CVResult(oof, predicted, scores, importance)
 
 
-def _get_gbdt_importance(gbdt_model: Union[CatBoost, LGBMModel], features: List[str],
+def _get_gbdt_importance(gbdt_model: Union[CatBoost, LGBMModel, XGBModel], features: List[str],
                          importance_type: str) -> pd.DataFrame:
     df = pd.DataFrame()
 
@@ -208,6 +209,8 @@ def _get_gbdt_importance(gbdt_model: Union[CatBoost, LGBMModel], features: List[
 
     if isinstance(gbdt_model, CatBoost):
         df['importance'] = gbdt_model.get_feature_importance()
+    elif isinstance(gbdt_model, XGBModel):
+        df['importance'] = gbdt_model.feature_importances_
     elif isinstance(gbdt_model, LGBMModel):
         df['importance'] = gbdt_model.booster_.feature_importance(importance_type=importance_type)
 
