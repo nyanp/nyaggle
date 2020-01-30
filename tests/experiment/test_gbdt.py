@@ -148,6 +148,71 @@ def test_experiment_cat_multiclass():
         _check_file_exists(temp_path, ('submission.csv', 'oof_prediction.npy', 'test_prediction.npy', 'metrics.txt'))
 
 
+def test_experiment_xgb_classifier():
+    X, y = make_classification_df(n_samples=1024, n_num_features=10, n_cat_features=2,
+                                  class_sep=0.98, random_state=0, id_column='user_id', target_name='tgt')
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
+
+    params = {
+        'max_depth': 8,
+        'num_boost_round': 100
+    }
+
+    with get_temp_directory() as temp_path:
+        result = experiment_gbdt(params, X_train, y_train, X_test, temp_path, eval_func=roc_auc_score, gbdt_type='xgb',
+                                 submission_filename='submission.csv')
+
+        assert len(np.unique(result.oof_prediction)) > 5  # making sure prediction is not binarized
+        assert len(np.unique(result.test_prediction)) > 5
+        assert roc_auc_score(y_train, result.oof_prediction) >= 0.9
+        assert roc_auc_score(y_test, result.test_prediction) >= 0.9
+        assert list(pd.read_csv(os.path.join(temp_path, 'submission.csv')).columns) == ['id', 'tgt']
+
+        _check_file_exists(temp_path, ('submission.csv', 'oof_prediction.npy', 'test_prediction.npy', 'metrics.txt'))
+
+
+def test_experiment_xgb_regressor():
+    X, y = make_regression_df(n_samples=1024, n_num_features=10, n_cat_features=2,
+                              random_state=0, id_column='user_id')
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
+
+    params = {
+        'max_depth': 8,
+        'num_boost_round': 100
+    }
+
+    with get_temp_directory() as temp_path:
+        result = experiment_gbdt(params, X_train, y_train, X_test, temp_path, gbdt_type='xgb')
+
+        assert mean_squared_error(y_train, result.oof_prediction) == result.metrics[-1]
+        _check_file_exists(temp_path, ('oof_prediction.npy', 'test_prediction.npy', 'metrics.txt'))
+
+
+def test_experiment_xgb_multiclass():
+    X, y = make_classification_df(n_samples=1024, n_num_features=10, n_cat_features=2, n_classes=5,
+                                  class_sep=0.98, random_state=0, id_column='user_id', target_name='tgt')
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
+
+    params = {
+        'max_depth': 8,
+        'num_boost_round': 100
+    }
+
+    with get_temp_directory() as temp_path:
+        result = experiment_gbdt(params, X_train, y_train, X_test, temp_path, gbdt_type='xgb',
+                                 type_of_target='multiclass', submission_filename='submission.csv')
+
+        assert result.oof_prediction.shape == (len(y_train), 5)
+        assert result.test_prediction.shape == (len(y_test), 5)
+
+        assert list(pd.read_csv(os.path.join(temp_path, 'submission.csv')).columns) == ['id', '0', '1', '2', '3', '4']
+
+        _check_file_exists(temp_path, ('submission.csv', 'oof_prediction.npy', 'test_prediction.npy', 'metrics.txt'))
+
+
 def test_experiment_cat_custom_eval():
     X, y = make_regression_df(n_samples=1024, n_num_features=10, n_cat_features=2,
                               random_state=0, id_column='user_id')

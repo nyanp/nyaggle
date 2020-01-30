@@ -11,10 +11,12 @@ import pandas as pd
 import sklearn.utils.multiclass as multiclass
 from catboost import CatBoost, CatBoostClassifier, CatBoostRegressor
 from lightgbm import LGBMModel, LGBMClassifier, LGBMRegressor
+from xgboost import XGBModel, XGBClassifier, XGBRegressor
 from more_itertools import first_true
 from pandas.api.types import is_integer_dtype, is_categorical
 from sklearn.model_selection import BaseCrossValidator
 from sklearn.metrics import roc_auc_score, mean_squared_error, log_loss
+from sklearn.preprocessing import LabelEncoder
 
 from nyaggle.experiment.experiment import Experiment
 from nyaggle.feature_store import load_features
@@ -24,6 +26,7 @@ from nyaggle.validation.split import check_cv
 
 GBDTResult = namedtuple('LGBResult', ['oof_prediction', 'test_prediction', 'metrics', 'models', 'importance', 'time',
                                       'submission_df'])
+GBDTModel = Union[CatBoost, LGBMModel, XGBModel]
 
 
 def find_best_lgbm_parameter(base_param: Dict, X: pd.DataFrame, y: pd.Series,
@@ -256,6 +259,9 @@ def experiment_gbdt(model_params: Dict[str, Any],
 
     _check_input(X_train, y, X_test)
 
+    if categorical_feature is None:
+        categorical_feature = [c for c in X_train.columns if X_train[c].dtype.name in ['object', 'category']]
+
     if with_auto_prep:
         X_train, X_test = autoprep_gbdt(X_train, X_test, categorical_feature, gbdt_type)
 
@@ -275,13 +281,11 @@ def experiment_gbdt(model_params: Dict[str, Any],
             exp.log_param('features', feature_list)
 
         if tuning_time_budget is not None:
-            assert gbdt_type == 'lgbm', 'auto-tuning with catboost is not supported'
+            assert gbdt_type == 'lgbm', 'auto-tuning is only supported for LightGBM'
             model_params = find_best_lgbm_parameter(model_params, X_train, y, cv=cv, groups=groups,
                                                     time_budget=tuning_time_budget, type_of_target=type_of_target)
             exp.log_param('model_params_tuned', model_params)
 
-        if categorical_feature is None:
-            categorical_feature = [c for c in X_train.columns if X_train[c].dtype.name in ['object', 'category']]
         exp.log('Categorical: {}'.format(categorical_feature))
 
         if type_of_target == 'auto':
@@ -363,6 +367,9 @@ def _dispatch_gbdt(gbdt_type: str, target_type: str, custom_eval: Optional[Calla
         ('binary', 'cat', CatBoostClassifier, roc_auc_score, 'cat_features'),
         ('multiclass', 'cat', CatBoostClassifier, log_loss, 'cat_features'),
         ('continuous', 'cat', CatBoostRegressor, mean_squared_error, 'cat_features'),
+        ('binary', 'xgb', XGBClassifier, roc_auc_score, None),
+        ('multiclass', 'xgb', XGBClassifier, log_loss, None),
+        ('continuous', 'xgb', XGBRegressor, mean_squared_error, None),
     ]
     found = first_true(gbdt_table, pred=lambda x: x[0] == target_type and x[1] == gbdt_type)
     if found is None:
@@ -375,17 +382,17 @@ def _dispatch_gbdt(gbdt_type: str, target_type: str, custom_eval: Optional[Calla
     return model, eval_func, cat_param
 
 
-def _save_model(gbdt_type: str, model: Union[CatBoost, LGBMModel], logging_directory: str, fold: int, exp: Experiment):
+def _save_model(gbdt_type: str, model: GBDTModel, logging_directory: str, fold: int, exp: Experiment):
     model_dir = os.path.join(logging_directory, 'models')
     os.makedirs(model_dir, exist_ok=True)
     path = os.path.join(model_dir, 'fold{}'.format(fold))
 
-    if gbdt_type == 'cat':
-        assert isinstance(model, CatBoost)
-        model.save_model(path)
-    else:
+    if gbdt_type == 'lgbm':
         assert isinstance(model, LGBMModel)
         model.booster_.save_model(path)
+    else:
+        assert isinstance(model, (XGBModel, CatBoost))
+        model.save_model(path)
 
     exp.log_artifact(path)
 
@@ -400,6 +407,25 @@ def _check_input(X_train: pd.DataFrame, y: pd.Series,
         assert list(X_train.columns) == list(X_test.columns), "columns are different between X_train and X_test"
 
 
+def _fill_na_by_unique_value(strain: pd.Series, stest: Optional[pd.Series], sall: pd.Series):
+    if is_integer_dtype(strain.dtype):
+        fillval = sall.min() - 1
+    else:
+        unique_values = sall.unique()
+        fillval = 'na'
+        while fillval in unique_values:
+            fillval += '-'
+    if is_categorical(strain):
+        strain = strain.cat.add_categories(fillval).fillna(fillval)
+        if stest is not None:
+            stest = stest.cat.add_categories(fillval).fillna(fillval)
+    else:
+        strain = strain.fillna(fillval)
+        if stest is not None:
+            stest = stest.fillna(fillval)
+    return strain, stest
+
+
 def autoprep_gbdt(X_train: pd.DataFrame, X_test: Optional[pd.DataFrame],
                   categorical_feature: Optional[List[str]] = None,
                   gbdt_type: str = 'lgbm') -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -412,20 +438,22 @@ def autoprep_gbdt(X_train: pd.DataFrame, X_test: Optional[pd.DataFrame],
 
         # https://catboost.ai/docs/concepts/faq.html#why-float-and-nan-values-are-forbidden-for-cat-features
         for c in categorical_feature:
-            if is_integer_dtype(X_train[c].dtype):
-                fillval = X_all[c].min() - 1
+            if X_test is not None:
+                X_train[c], X_test[c] = _fill_na_by_unique_value(X_train[c], X_test[c], X_all[c])
             else:
-                unique_values = X_all[c].unique()
-                fillval = 'na'
-                while fillval in unique_values:
-                    fillval += '-'
-            if is_categorical(X_train[c]):
-                X_train[c] = X_train[c].cat.add_categories(fillval).fillna(fillval)
-                if X_test is not None:
-                    X_test[c] = X_test[c].cat.add_categories(fillval).fillna(fillval)
-            else:
-                X_train[c].fillna(fillval, inplace=True)
-                if X_test is not None:
-                    X_test[c].fillna(fillval, inplace=True)
+                X_train[c], _ = _fill_na_by_unique_value(X_train[c], None, X_all[c])
+
+    if gbdt_type == 'xgb' and len(categorical_feature) > 0:
+        assert X_test is not None, "X_test is required for XGBoost with categorical variables"
+        X_train = X_train.copy()
+        X_test = X_test.copy()
+        X_all = pd.concat([X_train, X_test]).copy()
+
+        for c in categorical_feature:
+            X_train[c], X_test[c] = _fill_na_by_unique_value(X_train[c],
+                                                             X_test[c] if X_test is not None else None, X_all[c])
+            le = LabelEncoder()
+            X_train[c] = le.fit_transform(X_train[c])
+            X_test[c] = le.transform(X_test[c])
 
     return X_train, X_test

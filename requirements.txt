@@ -11,3 +11,4 @@ seaborn
 sklearn
 tqdm
 transformers
+xgboost

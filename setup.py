@@ -40,7 +40,8 @@ setup(
         'seaborn',
         'sklearn',
         'tqdm',
-        'transformers>=2.3.0'
+        'transformers>=2.3.0',
+        'xgboost'
     ],
     author='nyanp',
     author_email='Noumi.Taiga@gmail.com',
