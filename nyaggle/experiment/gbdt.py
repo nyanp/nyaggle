@@ -407,53 +407,64 @@ def _check_input(X_train: pd.DataFrame, y: pd.Series,
         assert list(X_train.columns) == list(X_test.columns), "columns are different between X_train and X_test"
 
 
-def _fill_na_by_unique_value(strain: pd.Series, stest: Optional[pd.Series], sall: pd.Series):
+def _fill_na_by_unique_value(strain: pd.Series, stest: Optional[pd.Series]):
     if is_integer_dtype(strain.dtype):
-        fillval = sall.min() - 1
+        fillval = min(strain.min(), stest.min()) - 1
     else:
-        unique_values = sall.unique()
+        unique_values = set(strain.unique()) | set(stest.unique())
         fillval = 'na'
         while fillval in unique_values:
             fillval += '-'
     if is_categorical(strain):
         strain = strain.cat.add_categories(fillval).fillna(fillval)
-        if stest is not None:
-            stest = stest.cat.add_categories(fillval).fillna(fillval)
+        stest = stest.cat.add_categories(fillval).fillna(fillval)
     else:
         strain = strain.fillna(fillval)
-        if stest is not None:
-            stest = stest.fillna(fillval)
+        stest = stest.fillna(fillval)
+        if isinstance(fillval, str):
+            strain = strain.astype(str)
+            stest = stest.astype(str)
     return strain, stest
 
 
 def autoprep_gbdt(X_train: pd.DataFrame, X_test: Optional[pd.DataFrame],
-                  categorical_feature: Optional[List[str]] = None,
+                  categorical_feature_to_treat: Optional[List[str]] = None,
                   gbdt_type: str = 'lgbm') -> Tuple[pd.DataFrame, pd.DataFrame]:
-    if categorical_feature is None:
-        categorical_feature = [c for c in X_train.columns if X_train[c].dtype.name in ['object', 'category']]
+    if categorical_feature_to_treat is None:
+        categorical_feature_to_treat = [c for c in X_train.columns if X_train[c].dtype.name in ['object', 'category']]
 
-    if gbdt_type == 'cat' and len(categorical_feature) > 0:
+    # LightGBM:
+    # Can handle categorical dtype. Otherwise, int, float or bool is acceptable for categorical columns.
+    # https://lightgbm.readthedocs.io/en/latest/Advanced-Topics.html#categorical-feature-support
+    #
+    # CatBoost:
+    # int, float, bool or str is acceptable for categorical columns. NaN should be filled.
+    # https://catboost.ai/docs/concepts/faq.html#why-float-and-nan-values-are-forbidden-for-cat-features
+    #
+    # XGBoost:
+    # All categorical column should be encoded beforehand.
+
+    if gbdt_type == 'lgbm':
+        # LightGBM can handle categorical dtype natively
+        categorical_feature_to_treat = [c for c in categorical_feature_to_treat if not is_categorical(X_train[c])]
+
+    if gbdt_type == 'cat' and len(categorical_feature_to_treat) > 0:
         X_train = X_train.copy()
-        X_all = X_train if X_test is None else pd.concat([X_train, X_test]).copy()
+        X_test = X_test if X_test is not None else X_train.iloc[:1, :].copy()  # dummy
+        for c in categorical_feature_to_treat:
+            X_train[c], X_test[c] = _fill_na_by_unique_value(X_train[c], X_test[c])
 
-        # https://catboost.ai/docs/concepts/faq.html#why-float-and-nan-values-are-forbidden-for-cat-features
-        for c in categorical_feature:
-            if X_test is not None:
-                X_train[c], X_test[c] = _fill_na_by_unique_value(X_train[c], X_test[c], X_all[c])
-            else:
-                X_train[c], _ = _fill_na_by_unique_value(X_train[c], None, X_all[c])
-
-    if gbdt_type == 'xgb' and len(categorical_feature) > 0:
+    if gbdt_type in ('xgb', 'lgbm') and len(categorical_feature_to_treat) > 0:
         assert X_test is not None, "X_test is required for XGBoost with categorical variables"
         X_train = X_train.copy()
         X_test = X_test.copy()
-        X_all = pd.concat([X_train, X_test]).copy()
 
-        for c in categorical_feature:
-            X_train[c], X_test[c] = _fill_na_by_unique_value(X_train[c],
-                                                             X_test[c] if X_test is not None else None, X_all[c])
+        for c in categorical_feature_to_treat:
+            X_train[c], X_test[c] = _fill_na_by_unique_value(X_train[c], X_test[c])
             le = LabelEncoder()
-            X_train[c] = le.fit_transform(X_train[c])
-            X_test[c] = le.transform(X_test[c])
+            concat = np.concatenate([X_train[c].values, X_test[c].values])
+            concat = le.fit_transform(concat)
+            X_train[c] = concat[:len(X_train)]
+            X_test[c] = concat[len(X_train):]
 
     return X_train, X_test

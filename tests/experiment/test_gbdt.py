@@ -493,3 +493,37 @@ def test_with_long_params():
         # just to make sure experiment finish
         experiment_gbdt(params, X_train, y_train, X_test,
                         logging_directory=temp_path, with_mlflow=True)
+
+
+def test_with_rare_categories():
+    X = pd.DataFrame({
+        'x0': [None]*100,
+        'x1': np.random.choice([np.inf, -np.inf], size=100),
+        'x2': ['nan'] + [None]*99,
+        'x3': np.concatenate([np.random.choice(['A', 'B'], size=50), np.random.choice(['C', 'D'], size=50)])
+    })
+
+    y = pd.Series(np.random.choice([0, 1], size=100), name='y')
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, shuffle=False, test_size=0.5)
+
+    params = {
+        'lgbm': {
+            'objective': 'binary',
+            'max_depth': 8
+        },
+        'xgb': {
+            'objective': 'binary:logistic',
+            'max_depth': 8
+        },
+        'cat': {
+            'loss_function': 'Logloss',
+            'max_depth': 8
+        }
+    }
+
+    for algorithm in ('cat', 'xgb', 'lgbm'):
+        with get_temp_directory() as temp_path:
+            experiment_gbdt(params[algorithm], X_train, y_train, X_test, gbdt_type=algorithm,
+                            logging_directory=temp_path, with_mlflow=True,
+                            categorical_feature=['x0', 'x1', 'x2', 'x3'])
