@@ -4,13 +4,12 @@ import shutil
 import uuid
 import warnings
 from logging import getLogger, FileHandler, DEBUG, Logger
-from typing import Dict, Optional, Union
+from typing import Dict, Optional
 
 import numpy as np
 import pandas as pd
 
 from nyaggle.environment import requires_mlflow
-
 
 MLFLOW_KEY_LENGTH_LIMIT = 250
 MLFLOW_VALUE_LENGTH_LIMIT = 250
@@ -52,13 +51,6 @@ class Experiment(object):
             One instance of ``nyaggle.experiment.Experiment`` corresponds to one run in mlflow.
             Note that all output files are located both ``logging_directory`` and
             mlflow's directory (``mlruns`` by default).
-        mlflow_experiment_id:
-            ID of the experiment of mlflow. Passed to ``mlflow.start_run()``.
-        mlflow_run_name:
-            Name of the run in mlflow. Passed to ``mlflow.start_run()``.
-            If ``None``, ``logging_directory`` is used as the run name.
-        mlflow_tracking_uri:
-            Tracking server uri in mlflow. Passed to ``mlflow.set_tracking_uri``.
     """
 
     def __init__(self,
@@ -66,10 +58,7 @@ class Experiment(object):
                  overwrite: bool = False,
                  custom_logger: Optional[Logger] = None,
                  with_mlflow: bool = False,
-                 mlflow_experiment_id: Optional[Union[int, str]] = None,
                  mlflow_run_id: Optional[str] = None,
-                 mlflow_run_name: Optional[str] = None,
-                 mlflow_tracking_uri: Optional[str] = None,
                  logging_mode: str = 'w'
                  ):
         os.makedirs(logging_directory, exist_ok=overwrite)
@@ -88,19 +77,15 @@ class Experiment(object):
         self.metrics_path = os.path.join(logging_directory, 'metrics.txt')
         self.metrics = open(self.metrics_path, mode=logging_mode)
         self.params = open(os.path.join(logging_directory, 'params.txt'), mode=logging_mode)
+        self.inherit_existing_run = False
 
         if self.with_mlflow:
             requires_mlflow()
-
             self.mlflow_run_id = mlflow_run_id
             if mlflow_run_id is not None:
-                self.mlflow_experiment_id = None
                 self.mlflow_run_name = None
-                self.mlflow_tracking_uri = None
             else:
-                self.mlflow_experiment_id = mlflow_experiment_id
-                self.mlflow_run_name = mlflow_run_name or logging_directory
-                self.mlflow_tracking_uri = mlflow_tracking_uri
+                self.mlflow_run_name = logging_directory
 
     def __enter__(self):
         self.start()
@@ -133,10 +118,12 @@ class Experiment(object):
         """
         if self.with_mlflow:
             import mlflow
-            if self.mlflow_tracking_uri is not None:
-                mlflow.set_tracking_uri(self.mlflow_tracking_uri)
-            active_run = mlflow.start_run(experiment_id=self.mlflow_experiment_id, run_name=self.mlflow_run_name,
-                                          run_id=self.mlflow_run_id)
+
+            if mlflow.active_run() is not None:
+                active_run = mlflow.active_run()
+                self.inherit_existing_run = True
+            else:
+                active_run = mlflow.start_run(run_name=self.mlflow_run_name, run_id=self.mlflow_run_id)
             mlflow_metadata = {
                 'artifact_uri': active_run.info.artifact_uri,
                 'experiment_id': active_run.info.experiment_id,
@@ -160,7 +147,8 @@ class Experiment(object):
             import mlflow
             mlflow.log_artifact(self.log_path)
             mlflow.log_artifact(self.metrics_path)
-            mlflow.end_run()
+            if not self.inherit_existing_run:
+                mlflow.end_run()
 
     def get_logger(self) -> Logger:
         """
