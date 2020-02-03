@@ -1,4 +1,5 @@
 import json
+import mlflow
 import os
 from urllib.parse import urlparse, unquote
 
@@ -527,3 +528,26 @@ def test_with_rare_categories():
             experiment_gbdt(params[algorithm], X_train, y_train, X_test, gbdt_type=algorithm,
                             logging_directory=temp_path, with_mlflow=True,
                             categorical_feature=['x0', 'x1', 'x2', 'x3'])
+
+
+def test_inherit_outer_scope_run():
+    mlflow.start_run()
+    mlflow.log_param('foo', 1)
+
+    params = {
+        'objective': 'binary',
+        'max_depth': 8
+    }
+    X, y = make_classification_df()
+
+    with get_temp_directory() as temp_path:
+        experiment_gbdt(params, X, y, with_mlflow=True, logging_directory=temp_path)
+
+    assert mlflow.active_run() is not None  # still valid
+
+    client = mlflow.tracking.MlflowClient()
+    data = client.get_run(mlflow.active_run().info.run_id).data
+
+    assert data.metrics['Overall'] > 0  # recorded
+
+    mlflow.end_run()

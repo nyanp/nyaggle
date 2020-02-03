@@ -5,7 +5,7 @@ from nyaggle.testing import get_temp_directory
 
 def test_experiment_continue():
     with get_temp_directory() as logging_dir:
-        with Experiment(logging_dir, with_mlflow=True, mlflow_run_name='bar') as e:
+        with Experiment(logging_dir, with_mlflow=True) as e:
             e.log_metric('CV', 0.97)
 
         # appending to exising local & mlflow result

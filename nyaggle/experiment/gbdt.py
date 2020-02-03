@@ -124,13 +124,8 @@ def experiment_gbdt(model_params: Dict[str, Any],
                     tuning_time_budget: Optional[int] = None,
                     feature_list: Optional[List[Union[int, str]]] = None,
                     feature_directory: Optional[str] = None,
-                    ignore_columns: Optional[List[str]] = None,
                     with_auto_prep: bool = True,
-                    with_mlflow: bool = False,
-                    mlflow_experiment_id: Optional[Union[int, str]] = None,
-                    mlflow_run_name: Optional[str] = None,
-                    mlflow_tracking_uri: Optional[str] = None,
-                    with_id = True
+                    with_mlflow: bool = False
                     ):
     """
     Evaluate metrics by cross-validation and stores result
@@ -210,9 +205,6 @@ def experiment_gbdt(model_params: Dict[str, Any],
             The list of feature ids saved through nyaggle.feature_store module.
         feature_directory:
             The location of features stored. Only used if feature_list is not empty.
-        ignore_columns:
-            The list of columns that will be dropped from the loaded dataframe.
-            Only used if feature_list is not empty.
         with_auto_prep:
             If True, the input datasets will be copied and automatic preprocessing will be performed on them.
             For example, if ``gbdt_type = 'cat'``, all missing values in categorical features will be filled.
@@ -221,13 +213,6 @@ def experiment_gbdt(model_params: Dict[str, Any],
             One instance of ``nyaggle.experiment.Experiment`` corresponds to one run in mlflow.
             Note that all output
             mlflow's directory (``mlruns`` by default).
-        mlflow_experiment_id:
-            ID of the experiment of mlflow. Passed to ``mlflow.start_run()``.
-        mlflow_run_name:
-            Name of the run in mlflow. Passed to ``mlflow.start_run()``.
-            If ``None``, ``logging_directory`` is used as the run name.
-        mlflow_tracking_uri:
-            Tracking server uri in mlflow. Passed to ``mlflow.set_tracking_uri``.
     :return:
         Namedtuple with following members
 
@@ -253,7 +238,7 @@ def experiment_gbdt(model_params: Dict[str, Any],
     if feature_list:
         X = pd.concat([X_train, X_test]) if X_test is not None else X_train
         X.reset_index(drop=True, inplace=True)
-        X = load_features(X, feature_list, directory=feature_directory, ignore_columns=ignore_columns)
+        X = load_features(X, feature_list, directory=feature_directory)
         ntrain = len(X_train)
         X_train, X_test = X.iloc[:ntrain, :], X.iloc[ntrain:, :].reset_index(drop=True)
 
@@ -267,8 +252,7 @@ def experiment_gbdt(model_params: Dict[str, Any],
 
     logging_directory = logging_directory.format(time=datetime.now().strftime('%Y%m%d_%H%M%S'))
 
-    with Experiment(logging_directory, overwrite, with_mlflow=with_mlflow, mlflow_tracking_uri=mlflow_tracking_uri,
-                    mlflow_experiment_id=mlflow_experiment_id, mlflow_run_name=mlflow_run_name) as exp:
+    with Experiment(logging_directory, overwrite, with_mlflow=with_mlflow) as exp:
         exp.log('GBDT: {}'.format(gbdt_type))
         exp.log('Experiment: {}'.format(logging_directory))
         exp.log('Params: {}'.format(model_params))
@@ -334,7 +318,8 @@ def experiment_gbdt(model_params: Dict[str, Any],
                     for i, y in enumerate(sorted(y.unique())):
                         submit_df.iloc[:, n_id_cols + i] = result.test_prediction[:, i]
                 else:
-                    submit_df.iloc[:, -1] = result.test_prediction
+                    n_id_cols = submit_df.shape[1] - 1
+                    submit_df.iloc[:, n_id_cols] = result.test_prediction
             else:
                 submit_df = pd.DataFrame()
                 submit_df['id'] = np.arange(len(X_test))
@@ -347,9 +332,6 @@ def experiment_gbdt(model_params: Dict[str, Any],
 
             if submission_filename is None:
                 submission_filename = os.path.basename(logging_directory)
-
-            if not with_id:
-                submit_df.drop(submit_df.columns[0], axis=1, inplace=True)
 
             exp.log_dataframe(submission_filename, submit_df, 'csv')
 
