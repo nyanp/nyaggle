@@ -27,4 +27,4 @@ result = experiment_gbdt(params,
                          './wine-quality-{time}',
                          type_of_target='continuous',
                          with_mlflow=True,
-                         tuning_time_budget=300)
+                         with_auto_hpo=True)
