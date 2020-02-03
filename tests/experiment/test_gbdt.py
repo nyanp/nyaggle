@@ -501,12 +501,10 @@ def test_with_rare_categories():
         'x0': [None]*100,
         'x1': np.random.choice([np.inf, -np.inf], size=100),
         'x2': ['nan'] + [None]*99,
-        'x3': np.concatenate([np.random.choice(['A', 'B'], size=50), np.random.choice(['C', 'D'], size=50)])
+        'x3': np.concatenate([np.random.choice(['A', 'B'], size=50), np.random.choice(['C', 'D', 'na'], size=50)])
     })
 
     y = pd.Series(np.random.choice([0, 1], size=100), name='y')
-
-    X_train, X_test, y_train, y_test = train_test_split(X, y, shuffle=False, test_size=0.5)
 
     params = {
         'lgbm': {
@@ -523,11 +521,22 @@ def test_with_rare_categories():
         }
     }
 
-    for algorithm in ('cat', 'xgb', 'lgbm'):
-        with get_temp_directory() as temp_path:
-            experiment_gbdt(params[algorithm], X_train, y_train, X_test, gbdt_type=algorithm,
-                            logging_directory=temp_path, with_mlflow=True,
-                            categorical_feature=['x0', 'x1', 'x2', 'x3'])
+    for cat_cast in (True, False):
+        X_ = X.copy()
+        y_ = y.copy()
+        if cat_cast:
+            for c in X.columns:
+                X_[c] = X_[c].astype('category')
+            X_ = X_.iloc[:50, :]
+            y_ = y_.iloc[:50]
+
+        X_train, X_test, y_train, y_test = train_test_split(X_, y_, shuffle=False, test_size=0.5)
+
+        for algorithm in ('cat', 'xgb', 'lgbm'):
+            with get_temp_directory() as temp_path:
+                experiment_gbdt(params[algorithm], X_train, y_train, X_test, gbdt_type=algorithm,
+                                logging_directory=temp_path, with_mlflow=True,
+                                categorical_feature=['x0', 'x1', 'x2', 'x3'])
 
 
 def test_inherit_outer_scope_run():

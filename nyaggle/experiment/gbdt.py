@@ -398,8 +398,8 @@ def _fill_na_by_unique_value(strain: pd.Series, stest: Optional[pd.Series]):
         while fillval in unique_values:
             fillval += '-'
     if is_categorical(strain):
-        strain = strain.cat.add_categories(fillval).fillna(fillval)
-        stest = stest.cat.add_categories(fillval).fillna(fillval)
+        strain = strain.cat.codes
+        stest = stest.cat.codes
     else:
         strain = strain.fillna(fillval)
         stest = stest.fillna(fillval)
@@ -432,7 +432,7 @@ def autoprep_gbdt(X_train: pd.DataFrame, X_test: Optional[pd.DataFrame],
 
     if gbdt_type == 'cat' and len(categorical_feature_to_treat) > 0:
         X_train = X_train.copy()
-        X_test = X_test if X_test is not None else X_train.iloc[:1, :].copy()  # dummy
+        X_test = X_test.copy() if X_test is not None else X_train.iloc[:1, :].copy()  # dummy
         for c in categorical_feature_to_treat:
             X_train[c], X_test[c] = _fill_na_by_unique_value(X_train[c], X_test[c])
 
