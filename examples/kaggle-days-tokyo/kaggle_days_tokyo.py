@@ -47,5 +47,5 @@ experiment_gbdt(logging_directory='baseline_kaggledays_tokyo',
                 eval_func=mean_squared_error,
                 type_of_target='continuous',
                 overwrite=True,
-                tuning_time_budget=600,
+                with_auto_hpo=True,
                 sample_submission=pd.read_csv('sample_submission.csv'))

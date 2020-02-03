@@ -121,9 +121,9 @@ def experiment_gbdt(model_params: Dict[str, Any],
                     sample_submission: Optional[pd.DataFrame] = None,
                     submission_filename: Optional[str] = None,
                     type_of_target: str = 'auto',
-                    tuning_time_budget: Optional[int] = None,
                     feature_list: Optional[List[Union[int, str]]] = None,
                     feature_directory: Optional[str] = None,
+                    with_auto_hpo: bool = False,
                     with_auto_prep: bool = True,
                     with_mlflow: bool = False
                     ):
@@ -198,9 +198,6 @@ def experiment_gbdt(model_params: Dict[str, Any],
         type_of_target:
             The type of target variable. If ``auto``, type is inferred by ``sklearn.utils.multiclass.type_of_target``.
             Otherwise, ``binary``, ``continuous``, or ``multiclass`` are supported.
-        tuning_time_budget:
-            If not ``None``, model parameters will be automatically updated using optuna with the specified time
-            budgets in seconds (only available in lightgbm).
         feature_list:
             The list of feature ids saved through nyaggle.feature_store module.
         feature_directory:
@@ -208,6 +205,8 @@ def experiment_gbdt(model_params: Dict[str, Any],
         with_auto_prep:
             If True, the input datasets will be copied and automatic preprocessing will be performed on them.
             For example, if ``gbdt_type = 'cat'``, all missing values in categorical features will be filled.
+        with_auto_hpo:
+            If True, model parameters will be automatically updated using optuna (only available in lightgbm).
         with_mlflow:
             If True, `mlflow tracking <https://www.mlflow.org/docs/latest/tracking.html>`_ is used.
             One instance of ``nyaggle.experiment.Experiment`` corresponds to one run in mlflow.
@@ -264,10 +263,10 @@ def experiment_gbdt(model_params: Dict[str, Any],
         if feature_list is not None:
             exp.log_param('features', feature_list)
 
-        if tuning_time_budget is not None:
+        if with_auto_hpo:
             assert gbdt_type == 'lgbm', 'auto-tuning is only supported for LightGBM'
             model_params = find_best_lgbm_parameter(model_params, X_train, y, cv=cv, groups=groups,
-                                                    time_budget=tuning_time_budget, type_of_target=type_of_target)
+                                                    type_of_target=type_of_target)
             exp.log_param('model_params_tuned', model_params)
 
         exp.log('Categorical: {}'.format(categorical_feature))
