@@ -389,24 +389,14 @@ def _check_input(X_train: pd.DataFrame, y: pd.Series,
         assert list(X_train.columns) == list(X_test.columns), "columns are different between X_train and X_test"
 
 
-def _fill_na_by_unique_value(strain: pd.Series, stest: Optional[pd.Series]):
-    if is_integer_dtype(strain.dtype):
-        fillval = min(strain.min(), stest.min()) - 1
-    else:
-        unique_values = set(strain.unique()) | set(stest.unique())
-        fillval = 'na'
-        while fillval in unique_values:
-            fillval += '-'
+def _fill_na_by_unique_value(strain: pd.Series, stest: Optional[pd.Series]) -> Tuple[pd.Series, pd.Series]:
     if is_categorical(strain):
-        strain = strain.cat.codes
-        stest = stest.cat.codes
+        return strain.cat.codes, stest.cat.codes
+    elif is_integer_dtype(strain.dtype):
+        fillval = min(strain.min(), stest.min()) - 1
+        return strain.fillna(fillval), stest.fillna(fillval)
     else:
-        strain = strain.fillna(fillval)
-        stest = stest.fillna(fillval)
-        if isinstance(fillval, str):
-            strain = strain.astype(str)
-            stest = stest.astype(str)
-    return strain, stest
+        return strain.astype(str), stest.astype(str)
 
 
 def autoprep_gbdt(X_train: pd.DataFrame, X_test: Optional[pd.DataFrame],
