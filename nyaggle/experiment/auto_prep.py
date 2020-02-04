@@ -1,5 +1,6 @@
 from typing import List, Optional, Tuple, Type, Union
 
+import numpy as np
 import pandas as pd
 from catboost import CatBoost
 from lightgbm import LGBMModel
