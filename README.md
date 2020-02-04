@@ -48,10 +48,10 @@ params = {
     'max_depth': 8
 }
 
-result = experiment_gbdt(params,
-                         X_train,
-                         y_train,
-                         X_test)
+result = experiment(params,
+                    X_train,
+                    y_train,
+                    X_test)
                          
 # You can get outputs that needed in data science competitions with 1 API
 
@@ -67,11 +67,11 @@ print(result.submission_df)    # The output dataframe saved as submission.csv
 
 
 # You can use it with mlflow and track your experiments through mlflow-ui
-result = experiment_gbdt(params,
-                         X_train,
-                         y_train,
-                         X_test,
-                         with_mlflow=True)
+result = experiment(params,
+                    X_train,
+                    y_train,
+                    X_test,
+                    with_mlflow=True)
 ```
 
 

@@ -1,9 +1,10 @@
 import copy
 import os
+import pickle
 import time
 from collections import namedtuple
 from datetime import datetime
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, Union
 
 import numpy as np
 import optuna.integration.lightgbm as optuna_lgb
@@ -14,6 +15,7 @@ from lightgbm import LGBMModel, LGBMClassifier, LGBMRegressor
 from xgboost import XGBModel, XGBClassifier, XGBRegressor
 from more_itertools import first_true
 from pandas.api.types import is_integer_dtype, is_categorical
+from sklearn.base import BaseEstimator
 from sklearn.model_selection import BaseCrossValidator
 from sklearn.metrics import roc_auc_score, mean_squared_error, log_loss
 from sklearn.preprocessing import LabelEncoder
@@ -24,8 +26,16 @@ from nyaggle.util import plot_importance
 from nyaggle.validation.cross_validate import cross_validate
 from nyaggle.validation.split import check_cv
 
-GBDTResult = namedtuple('LGBResult', ['oof_prediction', 'test_prediction', 'metrics', 'models', 'importance', 'time',
-                                      'submission_df'])
+ExperimentResult = namedtuple('LGBResult',
+                              [
+                                  'oof_prediction',
+                                  'test_prediction',
+                                  'metrics',
+                                  'models',
+                                  'importance',
+                                  'time',
+                                  'submission_df'
+                              ])
 GBDTModel = Union[CatBoost, LGBMModel, XGBModel]
 
 
@@ -107,26 +117,26 @@ def find_best_lgbm_parameter(base_param: Dict, X: pd.DataFrame, y: pd.Series,
     return result_param
 
 
-def experiment_gbdt(model_params: Dict[str, Any],
-                    X_train: pd.DataFrame, y: pd.Series,
-                    X_test: Optional[pd.DataFrame] = None,
-                    logging_directory: str = 'output/{time}',
-                    overwrite: bool = False,
-                    eval_func: Optional[Callable] = None,
-                    gbdt_type: str = 'lgbm',
-                    fit_params: Optional[Union[Dict[str, Any], Callable]] = None,
-                    cv: Optional[Union[int, Iterable, BaseCrossValidator]] = None,
-                    groups: Optional[pd.Series] = None,
-                    categorical_feature: Optional[List[str]] = None,
-                    sample_submission: Optional[pd.DataFrame] = None,
-                    submission_filename: Optional[str] = None,
-                    type_of_target: str = 'auto',
-                    feature_list: Optional[List[Union[int, str]]] = None,
-                    feature_directory: Optional[str] = None,
-                    with_auto_hpo: bool = False,
-                    with_auto_prep: bool = True,
-                    with_mlflow: bool = False
-                    ):
+def experiment(model_params: Dict[str, Any],
+               X_train: pd.DataFrame, y: pd.Series,
+               X_test: Optional[pd.DataFrame] = None,
+               logging_directory: str = 'output/{time}',
+               overwrite: bool = False,
+               eval_func: Optional[Callable] = None,
+               algorithm_type: Union[str, Type[BaseEstimator]] = 'lgbm',
+               fit_params: Optional[Union[Dict[str, Any], Callable]] = None,
+               cv: Optional[Union[int, Iterable, BaseCrossValidator]] = None,
+               groups: Optional[pd.Series] = None,
+               categorical_feature: Optional[List[str]] = None,
+               sample_submission: Optional[pd.DataFrame] = None,
+               submission_filename: Optional[str] = None,
+               type_of_target: str = 'auto',
+               feature_list: Optional[List[Union[int, str]]] = None,
+               feature_directory: Optional[str] = None,
+               with_auto_hpo: bool = False,
+               with_auto_prep: bool = True,
+               with_mlflow: bool = False
+               ):
     """
     Evaluate metrics by cross-validation and stores result
     (log, oof prediction, test prediction, feature importance plot and submission file)
@@ -246,17 +256,22 @@ def experiment_gbdt(model_params: Dict[str, Any],
     if categorical_feature is None:
         categorical_feature = [c for c in X_train.columns if X_train[c].dtype.name in ['object', 'category']]
 
+    if type_of_target == 'auto':
+        type_of_target = multiclass.type_of_target(y)
+    model_type, eval_func, cat_param_name = _dispatch_models(algorithm_type, type_of_target, eval_func)
+
     if with_auto_prep:
-        X_train, X_test = autoprep_gbdt(X_train, X_test, categorical_feature, gbdt_type)
+        assert issubclass(model_type, (LGBMModel, CatBoost, XGBModel)), "with_auto_prep is only supported for gbdt"
+        X_train, X_test = autoprep_gbdt(model_type, X_train, X_test, categorical_feature)
 
     logging_directory = logging_directory.format(time=datetime.now().strftime('%Y%m%d_%H%M%S'))
 
     with Experiment(logging_directory, overwrite, with_mlflow=with_mlflow) as exp:
-        exp.log('GBDT: {}'.format(gbdt_type))
+        exp.log('Algorithm: {}'.format(algorithm_type))
         exp.log('Experiment: {}'.format(logging_directory))
         exp.log('Params: {}'.format(model_params))
         exp.log('Features: {}'.format(list(X_train.columns)))
-        exp.log_param('gbdt_type', gbdt_type)
+        exp.log_param('algorithm_type', algorithm_type)
         exp.log_param('num_features', X_train.shape[1])
         exp.log_param('fit_params', fit_params)
         exp.log_param('model_params', model_params)
@@ -264,17 +279,14 @@ def experiment_gbdt(model_params: Dict[str, Any],
             exp.log_param('features', feature_list)
 
         if with_auto_hpo:
-            assert gbdt_type == 'lgbm', 'auto-tuning is only supported for LightGBM'
+            assert issubclass(model_type, LGBMModel), 'auto-tuning is only supported for LightGBM'
             model_params = find_best_lgbm_parameter(model_params, X_train, y, cv=cv, groups=groups,
                                                     type_of_target=type_of_target)
             exp.log_param('model_params_tuned', model_params)
 
         exp.log('Categorical: {}'.format(categorical_feature))
 
-        if type_of_target == 'auto':
-            type_of_target = multiclass.type_of_target(y)
-        model, eval_func, cat_param_name = _dispatch_gbdt(gbdt_type, type_of_target, eval_func)
-        models = [model(**model_params) for _ in range(cv.get_n_splits())]
+        models = [model_type(**model_params) for _ in range(cv.get_n_splits())]
 
         if fit_params is None:
             fit_params = {}
@@ -297,14 +309,15 @@ def experiment_gbdt(model_params: Dict[str, Any],
         exp.log_metric('Overall', result.scores[-1])
 
         # save importance plot
-        importance = pd.concat(result.importance)
-        plot_file_path = os.path.join(logging_directory, 'importance.png')
-        plot_importance(importance, plot_file_path)
-        exp.log_artifact(plot_file_path)
+        if result.importance:
+            importance = pd.concat(result.importance)
+            plot_file_path = os.path.join(logging_directory, 'importance.png')
+            plot_importance(importance, plot_file_path)
+            exp.log_artifact(plot_file_path)
 
         # save trained model
         for i, model in enumerate(models):
-            _save_model(gbdt_type, model, logging_directory, i + 1, exp)
+            _save_model(model, logging_directory, i + 1, exp)
 
         # save submission.csv
         submit_df = None
@@ -336,44 +349,55 @@ def experiment_gbdt(model_params: Dict[str, Any],
 
         elapsed_time = time.time() - start_time
 
-        return GBDTResult(result.oof_prediction, result.test_prediction,
-                          result.scores, models, result.importance, elapsed_time, submit_df)
+        return ExperimentResult(result.oof_prediction, result.test_prediction,
+                                result.scores, models, result.importance, elapsed_time, submit_df)
 
 
-def _dispatch_gbdt(gbdt_type: str, target_type: str, custom_eval: Optional[Callable] = None):
+def _dispatch_eval_func(target_type: str, custom_eval: Optional[Callable] = None):
+    default_eval_func = {
+        'binary': roc_auc_score,
+        'multiclass': log_loss,
+        'continuous': mean_squared_error
+    }
+    return custom_eval if custom_eval is not None else default_eval_func[target_type]
+
+
+def _dispatch_models(algorithm_type: Union[str, Type[BaseEstimator]],
+                     target_type: str, custom_eval: Optional[Callable] = None):
+    if not isinstance(algorithm_type, str):
+        assert issubclass(algorithm_type, BaseEstimator), "algorithm_type should be str or subclass of BaseEstimator"
+        return algorithm_type, _dispatch_eval_func(target_type, custom_eval), None
+
     gbdt_table = [
-        ('binary', 'lgbm', LGBMClassifier, roc_auc_score, 'categorical_feature'),
-        ('multiclass', 'lgbm', LGBMClassifier, log_loss, 'categorical_feature'),
-        ('continuous', 'lgbm', LGBMRegressor, mean_squared_error, 'categorical_feature'),
-        ('binary', 'cat', CatBoostClassifier, roc_auc_score, 'cat_features'),
-        ('multiclass', 'cat', CatBoostClassifier, log_loss, 'cat_features'),
-        ('continuous', 'cat', CatBoostRegressor, mean_squared_error, 'cat_features'),
-        ('binary', 'xgb', XGBClassifier, roc_auc_score, None),
-        ('multiclass', 'xgb', XGBClassifier, log_loss, None),
-        ('continuous', 'xgb', XGBRegressor, mean_squared_error, None),
+        ('binary', 'lgbm', LGBMClassifier, 'categorical_feature'),
+        ('multiclass', 'lgbm', LGBMClassifier, 'categorical_feature'),
+        ('continuous', 'lgbm', LGBMRegressor, 'categorical_feature'),
+        ('binary', 'cat', CatBoostClassifier, 'cat_features'),
+        ('multiclass', 'cat', CatBoostClassifier, 'cat_features'),
+        ('continuous', 'cat', CatBoostRegressor, 'cat_features'),
+        ('binary', 'xgb', XGBClassifier, None),
+        ('multiclass', 'xgb', XGBClassifier, None),
+        ('continuous', 'xgb', XGBRegressor, None),
     ]
-    found = first_true(gbdt_table, pred=lambda x: x[0] == target_type and x[1] == gbdt_type)
+    found = first_true(gbdt_table, pred=lambda x: x[0] == target_type and x[1] == algorithm_type)
     if found is None:
-        raise RuntimeError('Not supported gbdt_type ({}) or type_of_target ({}).'.format(gbdt_type, target_type))
+        raise RuntimeError('Not supported gbdt_type ({}) or type_of_target ({}).'.format(algorithm_type, target_type))
 
-    model, eval_func, cat_param = found[2], found[3], found[4]
-    if custom_eval is not None:
-        eval_func = custom_eval
-
-    return model, eval_func, cat_param
+    return found[2], _dispatch_eval_func(target_type, custom_eval), found[3]
 
 
-def _save_model(gbdt_type: str, model: GBDTModel, logging_directory: str, fold: int, exp: Experiment):
+def _save_model(model: Union[GBDTModel, BaseEstimator], logging_directory: str, fold: int, exp: Experiment):
     model_dir = os.path.join(logging_directory, 'models')
     os.makedirs(model_dir, exist_ok=True)
     path = os.path.join(model_dir, 'fold{}'.format(fold))
 
-    if gbdt_type == 'lgbm':
-        assert isinstance(model, LGBMModel)
+    if isinstance(model, LGBMModel):
         model.booster_.save_model(path)
-    else:
-        assert isinstance(model, (XGBModel, CatBoost))
+    elif isinstance(model, (XGBModel, CatBoost)):
         model.save_model(path)
+    else:
+        with open(path, "wb") as f:
+            pickle.dump(model, f)
 
     exp.log_artifact(path)
 
@@ -398,9 +422,8 @@ def _fill_na_by_unique_value(strain: pd.Series, stest: Optional[pd.Series]) -> T
         return strain.astype(str), stest.astype(str)
 
 
-def autoprep_gbdt(X_train: pd.DataFrame, X_test: Optional[pd.DataFrame],
-                  categorical_feature_to_treat: Optional[List[str]] = None,
-                  gbdt_type: str = 'lgbm') -> Tuple[pd.DataFrame, pd.DataFrame]:
+def autoprep_gbdt(model: Type[GBDTModel], X_train: pd.DataFrame, X_test: Optional[pd.DataFrame],
+                  categorical_feature_to_treat: Optional[List[str]] = None) -> Tuple[pd.DataFrame, pd.DataFrame]:
     if categorical_feature_to_treat is None:
         categorical_feature_to_treat = [c for c in X_train.columns if X_train[c].dtype.name in ['object', 'category']]
 
@@ -415,17 +438,17 @@ def autoprep_gbdt(X_train: pd.DataFrame, X_test: Optional[pd.DataFrame],
     # XGBoost:
     # All categorical column should be encoded beforehand.
 
-    if gbdt_type == 'lgbm':
+    if issubclass(model, LGBMModel):
         # LightGBM can handle categorical dtype natively
         categorical_feature_to_treat = [c for c in categorical_feature_to_treat if not is_categorical(X_train[c])]
 
-    if gbdt_type == 'cat' and len(categorical_feature_to_treat) > 0:
+    if issubclass(model, CatBoost) and len(categorical_feature_to_treat) > 0:
         X_train = X_train.copy()
         X_test = X_test.copy() if X_test is not None else X_train.iloc[:1, :].copy()  # dummy
         for c in categorical_feature_to_treat:
             X_train[c], X_test[c] = _fill_na_by_unique_value(X_train[c], X_test[c])
 
-    if gbdt_type in ('xgb', 'lgbm') and len(categorical_feature_to_treat) > 0:
+    if issubclass(model, (LGBMModel, XGBModel)) and len(categorical_feature_to_treat) > 0:
         assert X_test is not None, "X_test is required for XGBoost with categorical variables"
         X_train = X_train.copy()
         X_test = X_test.copy()

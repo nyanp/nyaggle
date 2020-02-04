@@ -2,7 +2,7 @@ import pandas as pd
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import GroupKFold
 
-from nyaggle.experiment import experiment_gbdt
+from nyaggle.experiment import experiment
 from nyaggle.feature.category_encoder import TargetEncoder
 
 lgb_params = {
@@ -39,13 +39,13 @@ X_train, y_train = transform(te, X_train, y_train)
 X_test, _ = transform(te, X_test, None)
 
 # generated submission.csv scores 11.61445 in private LB (35th)
-experiment_gbdt(logging_directory='baseline_kaggledays_tokyo',
-                model_params=lgb_params,
-                X_train=X_train,
-                y=y_train,
-                X_test=X_test,
-                eval_func=mean_squared_error,
-                type_of_target='continuous',
-                overwrite=True,
-                with_auto_hpo=True,
-                sample_submission=pd.read_csv('sample_submission.csv'))
+experiment(logging_directory='baseline_kaggledays_tokyo',
+           model_params=lgb_params,
+           X_train=X_train,
+           y=y_train,
+           X_test=X_test,
+           eval_func=mean_squared_error,
+           type_of_target='continuous',
+           overwrite=True,
+           with_auto_hpo=True,
+           sample_submission=pd.read_csv('sample_submission.csv'))

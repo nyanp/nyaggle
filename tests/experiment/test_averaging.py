@@ -4,7 +4,7 @@ import tempfile
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
 
-from nyaggle.experiment import average_results, experiment_gbdt
+from nyaggle.experiment import average_results, experiment
 from nyaggle.testing import make_classification_df
 
 
@@ -22,8 +22,8 @@ def test_averaging():
     with tempfile.TemporaryDirectory() as temp_path:
         for i in range(3):
             params['seed'] = i
-            ret_single = experiment_gbdt(params, X_train, y_train, X_test,
-                                         os.path.join(temp_path, 'seed{}'.format(i)))
+            ret_single = experiment(params, X_train, y_train, X_test,
+                                    os.path.join(temp_path, 'seed{}'.format(i)))
 
         df = average_results([
             os.path.join(temp_path, 'seed{}'.format(i)) for i in range(3)

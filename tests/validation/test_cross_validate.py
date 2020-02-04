@@ -87,7 +87,7 @@ def test_cv_lgbm_df():
 
 def test_cv_cat_df():
     X, y = make_classification_df(n_samples=1024, n_num_features=20, n_cat_features=1, class_sep=0.98, random_state=0)
-    X, _ = autoprep_gbdt(X, None, gbdt_type='cat')
+    X, _ = autoprep_gbdt(CatBoostClassifier(), X, None)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
 
     models = [CatBoostClassifier(n_estimators=300) for _ in range(5)]
