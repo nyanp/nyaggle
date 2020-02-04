@@ -2,7 +2,7 @@ import argparse
 import pandas as pd
 
 from sklearn.metrics import log_loss
-from nyaggle.experiment import experiment_gbdt
+from nyaggle.experiment import run_experiment
 
 
 if __name__ == "__main__":
@@ -24,8 +24,8 @@ if __name__ == "__main__":
         'task_type': 'GPU' if args.gpu else 'CPU'
     }
 
-    result = experiment_gbdt(cat_params, X_train, y_train, X_test, logging_directory='bnp-paribas-{time}',
-                             eval_func=log_loss,
-                             gbdt_type='cat',
-                             sample_submission=pd.read_csv('sample_submission.csv'),
-                             with_mlflow=True)
+    result = run_experiment(cat_params, X_train, y_train, X_test, logging_directory='bnp-paribas-{time}',
+                            eval_func=log_loss,
+                            algorithm_type='cat',
+                            sample_submission=pd.read_csv('sample_submission.csv'),
+                            with_mlflow=True)
