@@ -1,7 +1,7 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-from nyaggle.experiment import experiment
+from nyaggle.experiment import run_experiment
 
 
 csv_url = 'http://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv'
@@ -20,11 +20,11 @@ params = {
     'reg_alpha': 0.1
 }
 
-result = experiment(params,
-                    X_train,
-                    y_train,
-                    X_test,
+result = run_experiment(params,
+                        X_train,
+                        y_train,
+                        X_test,
                          './wine-quality-{time}',
-                    type_of_target='continuous',
-                    with_mlflow=True,
-                    with_auto_hpo=True)
+                        type_of_target='continuous',
+                        with_mlflow=True,
+                        with_auto_hpo=True)

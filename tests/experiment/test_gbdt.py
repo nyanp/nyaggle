@@ -11,7 +11,7 @@ from sklearn.metrics import roc_auc_score, mean_squared_error, mean_absolute_err
 from sklearn.model_selection import GroupKFold, KFold, train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 
-from nyaggle.experiment import experiment
+from nyaggle.experiment import run_experiment
 from nyaggle.feature_store import save_feature
 from nyaggle.testing import make_classification_df, make_regression_df, get_temp_directory
 
@@ -33,7 +33,7 @@ def test_experiment_lgb_classifier():
     }
 
     with get_temp_directory() as temp_path:
-        result = experiment(params, X_train, y_train, X_test, temp_path, eval_func=roc_auc_score)
+        result = run_experiment(params, X_train, y_train, X_test, temp_path, eval_func=roc_auc_score)
 
         assert len(np.unique(result.oof_prediction)) > 5  # making sure prediction is not binarized
         assert len(np.unique(result.test_prediction)) > 5
@@ -55,7 +55,7 @@ def test_experiment_lgb_regressor():
     }
 
     with get_temp_directory() as temp_path:
-        result = experiment(params, X_train, y_train, X_test, temp_path)
+        result = run_experiment(params, X_train, y_train, X_test, temp_path)
 
         assert len(np.unique(result.oof_prediction)) > 5  # making sure prediction is not binarized
         assert len(np.unique(result.test_prediction)) > 5
@@ -76,7 +76,7 @@ def test_experiment_lgb_multiclass():
     }
 
     with get_temp_directory() as temp_path:
-        result = experiment(params, X_train, y_train, X_test, temp_path)
+        result = run_experiment(params, X_train, y_train, X_test, temp_path)
 
         assert len(np.unique(result.oof_prediction[:, 0])) > 5  # making sure prediction is not binarized
         assert len(np.unique(result.test_prediction[:, 0])) > 5
@@ -98,8 +98,8 @@ def test_experiment_cat_classifier():
     }
 
     with get_temp_directory() as temp_path:
-        result = experiment(params, X_train, y_train, X_test, temp_path, eval_func=roc_auc_score, algorithm_type='cat',
-                            submission_filename='submission.csv', with_auto_prep=True)
+        result = run_experiment(params, X_train, y_train, X_test, temp_path, eval_func=roc_auc_score, algorithm_type='cat',
+                                submission_filename='submission.csv', with_auto_prep=True)
 
         assert len(np.unique(result.oof_prediction)) > 5  # making sure prediction is not binarized
         assert len(np.unique(result.test_prediction)) > 5
@@ -122,7 +122,7 @@ def test_experiment_cat_regressor():
     }
 
     with get_temp_directory() as temp_path:
-        result = experiment(params, X_train, y_train, X_test, temp_path, algorithm_type='cat')
+        result = run_experiment(params, X_train, y_train, X_test, temp_path, algorithm_type='cat')
 
         assert mean_squared_error(y_train, result.oof_prediction) == result.metrics[-1]
         _check_file_exists(temp_path, ('oof_prediction.npy', 'test_prediction.npy', 'metrics.txt'))
@@ -140,8 +140,8 @@ def test_experiment_cat_multiclass():
     }
 
     with get_temp_directory() as temp_path:
-        result = experiment(params, X_train, y_train, X_test, temp_path, algorithm_type='cat',
-                            type_of_target='multiclass', submission_filename='submission.csv', with_auto_prep=True)
+        result = run_experiment(params, X_train, y_train, X_test, temp_path, algorithm_type='cat',
+                                type_of_target='multiclass', submission_filename='submission.csv', with_auto_prep=True)
 
         assert result.oof_prediction.shape == (len(y_train), 5)
         assert result.test_prediction.shape == (len(y_test), 5)
@@ -163,8 +163,8 @@ def test_experiment_xgb_classifier():
     }
 
     with get_temp_directory() as temp_path:
-        result = experiment(params, X_train, y_train, X_test, temp_path, eval_func=roc_auc_score, algorithm_type='xgb',
-                            submission_filename='submission.csv', with_auto_prep=True)
+        result = run_experiment(params, X_train, y_train, X_test, temp_path, eval_func=roc_auc_score, algorithm_type='xgb',
+                                submission_filename='submission.csv', with_auto_prep=True)
 
         assert len(np.unique(result.oof_prediction)) > 5  # making sure prediction is not binarized
         assert len(np.unique(result.test_prediction)) > 5
@@ -187,7 +187,7 @@ def test_experiment_xgb_regressor():
     }
 
     with get_temp_directory() as temp_path:
-        result = experiment(params, X_train, y_train, X_test, temp_path, algorithm_type='xgb', with_auto_prep=True)
+        result = run_experiment(params, X_train, y_train, X_test, temp_path, algorithm_type='xgb', with_auto_prep=True)
 
         assert mean_squared_error(y_train, result.oof_prediction) == result.metrics[-1]
         _check_file_exists(temp_path, ('oof_prediction.npy', 'test_prediction.npy', 'metrics.txt'))
@@ -205,9 +205,9 @@ def test_experiment_xgb_multiclass():
     }
 
     with get_temp_directory() as temp_path:
-        result = experiment(params, X_train, y_train, X_test, temp_path, algorithm_type='xgb',
-                            type_of_target='multiclass', submission_filename='submission.csv',
-                            with_auto_prep=True)
+        result = run_experiment(params, X_train, y_train, X_test, temp_path, algorithm_type='xgb',
+                                type_of_target='multiclass', submission_filename='submission.csv',
+                                with_auto_prep=True)
 
         assert result.oof_prediction.shape == (len(y_train), 5)
         assert result.test_prediction.shape == (len(y_test), 5)
@@ -228,8 +228,8 @@ def test_experiment_sklearn_classifier():
     }
 
     with get_temp_directory() as temp_path:
-        result = experiment(params, X_train, y_train, X_test, temp_path, eval_func=roc_auc_score,
-                            algorithm_type=LogisticRegression, with_auto_prep=False)
+        result = run_experiment(params, X_train, y_train, X_test, temp_path, eval_func=roc_auc_score,
+                                algorithm_type=LogisticRegression, with_auto_prep=False)
 
         assert len(np.unique(result.oof_prediction)) > 5  # making sure prediction is not binarized
         assert len(np.unique(result.test_prediction)) > 5
@@ -250,8 +250,8 @@ def test_experiment_sklearn_regressor():
     }
 
     with get_temp_directory() as temp_path:
-        result = experiment(params, X_train, y_train, X_test, temp_path, with_auto_prep=False,
-                            algorithm_type=LinearRegression)
+        result = run_experiment(params, X_train, y_train, X_test, temp_path, with_auto_prep=False,
+                                algorithm_type=LinearRegression)
 
         assert len(np.unique(result.oof_prediction)) > 5  # making sure prediction is not binarized
         assert len(np.unique(result.test_prediction)) > 5
@@ -271,8 +271,8 @@ def test_experiment_sklearn_multiclass():
     }
 
     with get_temp_directory() as temp_path:
-        result = experiment(params, X_train, y_train, X_test, temp_path, algorithm_type=KNeighborsClassifier,
-                            with_auto_prep=False)
+        result = run_experiment(params, X_train, y_train, X_test, temp_path, algorithm_type=KNeighborsClassifier,
+                                with_auto_prep=False)
 
         assert len(np.unique(result.oof_prediction[:, 0])) > 5  # making sure prediction is not binarized
         assert len(np.unique(result.test_prediction[:, 0])) > 5
@@ -295,8 +295,8 @@ def test_experiment_cat_custom_eval():
     }
 
     with get_temp_directory() as temp_path:
-        result = experiment(params, X_train, y_train, X_test, temp_path,
-                            algorithm_type='cat', eval_func=mean_absolute_error)
+        result = run_experiment(params, X_train, y_train, X_test, temp_path,
+                                algorithm_type='cat', eval_func=mean_absolute_error)
 
         assert mean_absolute_error(y_train, result.oof_prediction) == result.metrics[-1]
         _check_file_exists(temp_path, ('oof_prediction.npy', 'test_prediction.npy', 'metrics.txt'))
@@ -314,7 +314,7 @@ def test_experiment_without_test_data():
     }
 
     with get_temp_directory() as temp_path:
-        result = experiment(params, X_train, y_train, None, temp_path)
+        result = run_experiment(params, X_train, y_train, None, temp_path)
 
         assert roc_auc_score(y_train, result.oof_prediction) >= 0.9
         _check_file_exists(temp_path, ('oof_prediction.npy', 'metrics.txt'))
@@ -333,11 +333,11 @@ def test_experiment_fit_params():
     }
 
     with get_temp_directory() as temp_path:
-        result1 = experiment(params, X_train, y_train, X_test,
-                             temp_path, fit_params={'early_stopping_rounds': None})
+        result1 = run_experiment(params, X_train, y_train, X_test,
+                                 temp_path, fit_params={'early_stopping_rounds': None})
     with get_temp_directory() as temp_path:
-        result2 = experiment(params, X_train, y_train, X_test,
-                             temp_path, fit_params={'early_stopping_rounds': 5})
+        result2 = run_experiment(params, X_train, y_train, X_test,
+                                 temp_path, fit_params={'early_stopping_rounds': 5})
 
     assert result1.models[-1].booster_.num_trees() == params['n_estimators']
     assert result2.models[-1].booster_.num_trees() < params['n_estimators']
@@ -355,7 +355,7 @@ def test_experiment_mlflow():
     }
 
     with get_temp_directory() as temp_path:
-        experiment(params, X_train, y_train, None, temp_path, with_mlflow=True)
+        run_experiment(params, X_train, y_train, None, temp_path, with_mlflow=True)
 
         _check_file_exists(temp_path, ('oof_prediction.npy', 'metrics.txt', 'mlflow.json'))
 
@@ -380,13 +380,13 @@ def test_experiment_already_exists():
     }
 
     with get_temp_directory() as temp_path:
-        experiment(params, X_train, y_train, None, temp_path, overwrite=True)
+        run_experiment(params, X_train, y_train, None, temp_path, overwrite=True)
 
         # result is overwrited by default
-        experiment(params, X_train, y_train, None, temp_path, overwrite=True)
+        run_experiment(params, X_train, y_train, None, temp_path, overwrite=True)
 
         with pytest.raises(Exception):
-            experiment(params, X_train, y_train, None, temp_path, overwrite=False)
+            run_experiment(params, X_train, y_train, None, temp_path, overwrite=False)
 
 
 def test_submission_filename():
@@ -401,7 +401,7 @@ def test_submission_filename():
     }
 
     with get_temp_directory() as temp_path:
-        experiment(params, X_train, y_train, X_test, temp_path, submission_filename='sub.csv')
+        run_experiment(params, X_train, y_train, X_test, temp_path, submission_filename='sub.csv')
 
         df = pd.read_csv(os.path.join(temp_path, 'sub.csv'))
         assert list(df.columns) == ['id', 'target']
@@ -419,7 +419,7 @@ def test_experiment_manual_cv_kfold():
     }
 
     with get_temp_directory() as temp_path:
-        result = experiment(params, X_train, y_train, None, temp_path, cv=KFold(4))
+        result = run_experiment(params, X_train, y_train, None, temp_path, cv=KFold(4))
         assert len(result.models) == 4
         assert len(result.metrics) == 4 + 1
 
@@ -436,7 +436,7 @@ def test_experiment_manual_cv_int():
     }
 
     with get_temp_directory() as temp_path:
-        result = experiment(params, X_train, y_train, None, temp_path, cv=KFold(2))
+        result = run_experiment(params, X_train, y_train, None, temp_path, cv=KFold(2))
         assert len(result.models) == 2
         assert len(result.metrics) == 2 + 1
 
@@ -467,7 +467,7 @@ def test_experiment_manual_cv_group():
     }
 
     with get_temp_directory() as temp_path:
-        result = experiment(params, X_train, y_train, X_test, temp_path, cv=GroupKFold(2), groups=grp)
+        result = run_experiment(params, X_train, y_train, X_test, temp_path, cv=GroupKFold(2), groups=grp)
         assert result.metrics[-1] < 0.7
 
 
@@ -485,7 +485,7 @@ def test_experiment_sample_submission_binary():
     }
 
     with get_temp_directory() as temp_path:
-        result = experiment(params, X_train, y_train, X_test, temp_path, sample_submission=sample_df)
+        result = run_experiment(params, X_train, y_train, X_test, temp_path, sample_submission=sample_df)
 
         assert list(result.submission_df.columns) == ['target_id_abc', 'target_value_abc']
         assert roc_auc_score(y_test, result.submission_df['target_value_abc']) > 0.8
@@ -506,7 +506,7 @@ def test_experiment_sample_submission_multiclass():
     }
 
     with get_temp_directory() as temp_path:
-        result = experiment(params, X_train, y_train, X_test, temp_path, sample_submission=sample_df)
+        result = run_experiment(params, X_train, y_train, X_test, temp_path, sample_submission=sample_df)
 
         assert list(result.submission_df.columns) == ['target_id_abc',
                                                       'target_class_0',
@@ -539,11 +539,11 @@ def test_with_feature_attachment():
         X_train, X_test, y_train, y_test = train_test_split(X, y, shuffle=False)
 
         with get_temp_directory() as temp_path:
-            result_wo_feature = experiment(params, X_train, y_train, X_test, logging_directory=temp_path)
+            result_wo_feature = run_experiment(params, X_train, y_train, X_test, logging_directory=temp_path)
 
         with get_temp_directory() as temp_path:
-            result_w_feature = experiment(params, X_train, y_train, X_test, logging_directory=temp_path,
-                                          feature_list=[0, 1, 2, 3], feature_directory=temp_feature_path)
+            result_w_feature = run_experiment(params, X_train, y_train, X_test, logging_directory=temp_path,
+                                              feature_list=[0, 1, 2, 3], feature_directory=temp_feature_path)
 
         assert result_w_feature.metrics[-1] > result_wo_feature.metrics[-1]
 
@@ -560,8 +560,8 @@ def test_with_long_params():
 
     with get_temp_directory() as temp_path:
         # just to make sure experiment finish
-        experiment(params, X_train, y_train, X_test,
-                   logging_directory=temp_path, with_mlflow=True)
+        run_experiment(params, X_train, y_train, X_test,
+                       logging_directory=temp_path, with_mlflow=True)
 
 
 def test_with_rare_categories():
@@ -602,9 +602,9 @@ def test_with_rare_categories():
 
         for algorithm in ('cat', 'xgb', 'lgbm'):
             with get_temp_directory() as temp_path:
-                experiment(params[algorithm], X_train, y_train, X_test, algorithm_type=algorithm,
-                           logging_directory=temp_path, with_mlflow=True, with_auto_prep=True,
-                           categorical_feature=['x0', 'x1', 'x2', 'x3'])
+                run_experiment(params[algorithm], X_train, y_train, X_test, algorithm_type=algorithm,
+                               logging_directory=temp_path, with_mlflow=True, with_auto_prep=True,
+                               categorical_feature=['x0', 'x1', 'x2', 'x3'])
 
 
 def test_inherit_outer_scope_run():
@@ -618,7 +618,7 @@ def test_inherit_outer_scope_run():
     X, y = make_classification_df()
 
     with get_temp_directory() as temp_path:
-        experiment(params, X, y, with_mlflow=True, logging_directory=temp_path)
+        run_experiment(params, X, y, with_mlflow=True, logging_directory=temp_path)
 
     assert mlflow.active_run() is not None  # still valid
 

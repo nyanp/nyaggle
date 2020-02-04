@@ -28,8 +28,8 @@ $pip install nyaggle
 ## Examples
 
 ### Experiment Logging
-`experiment_gbdt()` is an high-level API for cross validation using 
-gradient boosting algorithm. It outputs parameters, metrics, out of fold predictions, test predictions, 
+`run_experiment()` is an high-level API for experiment with cross validation.
+It outputs parameters, metrics, out of fold predictions, test predictions,
 feature importance and submission.csv under the specified directory.
 
 It can be combined with mlflow tracking.
@@ -48,10 +48,10 @@ params = {
     'max_depth': 8
 }
 
-result = experiment(params,
-                    X_train,
-                    y_train,
-                    X_test)
+result = run_experiment(params,
+                        X_train,
+                        y_train,
+                        X_test)
                          
 # You can get outputs that needed in data science competitions with 1 API
 
@@ -67,11 +67,11 @@ print(result.submission_df)    # The output dataframe saved as submission.csv
 
 
 # You can use it with mlflow and track your experiments through mlflow-ui
-result = experiment(params,
-                    X_train,
-                    y_train,
-                    X_test,
-                    with_mlflow=True)
+result = run_experiment(params,
+                        X_train,
+                        y_train,
+                        X_test,
+                        with_mlflow=True)
 ```
 
 

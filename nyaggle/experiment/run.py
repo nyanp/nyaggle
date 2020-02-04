@@ -1,26 +1,24 @@
-import copy
 import os
 import pickle
 import time
 from collections import namedtuple
 from datetime import datetime
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Type, Union
 
 import numpy as np
-import optuna.integration.lightgbm as optuna_lgb
 import pandas as pd
 import sklearn.utils.multiclass as multiclass
 from catboost import CatBoost, CatBoostClassifier, CatBoostRegressor
 from lightgbm import LGBMModel, LGBMClassifier, LGBMRegressor
-from xgboost import XGBModel, XGBClassifier, XGBRegressor
 from more_itertools import first_true
-from pandas.api.types import is_integer_dtype, is_categorical
 from sklearn.base import BaseEstimator
-from sklearn.model_selection import BaseCrossValidator
 from sklearn.metrics import roc_auc_score, mean_squared_error, log_loss
-from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import BaseCrossValidator
+from xgboost import XGBModel, XGBClassifier, XGBRegressor
 
+from nyaggle.experiment.auto_prep import autoprep_gbdt
 from nyaggle.experiment.experiment import Experiment
+from nyaggle.experiment.hyperparameter_tuner import find_best_lgbm_parameter
 from nyaggle.feature_store import load_features
 from nyaggle.util import plot_importance
 from nyaggle.validation.cross_validate import cross_validate
@@ -39,104 +37,26 @@ ExperimentResult = namedtuple('LGBResult',
 GBDTModel = Union[CatBoost, LGBMModel, XGBModel]
 
 
-def find_best_lgbm_parameter(base_param: Dict, X: pd.DataFrame, y: pd.Series,
-                             cv: Optional[Union[int, Iterable, BaseCrossValidator]] = None,
-                             groups: Optional[pd.Series] = None,
-                             time_budget: Optional[int] = None,
-                             type_of_target: str = 'auto') -> Dict:
-    """
-    Search hyperparameter for lightgbm using optuna.
-
-    Args:
-        base_param:
-            Base parameters passed to lgb.train.
-        X:
-            Training data.
-        y:
-            Target
-        cv:
-            int, cross-validation generator or an iterable which determines the cross-validation splitting strategy.
-        groups:
-            Group labels for the samples. Only used in conjunction with a “Group” cv instance (e.g., ``GroupKFold``).
-        time_budget:
-            Time budget for tuning (in seconds).
-        type_of_target:
-            The type of target variable. If ``auto``, type is inferred by ``sklearn.utils.multiclass.type_of_target``.
-            Otherwise, ``binary``, ``continuous``, or ``multiclass`` are supported.
-
-    Returns:
-        The best parameters found
-    """
-    cv = check_cv(cv, y)
-
-    if type_of_target == 'auto':
-        type_of_target = multiclass.type_of_target(y)
-
-    train_index, test_index = next(cv.split(X, y, groups))
-
-    dtrain = optuna_lgb.Dataset(X.iloc[train_index], y.iloc[train_index])
-    dvalid = optuna_lgb.Dataset(X.iloc[test_index], y.iloc[test_index])
-
-    params = copy.deepcopy(base_param)
-    if 'early_stopping_rounds' not in params:
-        params['early_stopping_rounds'] = 100
-
-    if not any([p in params for p in ('num_iterations', 'num_iteration',
-                                      'num_trees', 'num_tree',
-                                      'num_rounds', 'num_round')]):
-        params['num_iterations'] = params.get('n_estimators', 10000)
-
-    if 'objective' not in params:
-        tot_to_objective = {
-            'binary': 'binary',
-            'continuous': 'regression',
-            'multiclass': 'multiclass'
-        }
-        params['objective'] = tot_to_objective[type_of_target]
-
-    if 'metric' not in params and 'objective' in params:
-        if params['objective'] in ['regression', 'regression_l2', 'l2', 'mean_squared_error', 'mse', 'l2_root',
-                                   'root_mean_squared_error', 'rmse']:
-            params['metric'] = 'l2'
-        if params['objective'] in ['regression_l1', 'l1', 'mean_absolute_error', 'mae']:
-            params['metric'] = 'l1'
-        if params['objective'] in ['binary']:
-            params['metric'] = 'binary_logloss'
-        if params['objective'] in ['multiclass']:
-            params['metric'] = 'multi_logloss'
-
-    if not any([p in params for p in ('verbose', 'verbosity')]):
-        params['verbosity'] = -1
-
-    best_params, tuning_history = dict(), list()
-    optuna_lgb.train(params, dtrain, valid_sets=[dvalid], verbose_eval=0,
-                     best_params=best_params, tuning_history=tuning_history, time_budget=time_budget)
-
-    result_param = copy.deepcopy(base_param)
-    result_param.update(best_params)
-    return result_param
-
-
-def experiment(model_params: Dict[str, Any],
-               X_train: pd.DataFrame, y: pd.Series,
-               X_test: Optional[pd.DataFrame] = None,
-               logging_directory: str = 'output/{time}',
-               overwrite: bool = False,
-               eval_func: Optional[Callable] = None,
-               algorithm_type: Union[str, Type[BaseEstimator]] = 'lgbm',
-               fit_params: Optional[Union[Dict[str, Any], Callable]] = None,
-               cv: Optional[Union[int, Iterable, BaseCrossValidator]] = None,
-               groups: Optional[pd.Series] = None,
-               categorical_feature: Optional[List[str]] = None,
-               sample_submission: Optional[pd.DataFrame] = None,
-               submission_filename: Optional[str] = None,
-               type_of_target: str = 'auto',
-               feature_list: Optional[List[Union[int, str]]] = None,
-               feature_directory: Optional[str] = None,
-               with_auto_hpo: bool = False,
-               with_auto_prep: bool = False,
-               with_mlflow: bool = False
-               ):
+def run_experiment(model_params: Dict[str, Any],
+                   X_train: pd.DataFrame, y: pd.Series,
+                   X_test: Optional[pd.DataFrame] = None,
+                   logging_directory: str = 'output/{time}',
+                   overwrite: bool = False,
+                   eval_func: Optional[Callable] = None,
+                   algorithm_type: Union[str, Type[BaseEstimator]] = 'lgbm',
+                   fit_params: Optional[Union[Dict[str, Any], Callable]] = None,
+                   cv: Optional[Union[int, Iterable, BaseCrossValidator]] = None,
+                   groups: Optional[pd.Series] = None,
+                   categorical_feature: Optional[List[str]] = None,
+                   sample_submission: Optional[pd.DataFrame] = None,
+                   submission_filename: Optional[str] = None,
+                   type_of_target: str = 'auto',
+                   feature_list: Optional[List[Union[int, str]]] = None,
+                   feature_directory: Optional[str] = None,
+                   with_auto_hpo: bool = False,
+                   with_auto_prep: bool = False,
+                   with_mlflow: bool = False
+                   ):
     """
     Evaluate metrics by cross-validation and stores result
     (log, oof prediction, test prediction, feature importance plot and submission file)
@@ -410,55 +330,3 @@ def _check_input(X_train: pd.DataFrame, y: pd.Series,
 
     if X_test is not None:
         assert list(X_train.columns) == list(X_test.columns), "columns are different between X_train and X_test"
-
-
-def _fill_na_by_unique_value(strain: pd.Series, stest: Optional[pd.Series]) -> Tuple[pd.Series, pd.Series]:
-    if is_categorical(strain):
-        return strain.cat.codes, stest.cat.codes
-    elif is_integer_dtype(strain.dtype):
-        fillval = min(strain.min(), stest.min()) - 1
-        return strain.fillna(fillval), stest.fillna(fillval)
-    else:
-        return strain.astype(str), stest.astype(str)
-
-
-def autoprep_gbdt(model: Type[GBDTModel], X_train: pd.DataFrame, X_test: Optional[pd.DataFrame],
-                  categorical_feature_to_treat: Optional[List[str]] = None) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    if categorical_feature_to_treat is None:
-        categorical_feature_to_treat = [c for c in X_train.columns if X_train[c].dtype.name in ['object', 'category']]
-
-    # LightGBM:
-    # Can handle categorical dtype. Otherwise, int, float or bool is acceptable for categorical columns.
-    # https://lightgbm.readthedocs.io/en/latest/Advanced-Topics.html#categorical-feature-support
-    #
-    # CatBoost:
-    # int, float, bool or str is acceptable for categorical columns. NaN should be filled.
-    # https://catboost.ai/docs/concepts/faq.html#why-float-and-nan-values-are-forbidden-for-cat-features
-    #
-    # XGBoost:
-    # All categorical column should be encoded beforehand.
-
-    if issubclass(model, LGBMModel):
-        # LightGBM can handle categorical dtype natively
-        categorical_feature_to_treat = [c for c in categorical_feature_to_treat if not is_categorical(X_train[c])]
-
-    if issubclass(model, CatBoost) and len(categorical_feature_to_treat) > 0:
-        X_train = X_train.copy()
-        X_test = X_test.copy() if X_test is not None else X_train.iloc[:1, :].copy()  # dummy
-        for c in categorical_feature_to_treat:
-            X_train[c], X_test[c] = _fill_na_by_unique_value(X_train[c], X_test[c])
-
-    if issubclass(model, (LGBMModel, XGBModel)) and len(categorical_feature_to_treat) > 0:
-        assert X_test is not None, "X_test is required for XGBoost with categorical variables"
-        X_train = X_train.copy()
-        X_test = X_test.copy()
-
-        for c in categorical_feature_to_treat:
-            X_train[c], X_test[c] = _fill_na_by_unique_value(X_train[c], X_test[c])
-            le = LabelEncoder()
-            concat = np.concatenate([X_train[c].values, X_test[c].values])
-            concat = le.fit_transform(concat)
-            X_train[c] = concat[:len(X_train)]
-            X_test[c] = concat[len(X_train):]
-
-    return X_train, X_test
