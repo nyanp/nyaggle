@@ -1,8 +1,8 @@
 import json
-import mlflow
 import os
 from urllib.parse import urlparse, unquote
 
+import mlflow
 import numpy as np
 import pandas as pd
 import pytest
@@ -11,8 +11,8 @@ from sklearn.metrics import roc_auc_score, mean_squared_error, mean_absolute_err
 from sklearn.model_selection import GroupKFold, KFold, train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 
-from nyaggle.experiment import experiment, find_best_lgbm_parameter
-from nyaggle.feature_store import save_feature, load_features
+from nyaggle.experiment import experiment
+from nyaggle.feature_store import save_feature
 from nyaggle.testing import make_classification_df, make_regression_df, get_temp_directory
 
 
@@ -99,7 +99,7 @@ def test_experiment_cat_classifier():
 
     with get_temp_directory() as temp_path:
         result = experiment(params, X_train, y_train, X_test, temp_path, eval_func=roc_auc_score, algorithm_type='cat',
-                            submission_filename='submission.csv')
+                            submission_filename='submission.csv', with_auto_prep=True)
 
         assert len(np.unique(result.oof_prediction)) > 5  # making sure prediction is not binarized
         assert len(np.unique(result.test_prediction)) > 5
@@ -141,7 +141,7 @@ def test_experiment_cat_multiclass():
 
     with get_temp_directory() as temp_path:
         result = experiment(params, X_train, y_train, X_test, temp_path, algorithm_type='cat',
-                            type_of_target='multiclass', submission_filename='submission.csv')
+                            type_of_target='multiclass', submission_filename='submission.csv', with_auto_prep=True)
 
         assert result.oof_prediction.shape == (len(y_train), 5)
         assert result.test_prediction.shape == (len(y_test), 5)
@@ -164,7 +164,7 @@ def test_experiment_xgb_classifier():
 
     with get_temp_directory() as temp_path:
         result = experiment(params, X_train, y_train, X_test, temp_path, eval_func=roc_auc_score, algorithm_type='xgb',
-                            submission_filename='submission.csv')
+                            submission_filename='submission.csv', with_auto_prep=True)
 
         assert len(np.unique(result.oof_prediction)) > 5  # making sure prediction is not binarized
         assert len(np.unique(result.test_prediction)) > 5
@@ -187,7 +187,7 @@ def test_experiment_xgb_regressor():
     }
 
     with get_temp_directory() as temp_path:
-        result = experiment(params, X_train, y_train, X_test, temp_path, algorithm_type='xgb')
+        result = experiment(params, X_train, y_train, X_test, temp_path, algorithm_type='xgb', with_auto_prep=True)
 
         assert mean_squared_error(y_train, result.oof_prediction) == result.metrics[-1]
         _check_file_exists(temp_path, ('oof_prediction.npy', 'test_prediction.npy', 'metrics.txt'))
@@ -206,7 +206,8 @@ def test_experiment_xgb_multiclass():
 
     with get_temp_directory() as temp_path:
         result = experiment(params, X_train, y_train, X_test, temp_path, algorithm_type='xgb',
-                            type_of_target='multiclass', submission_filename='submission.csv')
+                            type_of_target='multiclass', submission_filename='submission.csv',
+                            with_auto_prep=True)
 
         assert result.oof_prediction.shape == (len(y_train), 5)
         assert result.test_prediction.shape == (len(y_test), 5)
@@ -602,7 +603,7 @@ def test_with_rare_categories():
         for algorithm in ('cat', 'xgb', 'lgbm'):
             with get_temp_directory() as temp_path:
                 experiment(params[algorithm], X_train, y_train, X_test, algorithm_type=algorithm,
-                           logging_directory=temp_path, with_mlflow=True,
+                           logging_directory=temp_path, with_mlflow=True, with_auto_prep=True,
                            categorical_feature=['x0', 'x1', 'x2', 'x3'])
 
 

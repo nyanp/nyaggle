@@ -134,7 +134,7 @@ def experiment(model_params: Dict[str, Any],
                feature_list: Optional[List[Union[int, str]]] = None,
                feature_directory: Optional[str] = None,
                with_auto_hpo: bool = False,
-               with_auto_prep: bool = True,
+               with_auto_prep: bool = False,
                with_mlflow: bool = False
                ):
     """
