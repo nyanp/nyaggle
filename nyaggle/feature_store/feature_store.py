@@ -163,9 +163,13 @@ def cached_feature(feature_name: Union[int, str], directory: str = './features/'
         >>>
         >>> @cached_feature('x')
         >>> def make_feature_x(param) -> pd.DataFrame:
+        >>>     print('called')
         >>>     ...
         >>>     return df
-
+        >>>
+        >>> x = make_feature_x(...)  # if x.f does not exist, call the function and save result to x.f
+        "called"
+        >>> x = make_feature_x(...)  # load from file in the second time
     """
     def _decorator(fun):
         @functools.wraps(fun)
