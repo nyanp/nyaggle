@@ -1,4 +1,6 @@
+import functools
 import os
+import pyarrow
 import warnings
 from typing import List, Optional, Union
 
@@ -141,3 +143,41 @@ def load_features(base_df: Optional[pd.DataFrame],
     concatenated = pd.concat([base_df] + dfs, axis=1)
     concatenated.columns = columns
     return concatenated
+
+
+def cached_feature(feature_name: Union[int, str], directory: str = './features/', ignore_columns: List[str] = None):
+    """
+    Decorator to wrap a function which returns pd.DataFrame with a memorizing callable that saves dataframe using
+    ``feature_store.save_feature``.
+
+    Args:
+        feature_name:
+            The name of the feature (used in ``save_feature``).
+        directory:
+            The directory where the feature is stored.
+        ignore_columns:
+            The list of columns that will be dropped from the loaded dataframe.
+
+    Example:
+        >>> from nyaggle.feature_store import cached_feature
+        >>>
+        >>> @cached_feature('x')
+        >>> def make_feature_x(param) -> pd.DataFrame:
+        >>>     ...
+        >>>     return df
+
+    """
+    def _decorator(fun):
+        @functools.wraps(fun)
+        def _decorated_fun(*args, **kwargs):
+            try:
+                return load_feature(feature_name, directory, ignore_columns)
+            except (pyarrow.ArrowIOError, IOError):
+                df = fun(*args, **kwargs)
+                assert isinstance(df, pd.DataFrame), "returning value of @cached_feature should be pd.DataFrame"
+                save_feature(df, feature_name, directory)
+                return df
+
+        return _decorated_fun
+
+    return _decorator

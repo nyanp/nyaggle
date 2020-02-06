@@ -173,3 +173,26 @@ def test_feature_exists():
         fs.save_feature(df[['a']], 0, directory=tmp)
         with pytest.raises(RuntimeError):
             fs.save_feature(df, 0, overwrite=False, directory=tmp)
+
+
+def test_decorator():
+    with get_temp_directory() as tmp:
+        @fs.cached_feature('x', tmp)
+        def make_feature_x():
+            return pd.DataFrame({'a': [1, 2, 3, 4, 5]})
+
+        @fs.cached_feature('y', tmp)
+        def make_feature_y(n: int):
+            return pd.DataFrame({'b': np.arange(n)})
+
+        x = make_feature_x()
+        assert make_feature_x.__name__ == "make_feature_x"
+        assert os.path.exists(os.path.join(tmp, "x.f"))
+        x2 = make_feature_x()
+        assert_frame_equal(x, x2)
+
+        y = make_feature_y(100)
+        assert len(y) == 100
+        assert os.path.exists(os.path.join(tmp, "y.f"))
+        y2 = make_feature_y(100)
+        assert_frame_equal(y, y2)
