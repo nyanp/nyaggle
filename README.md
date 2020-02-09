@@ -37,7 +37,7 @@ It can be combined with mlflow tracking.
 ```python
 from sklearn.model_selection import train_test_split
 
-from nyaggle.experiment import experiment_gbdt
+from nyaggle.experiment import run_experiment
 from nyaggle.testing import make_classification_df
 
 X, y = make_classification_df()
