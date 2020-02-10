@@ -11,6 +11,7 @@ Welcome to nyaggle's documentation!
    :caption: Contents:
 
    installation
+   source/tutorial/experiment
    source/nyaggle
 
 
