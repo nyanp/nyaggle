@@ -2,10 +2,10 @@ Concept of nyaggle.experiment
 -------------------------------
 
 
-In a typical tabular data competition, you may probably repeat evaluating your idea with cross validation and
-logging its parameters and results to track your experiments.
+In a typical tabular data competition, you may probably repeat evaluating your idea
+by cross-validating with logging the parameters and results to track your experiments.
 
-The ``nyaggle.experiment.run_experiment`` is an API for such situation.
+The ``nyaggle.experiment.run_experiment`` is an API for such situations.
 If you are using LightGBM as your model, the code will be quite simple:
 
 
@@ -33,7 +33,7 @@ If you are using LightGBM as your model, the code will be quite simple:
                           sample_submission=sample_df)
 
 
-The ``run_experiment`` API will perform cross validation and store artifacts to the logging directory. You will see the output files stored as follows:
+The ``run_experiment`` API will perform cross-validation and store artifacts to the logging directory. You will see the output files stored as follows:
 
 ::
 
@@ -56,11 +56,12 @@ The ``run_experiment`` API will perform cross validation and store artifacts to 
 
 
 .. hint::
-  The default validation strategy is 5-fold CV, and of course you can change this behavior by passing ``cv`` parameter
+  The default validation strategy is a 5-fold CV, and of course, you can change this behavior by passing ``cv`` parameter
   (see API reference in detail).
 
 
-If you want to use XGBoost, CatBoost or other sklearn's estimator, specify the type of algorithm:
+If you want to use XGBoost, CatBoost or other sklearn estimators,
+specify the type of algorithm:
 
 
 .. code-block:: python
@@ -118,8 +119,9 @@ In the same directory as the script executed, run
   mlflow ui
 
 
-and view it at http://localhost:5000 . On this page, you can see the list of experiments with
- CV scores and parameters.
+
+and view it at http://localhost:5000 .
+On this page, you can see the list of experiments with CV scores and parameters.
 
 
 .. image:: ../../image/mlflow.png
@@ -127,7 +129,7 @@ and view it at http://localhost:5000 . On this page, you can see the list of exp
 
 If you want to customize the behavior of logging, you can call ``run_experiment`` in
 the context of mlflow run. If there is an active run, ``run_experiment`` will use the
-currently active run instead of creating new one.
+currently active run instead of creating a new one.
 
 
 .. code-block:: python
