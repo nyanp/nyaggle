@@ -32,11 +32,14 @@ If you are using LightGBM as your model, the code will be quite simple:
       'max_depth': 8
   }
 
-  result = run_experiment(lightgbm_params, X_train, y, X_test,
+  result = run_experiment(lightgbm_params, 
+                          X_train, 
+                          y, 
+                          X_test,
                           sample_submission=sample_df)
 
 
-The ``run_experiment`` API will perform cross-validation and store artifacts to the logging directory. You will see the output files stored as follows:
+The ``run_experiment`` API performs cross-validation and stores artifacts to the logging directory. You will see the output files stored as follows:
 
 ::
 
@@ -76,24 +79,33 @@ specify the type of algorithm:
       'depth': 8,
       'task_type': 'GPU'
   }
-  result = run_experiment(catboost_params, X_train, y, X_test,
-                          sample_submission=sample_df, algorithm_type='cat')
+  result = run_experiment(catboost_params, 
+                          X_train,
+                          y, 
+                          X_test,
+                          algorithm_type='cat')
 
   # XGBoost
   xgboost_params = {
       'objective': 'reg:linear',
       'max_depth': 8
   }
-  result = run_experiment(xgboost_params, X_train, y, X_test,
-                          sample_submission=sample_df, algorithm_type='xgb')
+  result = run_experiment(xgboost_params, 
+                          X_train, 
+                          y, 
+                          X_test,
+                          algorithm_type='xgb')
 
   # sklearn estimator
   from sklearn.linear_model import Ridge
   rigde_params = {
       'alpha': 1.0
   }
-  result = run_experiment(rigde_params, X_train, y, X_test,
-                          sample_submission=sample_df, algorithm_type=Ridge)
+  result = run_experiment(rigde_params, 
+                          X_train, 
+                          y, 
+                          X_test,
+                          algorithm_type=Ridge)
 
 
 
@@ -104,14 +116,17 @@ specify the type of algorithm:
 Collaborating with mlflow
 ------------------------------
 
-If you want GUI dashboard to manage your experiments, you can use ``run_experiment`` with mlflow by just
- setting ``with_mlfow = True`` (you need to install mlflow beforehand).
+If you want GUI dashboard to manage your experiments, you can use ``run_experiment`` 
+with mlflow by just setting ``with_mlfow = True`` (you need to install mlflow beforehand).
 
 
 .. code-block:: python
 
-  result = run_experiment(params, X_train, y, X_test,
-                          sample_submission=sample_df, with_mlflow=True)
+  result = run_experiment(params, 
+                          X_train, 
+                          y, 
+                          X_test, 
+                          with_mlflow=True)
 
 
 
@@ -142,8 +157,11 @@ currently active run instead of creating a new one.
   with mlflow.start_run(run_name='your-favorite-run-name'):
       mlflow.log_param('something-you-want-to-log', 42)
 
-      result = run_experiment(params, X_train, y, X_test,
-                              sample_submission=sample_df, with_mlflow=True)
+      result = run_experiment(params, 
+                              X_train, 
+                              y, 
+                              X_test,
+                              with_mlflow=True)
 
 
 
