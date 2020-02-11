@@ -3,21 +3,10 @@
 ![Python Versions](https://img.shields.io/pypi/pyversions/nyaggle.svg?logo=python&logoColor=white)
 
 **nyaggle** is a utility library for Kaggle and offline competitions, 
-particularly focused on feature engineering and validation. 
-See [the documentation](https://nyaggle.readthedocs.io/en/latest/index.html) for details.
+particularly focused on experiment logging, feature engineering and validation. 
 
-- Feature Engineering
-    - K-Fold Target Encoding
-    - BERT Sentence Vectorization
-- Model Validation
-    - CV with OOF
-    - Adversarial Validation
-    - sklearn compatible time series splitter
-- Experiment
-    - Experiment logging
-    - High-level API for logging gradient boosting experiment
-- Ensemble
-    - Blending
+- [documentation](https://nyaggle.readthedocs.io/en/latest/index.html)
+- [slide (Japanese)](https://docs.google.com/presentation/d/1jv3J7DISw8phZT4z9rqjM-azdrQ4L4wWJN5P-gKL6fA/edit?usp=sharing)
 
 ## Installation
 You can install nyaggle via pip:
@@ -140,25 +129,3 @@ bv = BertSentenceVectorizer(text_columns=text_cols, lang='jp')
 
 japanese_text_vector = bv.fit_transform(train)
 ```
-
-### Model Validation
-`cross_validate()` is a handy API to calculate K-fold CV, Out-of-Fold prediction and test prediction at one time.
-You can pass LGBMClassifier/LGBMRegressor and any other sklearn models.
-
-```python
-import pandas as pd
-from lightgbm import LGBMClassifier
-from sklearn.datasets import make_classification
-from sklearn.metrics import roc_auc_score
-
-from nyaggle.validation import cross_validate
-
-X, y = make_classification(n_samples=1024, n_features=20, class_sep=0.98, random_state=0)
-
-models = [LGBMClassifier(n_estimators=300) for _ in range(5)]
-
-pred_oof, pred_test, scores, importance = \
-    cross_validate(models, X[:512, :], y[:512], X[512:, :], 
-                   nfolds=5, eval_func=roc_auc_score)
-```
-
