@@ -1,9 +1,12 @@
-Concept of nyaggle.experiment
+Quick Start of nyaggle.experiment
+==================================
+
+Concept
 -------------------------------
 
 
 In a typical tabular data competition, you may probably repeat evaluating your idea
-by cross-validating with logging the parameters and results to track your experiments.
+by cross-validation with logging the parameters and results to track your experiments.
 
 The ``nyaggle.experiment.run_experiment`` is an API for such situations.
 If you are using LightGBM as your model, the code will be quite simple:
@@ -56,7 +59,7 @@ The ``run_experiment`` API will perform cross-validation and store artifacts to 
 
 
 .. hint::
-  The default validation strategy is a 5-fold CV, and of course, you can change this behavior by passing ``cv`` parameter
+  The default validation strategy is a 5-fold CV. You can change this behavior by passing ``cv`` parameter
   (see API reference in detail).
 
 
