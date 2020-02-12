@@ -24,7 +24,7 @@ from nyaggle.util import plot_importance
 from nyaggle.validation.cross_validate import cross_validate
 from nyaggle.validation.split import check_cv
 
-ExperimentResult = namedtuple('LGBResult',
+ExperimentResult = namedtuple('ExperimentResult',
                               [
                                   'oof_prediction',
                                   'test_prediction',
