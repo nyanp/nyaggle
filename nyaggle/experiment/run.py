@@ -242,35 +242,41 @@ def run_experiment(model_params: Dict[str, Any],
         # save submission.csv
         submit_df = None
         if X_test is not None:
-            if sample_submission is not None:
-                submit_df = sample_submission.copy()
-
-                if type_of_target == 'multiclass':
-                    n_id_cols = submit_df.shape[1] - result.test_prediction.shape[1]
-                    for i, y in enumerate(sorted(y.unique())):
-                        submit_df.iloc[:, n_id_cols + i] = result.test_prediction[:, i]
-                else:
-                    n_id_cols = submit_df.shape[1] - 1
-                    submit_df.iloc[:, n_id_cols] = result.test_prediction
-            else:
-                submit_df = pd.DataFrame()
-                submit_df['id'] = np.arange(len(X_test))
-
-                if type_of_target == 'multiclass':
-                    for i, y in enumerate(sorted(y.unique())):
-                        submit_df[y] = result.test_prediction[:, i]
-                else:
-                    submit_df[y.name] = result.test_prediction
-
-            if submission_filename is None:
-                submission_filename = os.path.basename(logging_directory)
-
-            exp.log_dataframe(submission_filename, submit_df, 'csv')
+            submit_df = _make_submission_df(result.test_prediction, type_of_target, y, sample_submission)
+            exp.log_dataframe(submission_filename or os.path.basename(logging_directory), submit_df, 'csv')
 
         elapsed_time = time.time() - start_time
 
         return ExperimentResult(result.oof_prediction, result.test_prediction,
                                 result.scores, models, result.importance, elapsed_time, submit_df)
+
+
+def _make_submission_df(test_prediction: np.ndarray, type_of_target: str, y: pd.Series,
+                        sample_submission: Optional[pd.DataFrame] = None):
+    if sample_submission is not None:
+        submit_df = sample_submission.copy()
+
+        if type_of_target == 'multiclass':
+            n_id_cols = submit_df.shape[1] - test_prediction.shape[1]
+            for i, y in enumerate(sorted(y.unique())):
+                submit_df.iloc[:, n_id_cols + i] = test_prediction[:, i]
+        else:
+            n_id_cols = submit_df.shape[1] - 1
+            submit_df.iloc[:, n_id_cols] = test_prediction
+    else:
+        submit_df = pd.DataFrame()
+        id_col_name = y.index.name or 'id'
+        tgt_col_name = y.name or 'target'
+
+        submit_df[id_col_name] = np.arange(len(test_prediction))
+
+        if type_of_target == 'multiclass':
+            for i, y in enumerate(sorted(y.unique())):
+                submit_df[y] = test_prediction[:, i]
+        else:
+            submit_df[tgt_col_name] = test_prediction
+
+    return submit_df
 
 
 def _dispatch_eval_func(target_type: str, custom_eval: Optional[Callable] = None):
