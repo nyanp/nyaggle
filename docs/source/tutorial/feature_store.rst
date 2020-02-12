@@ -11,7 +11,7 @@ features each time you build a model.
 Many skilled Kagglers save their features to local disk as binary (npy, pickle or feather)
 to manage their features [1]_ [2]_ [3]_ [4]_.
 
-``feature_store`` is simple helper APIs to support feature management with feather format.
+``feature_store`` provides simple helper APIs for feature management.
 
 
 .. code-block:: python
@@ -22,11 +22,18 @@ to manage their features [1]_ [2]_ [3]_ [4]_.
   def make_feature_1(df: pd.DataFrame) -> pd.DataFrame:
       return ...
 
+  def make_feature_2(df: pd.DataFrame) -> pd.DataFrame:
+      return ...
+
   # feature 1
   feature_1 = make_feature_1(df)
 
+  # feature 2
+  feature_2 = make_feature_2(df)
+
   # name can be str or int
   fs.save_feature(feature_1, "my_feature_1")
+  fs.save_feature(feature_2, 42, '../my_favorite_feature_store')  # change directory to be saved
 
 
 ``save_feature`` stores dataframe as a feather format under the feature directory (``./features`` by default).
@@ -34,8 +41,8 @@ If you want to load the feature, just call ``load_feature`` by name.
 
 .. code-block:: python
 
-  # feature 1
   feature_1_restored = fs.load_feature("my_feature_1")
+  feature_2_restored = fs.load_feature(999)
 
 
 To merge all features into the main dataframe, call ``load_features`` with the main dataframe you want to merge with.
@@ -50,9 +57,15 @@ To merge all features into the main dataframe, call ``load_features`` with the m
   df_with_features = fs.load_features(base_df, ["my_feature_1", "magic_1", "leaky_1"])
 
 
+.. note::
+  ``load_features`` assumes that the stored feature values are concatenated in the
+  order [train, test].
+
+
 If you don't like separating your feature engineering code into the independent module,
-``cached_feature`` decorator provides cache functionality. It automatically saves returning value as
-feather, and loads it in the second call.
+``cached_feature`` decorator provides cache functionality.
+The function with this decorator automatically saves the return value using ``save_feature`` on the first call,
+and returns the result of ``load_feature`` on subsequent calls instead of executing the function body.
 
 .. code-block:: python
 

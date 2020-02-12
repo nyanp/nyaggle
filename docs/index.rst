@@ -15,9 +15,8 @@ Welcome to nyaggle's documentation!
    source/reference/index
 
 
-
 Indices and tables
-==================
+-------------------
 
 * :ref:`genindex`
 * :ref:`modindex`
