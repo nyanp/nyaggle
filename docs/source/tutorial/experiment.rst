@@ -1,4 +1,4 @@
-Quick Start of nyaggle.experiment
+nyaggle.experiment
 ==================================
 
 Concept
