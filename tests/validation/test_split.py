@@ -45,6 +45,55 @@ def test_take_over():
         next(folds)
 
 
+def test_skip():
+    df = pd.DataFrame()
+    df['id'] = np.arange(10)
+
+    kf = split.Skip(2, KFold(5))
+    folds = kf.split(df)
+
+    assert kf.get_n_splits() == 3
+
+    train_index, test_index = next(folds)
+    assert np.array_equal(test_index, np.array([4, 5]))
+
+    train_index, test_index = next(folds)
+    assert np.array_equal(test_index, np.array([6, 7]))
+
+    train_index, test_index = next(folds)
+    assert np.array_equal(test_index, np.array([8, 9]))
+
+    with pytest.raises(StopIteration):
+        next(folds)
+
+
+def test_nth():
+    df = pd.DataFrame()
+    df['id'] = np.arange(10)
+
+    kf = split.Nth(3, KFold(5))
+    folds = kf.split(df)
+
+    assert kf.get_n_splits() == 1
+
+    train_index, test_index = next(folds)
+    assert np.array_equal(test_index, np.array([4, 5]))
+
+    with pytest.raises(StopIteration):
+        next(folds)
+
+    kf = split.Nth(1, KFold(5))
+    folds = kf.split(df)
+
+    assert kf.get_n_splits() == 1
+
+    train_index, test_index = next(folds)
+    assert np.array_equal(test_index, np.array([0, 1]))
+
+    with pytest.raises(StopIteration):
+        next(folds)
+
+
 def test_time_series_split():
     df = pd.DataFrame()
     df['time'] = pd.date_range(start='2018/1/1', periods=5)
