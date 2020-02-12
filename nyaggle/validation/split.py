@@ -72,6 +72,78 @@ class Take(BaseCrossValidator):
             yield next(generator)
 
 
+class Skip(BaseCrossValidator):
+    """ Skips the first N folds and returns the remaining folds
+
+    This validator wraps the base validator to skip first n folds.
+
+    Args:
+        n:
+            The number of folds to be skipped.
+        base_validator:
+            The base validator to be wrapped.
+    Example:
+        >>> import numpy as np
+        >>> import pandas as pd
+        >>> from sklearn.model_selection import KFold
+        >>> from nyaggle.validation import Skip
+
+        >>> # take the last 2 folds out of 5
+        >>> split = Skip(3, KFold(5))
+        >>> folds.get_n_splits()
+        2
+    """
+    def __init__(self, n: int, base_validator: BaseCrossValidator):
+        self.base_validator = base_validator
+        self.n = n
+
+    def get_n_splits(self, X=None, y=None, groups=None):
+        return max(self.base_validator.get_n_splits(X, y, groups) - self.n, 0)
+
+    def split(self, X, y=None, groups=None):
+        generator = self.base_validator.split(X, y, groups)
+
+        for i in range(self.n):
+            next(generator)
+
+        for i in range(self.get_n_splits(X, y, groups)):
+            yield next(generator)
+
+
+class Nth(BaseCrossValidator):
+    """ Returns N-th fold of the base validator
+
+    This validator wraps the base validator to take n-th (1-origin) fold.
+
+    Args:
+        n:
+            The number of folds to be taken.
+        base_validator:
+            The base validator to be wrapped.
+    Example:
+        >>> import numpy as np
+        >>> import pandas as pd
+        >>> from sklearn.model_selection import KFold
+        >>> from nyaggle.validation import Nth
+
+        >>> # take the 3rd fold
+        >>> split = Nth(3, KFold(5))
+        >>> folds.get_n_splits()
+        1
+    """
+    def __init__(self, n: int, base_validator: BaseCrossValidator):
+        assert n > 0, "n is 1-origin and should be greater than 0"
+        self.base_validator = Take(1, Skip(n-1, base_validator))
+        self.n = n
+
+    def get_n_splits(self, X=None, y=None, groups=None):
+        return 1
+
+    def split(self, X, y=None, groups=None):
+        generator = self.base_validator.split(X, y, groups)
+        yield next(generator)
+
+
 class TimeSeriesSplit(BaseCrossValidator):
     """ Time Series cross-validator
 
