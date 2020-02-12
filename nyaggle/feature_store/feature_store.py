@@ -29,7 +29,7 @@ def validate_feature(df: pd.DataFrame, y: pd.Series):
 
 def save_feature(df: pd.DataFrame, feature_name: Union[int, str], directory: str = './features/',
                  with_csv_dump: bool = False, create_directory: bool = True,
-                 reference_target_variable: Optional[pd.Series] = None, overwrite: bool = True):
+                 reference_target_variable: Optional[pd.Series] = None, overwrite: bool = False):
     """
     Save pandas dataframe as feather-format
 
