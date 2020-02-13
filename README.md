@@ -129,3 +129,46 @@ bv = BertSentenceVectorizer(text_columns=text_cols, lang='jp')
 
 japanese_text_vector = bv.fit_transform(train)
 ```
+
+
+### Adversarial Validation
+
+```python
+import pandas as pd
+from nyaggle.validation import adversarial_validate
+
+train = pd.read_csv('train.csv')
+test = pd.read_csv('test.csv')
+
+auc, importance = adversarial_validate(train, test, importance_type='gain')
+
+```
+
+### Validation Splitters
+
+nyaggle provides a set of validation splitters that compatible with sklean interface.
+
+```python
+import pandas as pd
+from sklearn.model_selection import cross_validate, KFold
+from nyaggle.validation import TimeSeriesSplit, Take, Skip, Nth
+
+train = pd.read_csv('train.csv', parse_dates='dt')
+
+# time-series split
+ts = TimeSeriesSplit(train['dt'])
+ts.add_fold(train_interval=('2019-01-01', '2019-01-10'), test_interval=('2019-01-10', '2019-01-20'))
+ts.add_fold(train_interval=('2019-01-06', '2019-01-15'), test_interval=('2019-01-15', '2019-01-25'))
+
+cross_validate(..., cv=ts)
+
+# take the first 3 folds out of 10
+cross_validate(..., cv=Take(3, KFold(10)))
+
+# skip the first 3 folds, and evaluate the remaining 7 folds
+cross_validate(..., cv=Skip(3, KFold(10)))
+
+# evaluate 1st fold
+cross_validate(..., cv=Nth(1, ts))
+
+```
