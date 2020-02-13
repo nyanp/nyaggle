@@ -12,7 +12,7 @@ from sklearn.model_selection import KFold
 from nyaggle.validation.cross_validate import cross_validate
 from nyaggle.validation.split import Take
 
-ADVResult = namedtuple('CVResult', ['auc', 'importance'])
+ADVResult = namedtuple('ADVResult', ['auc', 'importance'])
 
 
 def adversarial_validate(X_train: pd.DataFrame,
