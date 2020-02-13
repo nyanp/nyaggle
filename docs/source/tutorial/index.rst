@@ -6,3 +6,4 @@ Tutorial
 
    experiment
    feature_store
+   experiment_advanced

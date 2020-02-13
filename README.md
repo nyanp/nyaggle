@@ -172,3 +172,14 @@ cross_validate(..., cv=Skip(3, KFold(10)))
 cross_validate(..., cv=Nth(1, ts))
 
 ```
+
+
+### Other Awesome Repositories
+Here is a list of awesome repositories that provide general utility functions for data science competitions.
+Please let me know if you have another one :)
+
+- [jeongyoonlee/Kaggler](https://github.com/jeongyoonlee/Kaggler)
+- [mxbi/mlcrate](https://github.com/mxbi/mlcrate)
+- [analokmaus/kuma_utils](https://github.com/analokmaus/kuma_utils)
+- [Far0n/kaggletils](https://github.com/Far0n/kaggletils)
+- [MLWave/Kaggle-Ensemble-Guide](https://github.com/MLWave/Kaggle-Ensemble-Guide)

@@ -1,5 +1,5 @@
-nyaggle.experiment
-==================================
+Tracking your machine learning experiments with run_experiment
+===============================================================
 
 Concept
 -------------------------------

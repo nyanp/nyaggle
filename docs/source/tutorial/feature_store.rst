@@ -1,5 +1,5 @@
-nyaggle.feature_store
-==================================
+Feature management using feature_store
+=======================================
 
 Concept
 -------------------------------
