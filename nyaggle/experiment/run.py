@@ -215,10 +215,9 @@ def run_experiment(model_params: Dict[str, Any],
 
         exp.log_params(fit_params)
 
-        predict_proba = type_of_target != 'continuous'
         result = cross_validate(models, X_train=X_train, y=y, X_test=X_test, cv=cv, groups=groups,
                                 logger=exp.get_logger(), eval_func=eval_func, fit_params=fit_params,
-                                predict_proba=predict_proba, type_of_target=type_of_target)
+                                type_of_target=type_of_target)
 
         # save oof
         exp.log_numpy('oof_prediction', result.oof_prediction)
