@@ -23,8 +23,11 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import importlib
+from typing import List, Tuple, Union
 
-def safe_isinstance(obj, class_path_str):
+
+def is_instance(obj, class_path_str: Union[str, List, Tuple]) -> bool:
     """
     Acts as a safe version of isinstance without having to explicitly
     import packages which may not exist in the users environment.
@@ -71,6 +74,20 @@ def safe_isinstance(obj, class_path_str):
         if _class is None:
             continue
 
-        return isinstance(obj, _class)
+        if isinstance(obj, _class):
+            return True
 
     return False
+
+
+def is_gbdt_instance(obj, algorithm_type: Union[str, Tuple]) -> bool:
+    if isinstance(algorithm_type, str):
+        algorithm_type = (algorithm_type,)
+
+    gbdt_instance_name = {
+        'lgbm': 'lightgbm.sklearn.LGBMModel',
+        'xgb': 'xgboost.sklearn.XGBModel',
+        'cat': 'catboost.core.CatBoost'
+    }
+
+    return is_instance(obj, tuple(gbdt_instance_name[t] for t in algorithm_type))
