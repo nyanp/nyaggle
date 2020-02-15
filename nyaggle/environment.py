@@ -47,6 +47,7 @@ def requires_lightgbm():
 try:
     import catboost
     _has_catboost = True
+    # TODO check catboost version >= 0.17
 except ImportError:
     _has_catboost = False
 
