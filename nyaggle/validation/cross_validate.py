@@ -1,5 +1,6 @@
 import copy
 import time
+import warnings
 from collections import namedtuple
 from logging import Logger, getLogger
 from typing import Any, Callable, Dict, Iterable, List, Optional, Union
@@ -24,7 +25,7 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
                    X_test: Union[pd.DataFrame, np.ndarray] = None,
                    cv: Optional[Union[int, Iterable, BaseCrossValidator]] = None,
                    groups: Optional[pd.Series] = None,
-                   predict_proba: bool = False, eval_func: Optional[Callable] = None, logger: Optional[Logger] = None,
+                   eval_func: Optional[Callable] = None, logger: Optional[Logger] = None,
                    on_each_fold: Optional[Callable[[int, BaseEstimator, pd.DataFrame, pd.Series], None]] = None,
                    fit_params: Optional[Union[Dict[str, Any], Callable]] = None,
                    importance_type: str = 'gain',
@@ -51,8 +52,6 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
             - An iterable yielding (train, test) splits as arrays of indices.
         groups:
             Group labels for the samples. Only used in conjunction with a “Group” cv instance (e.g., ``GroupKFold``).
-        predict_proba:
-            If true, call ``predict_proba`` instead of ``predict`` for calculating prediction for test data.
         eval_func:
             Function used for logging and returning scores
         logger:
@@ -67,6 +66,9 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
         early_stopping:
             If ``True``, ``eval_set`` will be added to ``fit_params`` for each fold.
             ``early_stopping_rounds = 100`` will also be appended to fit_params if it does not already have one.
+        type_of_target:
+            The type of target variable. If ``auto``, type is inferred by ``sklearn.utils.multiclass.type_of_target``.
+            Otherwise, ``binary``, ``continuous``, or ``multiclass`` are supported.
     Returns:
         Namedtuple with following members
 
@@ -126,10 +128,21 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
     if logger is None:
         logger = getLogger(__name__)
 
-    def _predict(model: BaseEstimator, x: pd.DataFrame, _predict_proba: bool):
-        if _predict_proba:
-            proba = model.predict_proba(x)
-            return proba[:, 1] if proba.shape[1] == 2 else proba
+    def _predict(model: BaseEstimator, x: pd.DataFrame, _type_of_target: str):
+        if _type_of_target in ('binary', 'multiclass'):
+            if hasattr(model, "predict_proba"):
+                proba = model.predict_proba(x)
+            elif hasattr(model, "decision_function"):
+                warnings.warn('Since {} does not have predict_proba method, '
+                              'decision_function is used for the prediction instead.'.format(type(model)))
+                proba = model.decision_function(x)
+            else:
+                raise RuntimeError('Estimator in classification problem should have '
+                                   'either predict_proba or decision_function')
+            if proba.ndim == 1:
+                return proba
+            else:
+                return proba[:, 1] if proba.shape[1] == 2 else proba
         else:
             return model.predict(x)
 
@@ -167,11 +180,11 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
         else:
             estimator[n].fit(train_x, train_y, **fit_params_fold)
 
-        oof[valid_idx] = _predict(estimator[n], valid_x, predict_proba)
+        oof[valid_idx] = _predict(estimator[n], valid_x, type_of_target)
         evaluated[valid_idx] = True
 
         if X_test is not None:
-            test += _predict(estimator[n], X_test, predict_proba)
+            test += _predict(estimator[n], X_test, type_of_target)
 
         if on_each_fold is not None:
             on_each_fold(n, estimator[n], train_x, train_y)

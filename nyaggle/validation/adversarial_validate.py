@@ -79,7 +79,7 @@ def adversarial_validate(X_train: pd.DataFrame,
     if cat_cols:
         fit_params['categorical_feature'] = cat_cols
 
-    result = cross_validate(estimator, concat, y, None, cv=cv, predict_proba=True,
+    result = cross_validate(estimator, concat, y, None, cv=cv,
                             eval_func=roc_auc_score, fit_params=fit_params, importance_type=importance_type)
 
     importance = pd.concat(result.importance)
