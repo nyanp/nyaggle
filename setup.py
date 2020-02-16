@@ -40,6 +40,11 @@ setup(
         'tqdm',
         'transformers>=2.3.0'
     ],
+
+    extras_require={
+        'all': ['catboost>=0.17', 'lightgbm', 'xgboost', 'torch', 'mlflow']
+    },
+
     author='nyanp',
     author_email='Noumi.Taiga@gmail.com',
     url='https://github.com/nyanp/nyaggle',
