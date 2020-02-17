@@ -38,7 +38,8 @@ setup(
         'seaborn',
         'sklearn',
         'tqdm',
-        'transformers>=2.3.0'
+        'transformers>=2.3.0',
+        'ubelt'
     ],
 
     extras_require={
