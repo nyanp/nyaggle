@@ -3,12 +3,12 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
-from catboost import CatBoostClassifier
-from lightgbm import LGBMClassifier
 from sklearn.base import BaseEstimator
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import KFold
 
+from nyaggle.environment import requires_lightgbm
+from nyaggle.util import is_instance
 from nyaggle.validation.cross_validate import cross_validate
 from nyaggle.validation.split import Take
 
@@ -66,10 +66,12 @@ def adversarial_validate(X_train: pd.DataFrame,
     y = np.array([1]*len(X_train) + [0]*len(X_test))
 
     if estimator is None:
+        requires_lightgbm()
+        from lightgbm import LGBMClassifier
         estimator = LGBMClassifier(n_estimators=10000, objective='binary', importance_type=importance_type,
                                    random_state=0)
     else:
-        assert isinstance(estimator, (LGBMClassifier, CatBoostClassifier)), \
+        assert is_instance(estimator, ('lightgbm.sklearn.LGBMModel', 'catboost.core.CatBoost')), \
             'Only CatBoostClassifier or LGBMClassifier is allowed'
 
     if cv is None:

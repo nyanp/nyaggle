@@ -8,19 +8,16 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Type, Union
 import numpy as np
 import pandas as pd
 import sklearn.utils.multiclass as multiclass
-from catboost import CatBoost, CatBoostClassifier, CatBoostRegressor
-from lightgbm import LGBMModel, LGBMClassifier, LGBMRegressor
-from more_itertools import first_true
 from sklearn.base import BaseEstimator
 from sklearn.metrics import roc_auc_score, mean_squared_error, log_loss
 from sklearn.model_selection import BaseCrossValidator
-from xgboost import XGBModel, XGBClassifier, XGBRegressor
 
+from nyaggle.environment import requires_catboost, requires_lightgbm, requires_xgboost
 from nyaggle.experiment.auto_prep import autoprep_gbdt
 from nyaggle.experiment.experiment import Experiment
 from nyaggle.experiment.hyperparameter_tuner import find_best_lgbm_parameter
 from nyaggle.feature_store import load_features
-from nyaggle.util import plot_importance
+from nyaggle.util import plot_importance, is_gbdt_instance
 from nyaggle.validation.cross_validate import cross_validate
 from nyaggle.validation.split import check_cv
 
@@ -34,7 +31,6 @@ ExperimentResult = namedtuple('ExperimentResult',
                                   'time',
                                   'submission_df'
                               ])
-GBDTModel = Union[CatBoost, LGBMModel, XGBModel]
 
 
 def run_experiment(model_params: Dict[str, Any],
@@ -181,8 +177,8 @@ def run_experiment(model_params: Dict[str, Any],
     model_type, eval_func, cat_param_name = _dispatch_models(algorithm_type, type_of_target, eval_func)
 
     if with_auto_prep:
-        assert issubclass(model_type, (LGBMModel, CatBoost, XGBModel)), "with_auto_prep is only supported for gbdt"
-        X_train, X_test = autoprep_gbdt(model_type, X_train, X_test, categorical_feature)
+        assert algorithm_type in ('cat', 'xgb', 'lgbm'), "with_auto_prep is only supported for gbdt"
+        X_train, X_test = autoprep_gbdt(algorithm_type, X_train, X_test, categorical_feature)
 
     logging_directory = logging_directory.format(time=datetime.now().strftime('%Y%m%d_%H%M%S'))
 
@@ -199,7 +195,7 @@ def run_experiment(model_params: Dict[str, Any],
             exp.log_param('features', feature_list)
 
         if with_auto_hpo:
-            assert issubclass(model_type, LGBMModel), 'auto-tuning is only supported for LightGBM'
+            assert algorithm_type == 'lgbm', 'auto-tuning is only supported for LightGBM'
             model_params = find_best_lgbm_parameter(model_params, X_train, y, cv=cv, groups=groups,
                                                     type_of_target=type_of_target)
             exp.log_param('model_params_tuned', model_params)
@@ -287,38 +283,50 @@ def _dispatch_eval_func(target_type: str, custom_eval: Optional[Callable] = None
     return custom_eval if custom_eval is not None else default_eval_func[target_type]
 
 
+def _dispatch_gbdt_class(algorithm_type: str, type_of_target: str):
+    is_regression = type_of_target == 'continuous'
+
+    if algorithm_type == 'lgbm':
+        requires_lightgbm()
+        from lightgbm import LGBMClassifier, LGBMRegressor
+        return LGBMRegressor if is_regression else LGBMClassifier
+    elif algorithm_type == 'cat':
+        requires_catboost()
+        from catboost import CatBoostClassifier, CatBoostRegressor
+        return CatBoostRegressor if is_regression else CatBoostClassifier
+    else:
+        requires_xgboost()
+        assert algorithm_type == 'xgb'
+        from xgboost import XGBClassifier, XGBRegressor
+        return XGBRegressor if is_regression else XGBClassifier
+
+
 def _dispatch_models(algorithm_type: Union[str, Type[BaseEstimator]],
                      target_type: str, custom_eval: Optional[Callable] = None):
     if not isinstance(algorithm_type, str):
         assert issubclass(algorithm_type, BaseEstimator), "algorithm_type should be str or subclass of BaseEstimator"
         return algorithm_type, _dispatch_eval_func(target_type, custom_eval), None
 
-    gbdt_table = [
-        ('binary', 'lgbm', LGBMClassifier, 'categorical_feature'),
-        ('multiclass', 'lgbm', LGBMClassifier, 'categorical_feature'),
-        ('continuous', 'lgbm', LGBMRegressor, 'categorical_feature'),
-        ('binary', 'cat', CatBoostClassifier, 'cat_features'),
-        ('multiclass', 'cat', CatBoostClassifier, 'cat_features'),
-        ('continuous', 'cat', CatBoostRegressor, 'cat_features'),
-        ('binary', 'xgb', XGBClassifier, None),
-        ('multiclass', 'xgb', XGBClassifier, None),
-        ('continuous', 'xgb', XGBRegressor, None),
-    ]
-    found = first_true(gbdt_table, pred=lambda x: x[0] == target_type and x[1] == algorithm_type)
-    if found is None:
-        raise RuntimeError('Not supported gbdt_type ({}) or type_of_target ({}).'.format(algorithm_type, target_type))
+    cat_features = {
+        'lgbm': 'categorical_feature',
+        'cat': 'cat_features',
+        'xgb': None
+    }
 
-    return found[2], _dispatch_eval_func(target_type, custom_eval), found[3]
+    gbdt_class = _dispatch_gbdt_class(algorithm_type, target_type)
+    eval_func = _dispatch_eval_func(target_type, custom_eval)
+
+    return gbdt_class, eval_func, cat_features[algorithm_type]
 
 
-def _save_model(model: Union[GBDTModel, BaseEstimator], logging_directory: str, fold: int, exp: Experiment):
+def _save_model(model: BaseEstimator, logging_directory: str, fold: int, exp: Experiment):
     model_dir = os.path.join(logging_directory, 'models')
     os.makedirs(model_dir, exist_ok=True)
     path = os.path.join(model_dir, 'fold{}'.format(fold))
 
-    if isinstance(model, LGBMModel):
+    if is_gbdt_instance(model, 'lgbm'):
         model.booster_.save_model(path)
-    elif isinstance(model, (XGBModel, CatBoost)):
+    elif is_gbdt_instance(model, ('xgb', 'cat')):
         model.save_model(path)
     else:
         with open(path, "wb") as f:

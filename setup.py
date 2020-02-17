@@ -28,9 +28,7 @@ setup(
     license='MIT',
 
     install_requires=[
-        'catboost>=0.17',
         'category_encoders',
-        'lightgbm',
         'matplotlib',
         'more-itertools',
         'numpy',
@@ -40,9 +38,13 @@ setup(
         'seaborn',
         'sklearn',
         'tqdm',
-        'transformers>=2.3.0',
-        'xgboost'
+        'transformers>=2.3.0'
     ],
+
+    extras_require={
+        'all': ['catboost>=0.17', 'lightgbm', 'xgboost', 'torch', 'mlflow']
+    },
+
     author='nyanp',
     author_email='Noumi.Taiga@gmail.com',
     url='https://github.com/nyanp/nyaggle',

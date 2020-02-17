@@ -1,17 +1,12 @@
-from typing import List, Optional, Tuple, Type, Union
+from typing import List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
-from catboost import CatBoost
-from lightgbm import LGBMModel
 from pandas.api.types import is_integer_dtype, is_categorical
 from sklearn.preprocessing import LabelEncoder
-from xgboost import XGBModel
-
-GBDTModel = Union[CatBoost, LGBMModel, XGBModel]
 
 
-def autoprep_gbdt(model: Type[GBDTModel], X_train: pd.DataFrame, X_test: Optional[pd.DataFrame],
+def autoprep_gbdt(algorithm_type: str, X_train: pd.DataFrame, X_test: Optional[pd.DataFrame],
                   categorical_feature_to_treat: Optional[List[str]] = None) -> Tuple[pd.DataFrame, pd.DataFrame]:
     if categorical_feature_to_treat is None:
         categorical_feature_to_treat = [c for c in X_train.columns if X_train[c].dtype.name in ['object', 'category']]
@@ -27,17 +22,17 @@ def autoprep_gbdt(model: Type[GBDTModel], X_train: pd.DataFrame, X_test: Optiona
     # XGBoost:
     # All categorical column should be encoded beforehand.
 
-    if issubclass(model, LGBMModel):
+    if algorithm_type == 'lgbm':
         # LightGBM can handle categorical dtype natively
         categorical_feature_to_treat = [c for c in categorical_feature_to_treat if not is_categorical(X_train[c])]
 
-    if issubclass(model, CatBoost) and len(categorical_feature_to_treat) > 0:
+    if algorithm_type == 'cat' and len(categorical_feature_to_treat) > 0:
         X_train = X_train.copy()
         X_test = X_test.copy() if X_test is not None else X_train.iloc[:1, :].copy()  # dummy
         for c in categorical_feature_to_treat:
             X_train[c], X_test[c] = _fill_na_by_unique_value(X_train[c], X_test[c])
 
-    if issubclass(model, (LGBMModel, XGBModel)) and len(categorical_feature_to_treat) > 0:
+    if algorithm_type in ('lgbm', 'xgb') and len(categorical_feature_to_treat) > 0:
         assert X_test is not None, "X_test is required for XGBoost with categorical variables"
         X_train = X_train.copy()
         X_test = X_test.copy()
