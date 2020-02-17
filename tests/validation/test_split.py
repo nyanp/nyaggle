@@ -167,3 +167,66 @@ def test_sliding_window_split():
     ]
 
     assert window.times == expected
+
+
+def test_stratified_group_kfold_one_class_per_grp():
+    sgf = split.StratifiedGroupKFold(2, shuffle=False)
+
+    df = pd.DataFrame()
+    df['group'] = [1, 1, 2, 2, 3, 3, 4, 4]
+    df['y'] = [0, 0, 1, 1, 0, 0, 1, 1]
+    df['x'] = [0, 1, 2, 3, 4, 5, 6, 7]
+
+    assert sgf.get_n_splits(df, df['y'], df['group']) == 2
+
+    splits = sgf.split(df, df['y'], df['group'])
+
+    train_index, test_index = next(splits)
+    assert np.array_equal(train_index, np.array([2, 3, 4, 5]))
+    assert np.array_equal(test_index, np.array([0, 1, 6, 7]))
+
+    train_index, test_index = next(splits)
+    assert np.array_equal(train_index, np.array([0, 1, 6, 7]))
+    assert np.array_equal(test_index, np.array([2, 3, 4, 5]))
+
+
+def test_stratified_group_kfold_multi_class_per_fold():
+    sgf = split.StratifiedGroupKFold(2, shuffle=False)
+
+    df = pd.DataFrame()
+    df['group'] = [1, 1, 2, 2, 3, 3, 4, 4]
+    df['y'] = [0, 1, 0, 1, 1, 1, 1, 1]
+    df['x'] = [0, 1, 2, 3, 4, 5, 6, 7]
+
+    assert sgf.get_n_splits(df, df['y'], df['group']) == 2
+
+    splits = sgf.split(df, df['y'], df['group'])
+
+    train_index, test_index = next(splits)
+    assert np.array_equal(train_index, np.array([0, 1, 4, 5]))
+    assert np.array_equal(test_index, np.array([2, 3, 6, 7]))
+
+    train_index, test_index = next(splits)
+    assert np.array_equal(train_index, np.array([2, 3, 6, 7]))
+    assert np.array_equal(test_index, np.array([0, 1, 4, 5]))
+
+
+def test_stratified_group_kfold_imbalanced_group():
+    sgf = split.StratifiedGroupKFold(2, shuffle=False)
+
+    df = pd.DataFrame()
+    df['group'] = [1, 1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4]
+    df['y'] = [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1]
+    df['x'] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+
+    assert sgf.get_n_splits(df, df['y'], df['group']) == 2
+
+    splits = sgf.split(df, df['y'], df['group'])
+
+    train_index, test_index = next(splits)
+    assert np.array_equal(train_index, np.array([8, 9, 10, 11]))
+    assert np.array_equal(test_index, np.array([0, 1, 2, 3, 4, 5, 6, 7]))
+
+    train_index, test_index = next(splits)
+    assert np.array_equal(train_index, np.array([0, 1, 2, 3, 4, 5, 6, 7]))
+    assert np.array_equal(test_index, np.array([8, 9, 10, 11]))
