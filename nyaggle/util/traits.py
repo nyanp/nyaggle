@@ -1,6 +1,6 @@
-# safe_instance function is originally from:
+# Original work of safe_instance:
 # https://github.com/slundberg/shap/blob/master/shap/common.py
-
+# -----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
 # Copyright (c) 2018 Scott Lundberg
@@ -22,6 +22,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+# -----------------------------------------------------------------------------
 
 import importlib
 from typing import List, Tuple, Union
