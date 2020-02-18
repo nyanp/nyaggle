@@ -22,7 +22,6 @@ from typing import Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
-import ubelt as ub
 import sklearn.model_selection as model_selection
 from sklearn.model_selection import BaseCrossValidator, KFold, StratifiedKFold
 from sklearn.utils.multiclass import type_of_target
