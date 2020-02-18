@@ -356,18 +356,17 @@ class StratifiedGroupKFold(_BaseKFold):
     python -m xdoctest fishnet.utils.sklearn_helpers StratifiedGroupKFold
     Example
     -------
+    >>> from pprint import pprint
     >>> rng = np.random.RandomState(0)
     >>> groups = [1, 1, 3, 4, 2, 2, 7, 8, 8]
     >>> y      = [1, 1, 1, 1, 2, 2, 2, 3, 3]
     >>> X = np.empty((len(y), 0))
     >>> self = StratifiedGroupKFold(random_state=rng)
     >>> skf_list = list(self.split(X=X, y=y, groups=groups))
-    >>> print(ub.repr2(skf_list, with_dtype=False))
-    [
-        (np.array([2, 3, 4, 5, 6]), np.array([0, 1, 7, 8])),
-        (np.array([0, 1, 2, 7, 8]), np.array([3, 4, 5, 6])),
-        (np.array([0, 1, 3, 4, 5, 6, 7, 8]), np.array([2])),
-    ]
+    >>> pprint(skf_list)
+    [(array([2, 3, 4, 5, 6]), array([0, 1, 7, 8])),
+     (array([0, 1, 2, 7, 8]), array([3, 4, 5, 6])),
+     (array([0, 1, 3, 4, 5, 6, 7, 8]), array([2]))]
     """
 
     def __init__(self, n_splits=3, shuffle=False, random_state=None):
