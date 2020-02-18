@@ -386,7 +386,7 @@ class StratifiedGroupKFold(_BaseKFold):
 
         unique_y, y_inversed = np.unique(y, return_inverse=True)
         n_classes = max(unique_y) + 1
-        group_to_idxs = ub.group_items(range(len(groups)), groups)
+        group_to_idxs = self._group_items(groups)
         # unique_groups = list(group_to_idxs.keys())
         group_idxs = list(group_to_idxs.values())
         grouped_y = [y.take(idxs) for idxs in group_idxs]
