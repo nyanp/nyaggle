@@ -442,11 +442,11 @@ class StratifiedGroupKFold(_BaseKFold):
     @staticmethod
     def _group_items(groups):
         from collections import defaultdict
-        d = defaultdict(list)
-        pd_groups = pd.Series(range(len(groups)), index=groups)
-        for k, v in pd_groups.groupby(level=0):
-            d[k] = v.values
-        return d
+        group_id_to_items = defaultdict(list)
+        pairs = zip(groups, range(len(groups)))
+        for k, v in pairs:
+            group_id_to_items[k].append(v)
+        return group_id_to_items
 
     def _iter_test_masks(self, X, y=None, groups=None):
         test_folds = self._make_test_folds(X, y, groups)
