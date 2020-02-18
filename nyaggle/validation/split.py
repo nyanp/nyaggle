@@ -352,8 +352,6 @@ class StratifiedGroupKFold(_BaseKFold):
     Args:
         n_splits :
             Number of folds. Must be at least 2.
-        shuffle:
-        random_state:
 
     CommandLine:
         python -m xdoctest fishnet.utils.sklearn_helpers StratifiedGroupKFold
