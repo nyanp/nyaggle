@@ -353,9 +353,6 @@ class StratifiedGroupKFold(_BaseKFold):
         n_splits :
             Number of folds. Must be at least 2.
 
-    CommandLine:
-        python -m xdoctest fishnet.utils.sklearn_helpers StratifiedGroupKFold
-
     Example:
         >>> rng = np.random.RandomState(0)
         >>> groups = [1, 1, 3, 4, 2, 2, 7, 8, 8]
