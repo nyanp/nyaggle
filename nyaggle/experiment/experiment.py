@@ -46,6 +46,15 @@ def _sanitize(v):
     return v if isinstance(v, numbers.Number) else str(v)
 
 
+def _try_to_get_existing_mlflow_run_id(logging_directory: str) -> Optional[str]:
+    mlflow_path = os.path.join(logging_directory, 'mlflow.json')
+    if os.path.exists(mlflow_path):
+        with open(mlflow_path, 'r') as f:
+            mlflow_metadata = json.load(f)
+            return mlflow_metadata['run_id']
+    return None
+
+
 class Experiment(object):
     """Minimal experiment logger for Kaggle
 
@@ -85,7 +94,6 @@ class Experiment(object):
                  logging_directory: str,
                  custom_logger: Optional[Logger] = None,
                  with_mlflow: bool = False,
-                 mlflow_run_id: Optional[str] = None,
                  if_exists: str = 'error'
                  ):
         logging_directory = _check_directory(logging_directory, if_exists)
@@ -109,8 +117,8 @@ class Experiment(object):
 
         if self.with_mlflow:
             requires_mlflow()
-            self.mlflow_run_id = mlflow_run_id
-            if mlflow_run_id is not None:
+            self.mlflow_run_id = _try_to_get_existing_mlflow_run_id(logging_directory)
+            if self.mlflow_run_id is not None:
                 self.mlflow_run_name = None
             else:
                 self.mlflow_run_name = logging_directory
@@ -123,20 +131,8 @@ class Experiment(object):
         self.stop()
 
     @classmethod
-    def continue_from(cls, logging_directory: str):
-        params = {
-            'logging_directory': logging_directory,
-            'if_exists': 'append'
-        }
-
-        mlflow_path = os.path.join(logging_directory, 'mlflow.json')
-        if os.path.exists(mlflow_path):
-            with open(mlflow_path, 'r') as f:
-                mlflow_metadata = json.load(f)
-                params['with_mlflow'] = True
-                params['mlflow_run_id'] = mlflow_metadata['run_id']
-
-        return cls(**params)
+    def continue_from(cls, logging_directory: str, with_mlflow: bool = False):
+        return cls(logging_directory=logging_directory, if_exists='append', with_mlflow=with_mlflow)
 
     def start(self):
         """
@@ -264,8 +260,8 @@ class Experiment(object):
             score:
                 Metric value.
         """
-        name = self._sanitize(name)
-        score = self._sanitize(score)
+        name = _sanitize(name)
+        score = _sanitize(score)
         self.metrics[name] = score
 
         if self.with_mlflow:
