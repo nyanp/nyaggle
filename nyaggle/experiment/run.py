@@ -37,7 +37,7 @@ def run_experiment(model_params: Dict[str, Any],
                    X_train: pd.DataFrame, y: pd.Series,
                    X_test: Optional[pd.DataFrame] = None,
                    logging_directory: str = 'output/{time}',
-                   overwrite: bool = False,
+                   if_exists: str = 'error',
                    eval_func: Optional[Callable] = None,
                    algorithm_type: Union[str, Type[BaseEstimator]] = 'lgbm',
                    fit_params: Optional[Union[Dict[str, Any], Callable]] = None,
@@ -92,8 +92,12 @@ def run_experiment(model_params: Dict[str, Any],
             Test data (Optional). If specified, prediction on the test data is performed using ensemble of models.
         logging_directory:
             Path to directory where output of experiment is stored.
-        overwrite:
-            If True, contents in ``logging_directory`` will be overwritten.
+        if_exists:
+            How to behave if the logging directory already exists.
+            - error: Raise a ValueError.
+            - replace: Delete logging directory before logging.
+            - append: Append to exisitng experiment.
+            - rename: Rename current directory by adding "_1", "_2"... prefix
         fit_params:
             Parameters passed to the fit method of the estimator. If dict is passed, the same parameter except
             eval_set passed for each fold. If callable is passed,
@@ -182,7 +186,7 @@ def run_experiment(model_params: Dict[str, Any],
 
     logging_directory = logging_directory.format(time=datetime.now().strftime('%Y%m%d_%H%M%S'))
 
-    with Experiment(logging_directory, overwrite, with_mlflow=with_mlflow) as exp:
+    with Experiment(logging_directory, if_exists=if_exists, with_mlflow=with_mlflow) as exp:
         exp.log('Algorithm: {}'.format(algorithm_type))
         exp.log('Experiment: {}'.format(logging_directory))
         exp.log('Params: {}'.format(model_params))

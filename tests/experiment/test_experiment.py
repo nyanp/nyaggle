@@ -1,4 +1,6 @@
+import json
 import os
+
 from nyaggle.experiment import Experiment
 from nyaggle.testing import get_temp_directory
 
@@ -12,13 +14,7 @@ def test_experiment_continue():
         with Experiment.continue_from(logging_dir) as e:
             e.log_metric('LB', 0.95)
 
-            metric_file = os.path.join(logging_dir, 'metrics.txt')
-
-            with open(metric_file, 'r') as f:
-                lines = [line.split(',') for line in f.readlines()]
-
-                assert lines[0][0] == 'CV'
-                assert lines[1][0] == 'LB'
+            metric_file = os.path.join(logging_dir, 'metrics.json')
 
             import mlflow
 
@@ -26,3 +22,8 @@ def test_experiment_continue():
             data = client.get_run(mlflow.active_run().info.run_id).data
             assert data.metrics['CV'] == 0.97
             assert data.metrics['LB'] == 0.95
+
+        with open(metric_file, 'r') as f:
+            obj = json.load(f)
+            assert obj['CV'] == 0.97
+            assert obj['LB'] == 0.95

@@ -46,6 +46,6 @@ run_experiment(logging_directory='baseline_kaggledays_tokyo',
                X_test=X_test,
                eval_func=mean_squared_error,
                type_of_target='continuous',
-               overwrite=True,
+               if_exists='replace',
                with_auto_hpo=True,
                sample_submission=pd.read_csv('sample_submission.csv'))
