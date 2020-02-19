@@ -1,3 +1,8 @@
+# Modified work:
+# -----------------------------------------------------------------------------
+# Copyright (c) 2020 Kota Yuhara (@wakamezake)
+# -----------------------------------------------------------------------------
+
 # Original work of StratifiedGroupKFold:
 # https://github.com/Erotemic/baseline-viame-2018/blob/master/fishnet/util/sklearn_helpers.py
 # -----------------------------------------------------------------------------
@@ -22,7 +27,6 @@ from typing import Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
-import ubelt as ub
 import sklearn.model_selection as model_selection
 from sklearn.model_selection import BaseCrossValidator, KFold, StratifiedKFold
 from sklearn.utils.multiclass import type_of_target
@@ -341,37 +345,38 @@ class SlidingWindowSplit(TimeSeriesSplit):
 
 
 class StratifiedGroupKFold(_BaseKFold):
-    """Stratified K-Folds cross-validator with grouping
+    """ Stratified K-Folds cross-validator with grouping
+
     Provides train/test indices to split data in train/test sets.
     This cross-validation object is a variation of GroupKFold that returns
     stratified folds. The folds are made by preserving the percentage of
     samples for each class.
     Read more in the :ref:`User Guide <cross_validation>`.
-    Parameters
-    ----------
-    n_splits : int, default=3
-        Number of folds. Must be at least 2.
-    CommandLine
-    -----------
-    python -m xdoctest fishnet.utils.sklearn_helpers StratifiedGroupKFold
-    Example
-    -------
-    >>> rng = np.random.RandomState(0)
-    >>> groups = [1, 1, 3, 4, 2, 2, 7, 8, 8]
-    >>> y      = [1, 1, 1, 1, 2, 2, 2, 3, 3]
-    >>> X = np.empty((len(y), 0))
-    >>> self = StratifiedGroupKFold(random_state=rng)
-    >>> skf_list = list(self.split(X=X, y=y, groups=groups))
-    >>> print(ub.repr2(skf_list, with_dtype=False))
-    [
-        (np.array([2, 3, 4, 5, 6]), np.array([0, 1, 7, 8])),
-        (np.array([0, 1, 2, 7, 8]), np.array([3, 4, 5, 6])),
-        (np.array([0, 1, 3, 4, 5, 6, 7, 8]), np.array([2])),
-    ]
+
+    Args:
+        n_splits :
+            Number of folds. Must be at least 2.
+
+    Example:
+        >>> from pprint import pprint
+        >>> rng = np.random.RandomState(0)
+        >>> groups = [1, 1, 3, 4, 2, 2, 7, 8, 8]
+        >>> y      = [1, 1, 1, 1, 2, 2, 2, 3, 3]
+        >>> X = np.empty((len(y), 0))
+        >>> self = StratifiedGroupKFold(random_state=rng)
+        >>> skf_list = list(self.split(X=X, y=y, groups=groups))
+        >>> pprint(skf_list)
+        [
+            (np.array([2, 3, 4, 5, 6]), np.array([0, 1, 7, 8])),
+            (np.array([0, 1, 2, 7, 8]), np.array([3, 4, 5, 6])),
+            (np.array([0, 1, 3, 4, 5, 6, 7, 8]), np.array([2])),
+        ]
     """
 
-    def __init__(self, n_splits=3, shuffle=False, random_state=None):
-        super(StratifiedGroupKFold, self).__init__(n_splits, shuffle, random_state)
+    def __init__(self, n_splits: int = 3, shuffle: bool = False,
+                 random_state: Optional[Union[int, np.random.RandomState]] = None):
+        super(StratifiedGroupKFold, self).__init__(n_splits, shuffle,
+                                                   random_state)
 
     def _make_test_folds(self, X, y=None, groups=None):
         """
@@ -394,7 +399,7 @@ class StratifiedGroupKFold(_BaseKFold):
 
         unique_y, y_inversed = np.unique(y, return_inverse=True)
         n_classes = max(unique_y) + 1
-        group_to_idxs = ub.group_items(range(len(groups)), groups)
+        group_to_idxs = self._group_items(groups)
         # unique_groups = list(group_to_idxs.keys())
         group_idxs = list(group_to_idxs.values())
         grouped_y = [y.take(idxs) for idxs in group_idxs]
@@ -448,6 +453,15 @@ class StratifiedGroupKFold(_BaseKFold):
             test_folds[idxs] = splitx
 
         return test_folds
+
+    @staticmethod
+    def _group_items(groups):
+        from collections import defaultdict
+        group_id_to_items = defaultdict(list)
+        pairs = zip(groups, range(len(groups)))
+        for k, v in pairs:
+            group_id_to_items[k].append(v)
+        return group_id_to_items
 
     def _iter_test_masks(self, X, y=None, groups=None):
         test_folds = self._make_test_folds(X, y, groups)
