@@ -372,9 +372,11 @@ class StratifiedGroupKFold(_BaseKFold):
             (np.array([0, 1, 3, 4, 5, 6, 7, 8]), np.array([2])),
         ]
     """
+
     def __init__(self, n_splits: int = 3, shuffle: bool = False,
                  random_state: Optional[Union[int, np.random.RandomState]] = None):
-        super(StratifiedGroupKFold, self).__init__(n_splits, shuffle, random_state)
+        super(StratifiedGroupKFold, self).__init__(n_splits, shuffle,
+                                                   random_state)
 
     def _make_test_folds(self, X, y=None, groups=None):
         """
