@@ -1,3 +1,8 @@
+# Modified work:
+# -----------------------------------------------------------------------------
+# Copyright (c) 2020 Kota Yuhara (@wakamezake)
+# -----------------------------------------------------------------------------
+
 # Original work of StratifiedGroupKFold:
 # https://github.com/Erotemic/baseline-viame-2018/blob/master/fishnet/util/sklearn_helpers.py
 # -----------------------------------------------------------------------------
