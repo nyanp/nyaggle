@@ -42,6 +42,10 @@ def _check_directory(directory: str, if_exists: str) -> str:
     return directory
 
 
+def _sanitize(v):
+    return v if isinstance(v, numbers.Number) else str(v)
+
+
 class Experiment(object):
     """Minimal experiment logger for Kaggle
 
@@ -99,7 +103,6 @@ class Experiment(object):
             self.logger.addHandler(FileHandler(self.log_path))
             self.logger.setLevel(DEBUG)
             self.is_custom = False
-        self.metrics_path = os.path.join(logging_directory, 'metrics.txt')
         self.metrics = self._load_dict('metrics.json')
         self.params = self._load_dict('params.json')
         self.inherit_existing_run = False
@@ -223,9 +226,6 @@ class Experiment(object):
         """
         self.logger.info(text)
 
-    def _sanitize(self, v):
-        return v if isinstance(v, numbers.Number) else str(v)
-
     def log_param(self, key, value):
         """
         Logs a key-value pair for the experiment.
@@ -234,8 +234,8 @@ class Experiment(object):
             key: parameter name
             value: parameter value
         """
-        key = self._sanitize(key)
-        value = self._sanitize(value)
+        key = _sanitize(key)
+        value = _sanitize(value)
         self.params[key] = value
 
         if self.with_mlflow:

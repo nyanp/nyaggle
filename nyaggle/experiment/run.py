@@ -75,8 +75,8 @@ def run_experiment(model_params: Dict[str, Any],
           oof_prediction.npy       <== Out of fold prediction in numpy array format
           test_prediction.npy      <== Test prediction in numpy array format
           submission.csv           <== Submission csv file
-          metrics.txt              <== Metrics
-          params.txt               <== Parameters
+          metrics.json             <== Metrics
+          params.json              <== Parameters
           models/
               fold1                <== The trained model in fold 1
               ...

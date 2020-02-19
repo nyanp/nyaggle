@@ -45,8 +45,8 @@ The ``run_experiment`` API performs cross-validation and stores artifacts to the
 
     output
     └── 20200130123456          # yyyymmssHHMMSS
-        ├── params.txt          # Parameters
-        ├── metrics.txt         # Metrics (single fold & overall CV score)
+        ├── params.json         # Parameters
+        ├── metrics.json        # Metrics (single fold & overall CV score)
         ├── oof_prediction.npy  # Out of fold prediction
         ├── test_prediction.npy # Test prediction
         ├── 20200130123456.csv  # Submission csv file
