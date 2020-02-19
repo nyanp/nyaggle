@@ -385,16 +385,8 @@ class StratifiedGroupKFold(_BaseKFold):
             y (ndarray):  labels(default = None)
             groups (None): (default = None)
         """
-        from sklearn.utils.multiclass import type_of_target
         n_splits = self.n_splits
         y = np.asarray(y)
-        type_of_target_y = type_of_target(y)
-        allowed_target_types = {"binary", "multiclass"}
-        if type_of_target_y not in allowed_target_types:
-            raise ValueError(
-                'Supported target types are: {}. Got {!r} instead.'.format(
-                    allowed_target_types, type_of_target_y))
-
         n_samples = y.shape[0]
 
         unique_y, y_inversed = np.unique(y, return_inverse=True)
