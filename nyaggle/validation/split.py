@@ -346,7 +346,6 @@ class SlidingWindowSplit(TimeSeriesSplit):
 
 class StratifiedGroupKFold(_BaseKFold):
     """ Stratified K-Folds cross-validator with grouping
-
     Provides train/test indices to split data in train/test sets.
     This cross-validation object is a variation of GroupKFold that returns
     stratified folds. The folds are made by preserving the percentage of
@@ -371,6 +370,7 @@ class StratifiedGroupKFold(_BaseKFold):
             (np.array([0, 1, 2, 7, 8]), np.array([3, 4, 5, 6])),
             (np.array([0, 1, 3, 4, 5, 6, 7, 8]), np.array([2])),
         ]
+
     """
 
     def __init__(self, n_splits: int = 3, shuffle: bool = False,
@@ -385,16 +385,8 @@ class StratifiedGroupKFold(_BaseKFold):
             y (ndarray):  labels(default = None)
             groups (None): (default = None)
         """
-        from sklearn.utils.multiclass import type_of_target
         n_splits = self.n_splits
         y = np.asarray(y)
-        type_of_target_y = type_of_target(y)
-        allowed_target_types = {"binary", "multiclass"}
-        if type_of_target_y not in allowed_target_types:
-            raise ValueError(
-                'Supported target types are: {}. Got {!r} instead.'.format(
-                    allowed_target_types, type_of_target_y))
-
         n_samples = y.shape[0]
 
         unique_y, y_inversed = np.unique(y, return_inverse=True)
