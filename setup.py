@@ -39,7 +39,6 @@ setup(
         'sklearn',
         'tqdm',
         'transformers>=2.3.0',
-        'ubelt'
     ],
 
     extras_require={

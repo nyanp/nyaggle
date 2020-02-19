@@ -371,6 +371,7 @@ class StratifiedGroupKFold(_BaseKFold):
             (np.array([0, 1, 2, 7, 8]), np.array([3, 4, 5, 6])),
             (np.array([0, 1, 3, 4, 5, 6, 7, 8]), np.array([2])),
         ]
+
     """
 
     def __init__(self, n_splits: int = 3, shuffle: bool = False,
