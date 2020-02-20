@@ -242,3 +242,15 @@ def test_stratified_group_kfold_y_with_continuous():
     with pytest.raises(ValueError):
         splits = sgf.split(df, df['y'], df['group'])
         next(splits)
+
+
+def test_stratified_group_kfold_groups_set_none():
+    sgf = split.StratifiedGroupKFold(2, shuffle=False)
+
+    df = pd.DataFrame()
+    df['group'] = [1, 1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4]
+    df['y'] = [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1]
+    df['x'] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    with pytest.raises(ValueError):
+        splits = sgf.split(df, df['y'], groups=None)
+        next(splits)
