@@ -385,7 +385,6 @@ class StratifiedGroupKFold(_BaseKFold):
             y (ndarray):  labels(default = None)
             groups (None): (default = None)
         """
-        from sklearn.utils.multiclass import type_of_target
         n_splits = self.n_splits
         y = np.asarray(y)
         type_of_target_y = type_of_target(y)
