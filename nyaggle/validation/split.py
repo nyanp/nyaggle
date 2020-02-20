@@ -30,6 +30,7 @@ import pandas as pd
 import sklearn.model_selection as model_selection
 from sklearn.model_selection import BaseCrossValidator, KFold, StratifiedKFold
 from sklearn.utils.multiclass import type_of_target
+from sklearn.utils.validation import check_array
 from sklearn.model_selection._split import _BaseKFold
 
 
@@ -471,6 +472,5 @@ class StratifiedGroupKFold(_BaseKFold):
         """
         Generate indices to split data into training and test set.
         """
-        from sklearn.utils.validation import check_array
         y = check_array(y, ensure_2d=False, dtype=None)
         return super(StratifiedGroupKFold, self).split(X, y, groups)
