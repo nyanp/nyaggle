@@ -345,36 +345,38 @@ class SlidingWindowSplit(TimeSeriesSplit):
 
 
 class StratifiedGroupKFold(_BaseKFold):
-    """Stratified K-Folds cross-validator with grouping
+    """ Stratified K-Folds cross-validator with grouping
     Provides train/test indices to split data in train/test sets.
     This cross-validation object is a variation of GroupKFold that returns
     stratified folds. The folds are made by preserving the percentage of
     samples for each class.
     Read more in the :ref:`User Guide <cross_validation>`.
-    Parameters
-    ----------
-    n_splits : int, default=3
-        Number of folds. Must be at least 2.
-    CommandLine
-    -----------
-    python -m xdoctest fishnet.utils.sklearn_helpers StratifiedGroupKFold
-    Example
-    -------
-    >>> from pprint import pprint
-    >>> rng = np.random.RandomState(0)
-    >>> groups = [1, 1, 3, 4, 2, 2, 7, 8, 8]
-    >>> y      = [1, 1, 1, 1, 2, 2, 2, 3, 3]
-    >>> X = np.empty((len(y), 0))
-    >>> self = StratifiedGroupKFold(random_state=rng)
-    >>> skf_list = list(self.split(X=X, y=y, groups=groups))
-    >>> pprint(skf_list)
-    [(array([2, 3, 4, 5, 6]), array([0, 1, 7, 8])),
-     (array([0, 1, 2, 7, 8]), array([3, 4, 5, 6])),
-     (array([0, 1, 3, 4, 5, 6, 7, 8]), array([2]))]
+
+    Args:
+        n_splits :
+            Number of folds. Must be at least 2.
+
+    Example:
+        >>> from pprint import pprint
+        >>> rng = np.random.RandomState(0)
+        >>> groups = [1, 1, 3, 4, 2, 2, 7, 8, 8]
+        >>> y      = [1, 1, 1, 1, 2, 2, 2, 3, 3]
+        >>> X = np.empty((len(y), 0))
+        >>> self = StratifiedGroupKFold(random_state=rng)
+        >>> skf_list = list(self.split(X=X, y=y, groups=groups))
+        >>> pprint(skf_list)
+        [
+            (np.array([2, 3, 4, 5, 6]), np.array([0, 1, 7, 8])),
+            (np.array([0, 1, 2, 7, 8]), np.array([3, 4, 5, 6])),
+            (np.array([0, 1, 3, 4, 5, 6, 7, 8]), np.array([2])),
+        ]
+
     """
 
-    def __init__(self, n_splits=3, shuffle=False, random_state=None):
-        super(StratifiedGroupKFold, self).__init__(n_splits, shuffle, random_state)
+    def __init__(self, n_splits: int = 3, shuffle: bool = False,
+                 random_state: Optional[Union[int, np.random.RandomState]] = None):
+        super(StratifiedGroupKFold, self).__init__(n_splits, shuffle,
+                                                   random_state)
 
     def _make_test_folds(self, X, y=None, groups=None):
         """
