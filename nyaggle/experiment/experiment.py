@@ -30,6 +30,13 @@ def _check_directory(directory: str, if_exists: str) -> str:
         elif if_exists == 'replace':
             warnings.warn(
                 'directory {} already exists. It will be replaced by the new result'.format(directory))
+
+            existing_run_id = _try_to_get_existing_mlflow_run_id(directory)
+            if existing_run_id is not None:
+                requires_mlflow()
+                import mlflow
+                mlflow.delete_run(existing_run_id)
+
             shutil.rmtree(directory, ignore_errors=True)
         elif if_exists == 'rename':
             postfix_index = 1
@@ -151,6 +158,7 @@ class Experiment(object):
                 'experiment_id': active_run.info.experiment_id,
                 'run_id': active_run.info.run_id
             }
+            self.mlflow_run_id = active_run.info.run_id
             with open(os.path.join(self.logging_directory, 'mlflow.json'), 'w') as f:
                 json.dump(mlflow_metadata, f, indent=4)
 
