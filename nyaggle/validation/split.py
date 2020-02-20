@@ -30,6 +30,7 @@ import pandas as pd
 import sklearn.model_selection as model_selection
 from sklearn.model_selection import BaseCrossValidator, KFold, StratifiedKFold
 from sklearn.utils.multiclass import type_of_target
+from sklearn.utils.validation import check_array
 from sklearn.model_selection._split import _BaseKFold
 
 
@@ -346,6 +347,7 @@ class SlidingWindowSplit(TimeSeriesSplit):
 
 class StratifiedGroupKFold(_BaseKFold):
     """ Stratified K-Folds cross-validator with grouping
+
     Provides train/test indices to split data in train/test sets.
     This cross-validation object is a variation of GroupKFold that returns
     stratified folds. The folds are made by preserving the percentage of
@@ -370,7 +372,6 @@ class StratifiedGroupKFold(_BaseKFold):
             (np.array([0, 1, 2, 7, 8]), np.array([3, 4, 5, 6])),
             (np.array([0, 1, 3, 4, 5, 6, 7, 8]), np.array([2])),
         ]
-
     """
 
     def __init__(self, n_splits: int = 3, shuffle: bool = False,
@@ -387,6 +388,13 @@ class StratifiedGroupKFold(_BaseKFold):
         """
         n_splits = self.n_splits
         y = np.asarray(y)
+        type_of_target_y = type_of_target(y)
+        allowed_target_types = {"binary", "multiclass"}
+        if type_of_target_y not in allowed_target_types:
+            raise ValueError(
+                'Supported target types are: {}. Got {!r} instead.'.format(
+                    allowed_target_types, type_of_target_y))
+
         n_samples = y.shape[0]
 
         unique_y, y_inversed = np.unique(y, return_inverse=True)
@@ -464,6 +472,5 @@ class StratifiedGroupKFold(_BaseKFold):
         """
         Generate indices to split data into training and test set.
         """
-        from sklearn.utils.validation import check_array
         y = check_array(y, ensure_2d=False, dtype=None)
         return super(StratifiedGroupKFold, self).split(X, y, groups)

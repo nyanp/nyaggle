@@ -230,15 +230,3 @@ def test_stratified_group_kfold_imbalanced_group():
     train_index, test_index = next(splits)
     assert np.array_equal(train_index, np.array([0, 1, 2, 3, 4, 5, 6, 7]))
     assert np.array_equal(test_index, np.array([8, 9, 10, 11]))
-
-
-def test_stratified_group_kfold_y_with_continuous():
-    sgf = split.StratifiedGroupKFold(2, shuffle=False)
-    np.random.seed(1)
-    df = pd.DataFrame()
-    df['group'] = [1, 1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4]
-    df['y'] = np.random.rand(len(df['group']))
-    df['x'] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-    with pytest.raises(ValueError):
-        splits = sgf.split(df, df['y'], df['group'])
-        next(splits)
