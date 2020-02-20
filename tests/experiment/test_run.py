@@ -11,7 +11,7 @@ from sklearn.metrics import roc_auc_score, mean_squared_error, mean_absolute_err
 from sklearn.model_selection import GroupKFold, KFold, train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 
-from nyaggle.experiment import run_experiment
+from nyaggle.experiment import Experiment, run_experiment
 from nyaggle.feature_store import save_feature
 from nyaggle.testing import make_classification_df, make_regression_df, get_temp_directory
 
@@ -634,3 +634,18 @@ def test_inherit_outer_scope_run():
     assert data.metrics['Overall'] > 0  # recorded
 
     mlflow.end_run()
+
+
+def test_custom_experiment():
+    params = {
+        'objective': 'binary',
+        'max_depth': 8
+    }
+    X, y = make_classification_df()
+
+    with get_temp_directory() as temp_path:
+        with Experiment(temp_path, with_mlflow=True) as e:
+            run_experiment(params, X, y, logging_directory='foobar', inherit_experiment=e)
+
+        # all files are logged into e.logging_directory, instead of 'foobar'
+        _check_file_exists(temp_path, with_mlflow=True)
