@@ -386,6 +386,10 @@ class StratifiedGroupKFold(_BaseKFold):
             groups (None): (default = None)
         """
         from sklearn.utils.multiclass import type_of_target
+
+        if groups is None:
+            raise ValueError("`groups` should not be None")
+
         n_splits = self.n_splits
         y = np.asarray(y)
         type_of_target_y = type_of_target(y)
