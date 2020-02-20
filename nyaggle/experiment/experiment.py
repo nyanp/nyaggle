@@ -1,4 +1,5 @@
 import json
+import numbers
 import os
 import shutil
 import uuid
@@ -22,6 +23,45 @@ def _sanitize_mlflow_param(param, limit):
     return param
 
 
+def _check_directory(directory: str, if_exists: str) -> str:
+    if os.path.exists(directory):
+        if if_exists == 'error':
+            raise ValueError('directory {} already exists.'.format(directory))
+        elif if_exists == 'replace':
+            warnings.warn(
+                'directory {} already exists. It will be replaced by the new result'.format(directory))
+
+            existing_run_id = _try_to_get_existing_mlflow_run_id(directory)
+            if existing_run_id is not None:
+                requires_mlflow()
+                import mlflow
+                mlflow.delete_run(existing_run_id)
+
+            shutil.rmtree(directory, ignore_errors=True)
+        elif if_exists == 'rename':
+            postfix_index = 1
+
+            while os.path.exists(directory + '_' + str(postfix_index)):
+                postfix_index += 1
+
+            directory += '_' + str(postfix_index)
+            warnings.warn('directory is renamed to {} because the original directory already exists.'.format(directory))
+    return directory
+
+
+def _sanitize(v):
+    return v if isinstance(v, numbers.Number) else str(v)
+
+
+def _try_to_get_existing_mlflow_run_id(logging_directory: str) -> Optional[str]:
+    mlflow_path = os.path.join(logging_directory, 'mlflow.json')
+    if os.path.exists(mlflow_path):
+        with open(mlflow_path, 'r') as f:
+            mlflow_metadata = json.load(f)
+            return mlflow_metadata['run_id']
+    return None
+
+
 class Experiment(object):
     """Minimal experiment logger for Kaggle
 
@@ -42,8 +82,6 @@ class Experiment(object):
     Args:
         logging_directory:
             Path to directory where output is stored.
-        overwrite:
-            If True, contents in ``logging_directory`` will be overwritten.
         custom_logger:
             A custom logger to be used instead of default logger.
         with_mlflow:
@@ -51,17 +89,23 @@ class Experiment(object):
             One instance of ``nyaggle.experiment.Experiment`` corresponds to one run in mlflow.
             Note that all output files are located both ``logging_directory`` and
             mlflow's directory (``mlruns`` by default).
+        if_exists:
+            How to behave if the logging directory already exists.
+            - error: Raise a ValueError.
+            - replace: Delete logging directory before logging.
+            - append: Append to exisitng experiment.
+            - rename: Rename current directory by adding "_1", "_2"... prefix
     """
 
     def __init__(self,
                  logging_directory: str,
-                 overwrite: bool = False,
                  custom_logger: Optional[Logger] = None,
                  with_mlflow: bool = False,
-                 mlflow_run_id: Optional[str] = None,
-                 logging_mode: str = 'w'
+                 if_exists: str = 'error'
                  ):
-        os.makedirs(logging_directory, exist_ok=overwrite)
+        logging_directory = _check_directory(logging_directory, if_exists)
+        os.makedirs(logging_directory, exist_ok=True)
+
         self.logging_directory = logging_directory
         self.with_mlflow = with_mlflow
 
@@ -74,15 +118,14 @@ class Experiment(object):
             self.logger.addHandler(FileHandler(self.log_path))
             self.logger.setLevel(DEBUG)
             self.is_custom = False
-        self.metrics_path = os.path.join(logging_directory, 'metrics.txt')
-        self.metrics = open(self.metrics_path, mode=logging_mode)
-        self.params = open(os.path.join(logging_directory, 'params.txt'), mode=logging_mode)
+        self.metrics = self._load_dict('metrics.json')
+        self.params = self._load_dict('params.json')
         self.inherit_existing_run = False
 
         if self.with_mlflow:
             requires_mlflow()
-            self.mlflow_run_id = mlflow_run_id
-            if mlflow_run_id is not None:
+            self.mlflow_run_id = _try_to_get_existing_mlflow_run_id(logging_directory)
+            if self.mlflow_run_id is not None:
                 self.mlflow_run_name = None
             else:
                 self.mlflow_run_name = logging_directory
@@ -95,22 +138,8 @@ class Experiment(object):
         self.stop()
 
     @classmethod
-    def continue_from(cls, logging_directory: str):
-        params = {
-            'logging_directory': logging_directory,
-            'overwrite': True,
-            'logging_mode': 'a'
-        }
-
-        mlflow_path = os.path.join(logging_directory, 'mlflow.json')
-        if os.path.exists(mlflow_path):
-            with open(mlflow_path, 'r') as f:
-                mlflow_metadata = json.load(f)
-
-                params['with_mlflow'] = True
-                params['mlflow_run_id'] = mlflow_metadata['run_id']
-
-        return cls(**params)
+    def continue_from(cls, logging_directory: str, with_mlflow: bool = False):
+        return cls(logging_directory=logging_directory, if_exists='append', with_mlflow=with_mlflow)
 
     def start(self):
         """
@@ -129,15 +158,33 @@ class Experiment(object):
                 'experiment_id': active_run.info.experiment_id,
                 'run_id': active_run.info.run_id
             }
+            self.mlflow_run_id = active_run.info.run_id
             with open(os.path.join(self.logging_directory, 'mlflow.json'), 'w') as f:
                 json.dump(mlflow_metadata, f, indent=4)
+
+    def _load_dict(self, filename: str) -> Dict:
+        try:
+            path = os.path.join(self.logging_directory, filename)
+            with open(path, 'r') as f:
+                return json.load(f)
+        except IOError:
+            self.logger.warning('failed to load file: {}'.format(filename))
+            return {}
+
+    def _save_dict(self, obj: Dict, filename: str):
+        try:
+            path = os.path.join(self.logging_directory, filename)
+            with open(path, 'w') as f:
+                json.dump(obj, f)
+        except IOError:
+            self.logger.warning('failed to save file: {}'.format(filename))
 
     def stop(self):
         """
         Stop current experiment.
         """
-        self.metrics.close()
-        self.params.close()
+        self._save_dict(self.metrics, 'metrics.json')
+        self._save_dict(self.params, 'params.json')
 
         if not self.is_custom:
             for h in self.logger.handlers:
@@ -146,7 +193,8 @@ class Experiment(object):
         if self.with_mlflow:
             import mlflow
             mlflow.log_artifact(self.log_path)
-            mlflow.log_artifact(self.metrics_path)
+            mlflow.log_artifact(os.path.join(self.logging_directory, 'metrics.json'))
+            mlflow.log_artifact(os.path.join(self.logging_directory, 'params.json'))
             if not self.inherit_existing_run:
                 mlflow.end_run()
 
@@ -190,8 +238,9 @@ class Experiment(object):
             key: parameter name
             value: parameter value
         """
-        self.params.write('{},{}\n'.format(key, value))
-        self.params.flush()
+        key = _sanitize(key)
+        value = _sanitize(value)
+        self.params[key] = value
 
         if self.with_mlflow:
             import mlflow
@@ -219,8 +268,9 @@ class Experiment(object):
             score:
                 Metric value.
         """
-        self.metrics.write('{},{}\n'.format(name, score))
-        self.metrics.flush()
+        name = _sanitize(name)
+        score = _sanitize(score)
+        self.metrics[name] = score
 
         if self.with_mlflow:
             import mlflow

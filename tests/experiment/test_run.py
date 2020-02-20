@@ -16,7 +16,13 @@ from nyaggle.feature_store import save_feature
 from nyaggle.testing import make_classification_df, make_regression_df, get_temp_directory
 
 
-def _check_file_exists(directory, files):
+def _check_file_exists(directory, submission_filename=None, with_mlflow=False):
+    files = ['oof_prediction.npy', 'test_prediction.npy', 'metrics.json', 'params.json']
+    if submission_filename:
+        files.append(submission_filename)
+    if with_mlflow:
+        files.append('mlflow.json')
+
     for f in files:
         assert os.path.exists(os.path.join(directory, f)), 'File not found: {}'.format(f)
 
@@ -40,7 +46,7 @@ def test_experiment_lgb_classifier():
         assert roc_auc_score(y_train, result.oof_prediction) >= 0.9
         assert roc_auc_score(y_test, result.test_prediction) >= 0.9
 
-        _check_file_exists(temp_path, ('oof_prediction.npy', 'test_prediction.npy', 'metrics.txt'))
+        _check_file_exists(temp_path)
 
 
 def test_experiment_lgb_regressor():
@@ -61,7 +67,7 @@ def test_experiment_lgb_regressor():
         assert len(np.unique(result.test_prediction)) > 5
         assert mean_squared_error(y_train, result.oof_prediction) == result.metrics[-1]
 
-        _check_file_exists(temp_path, ('oof_prediction.npy', 'test_prediction.npy', 'metrics.txt'))
+        _check_file_exists(temp_path)
 
 
 def test_experiment_lgb_multiclass():
@@ -83,7 +89,7 @@ def test_experiment_lgb_multiclass():
         assert result.oof_prediction.shape == (len(y_train), 5)
         assert result.test_prediction.shape == (len(y_test), 5)
 
-        _check_file_exists(temp_path, ('oof_prediction.npy', 'test_prediction.npy', 'metrics.txt'))
+        _check_file_exists(temp_path)
 
 
 def test_experiment_cat_classifier():
@@ -107,7 +113,7 @@ def test_experiment_cat_classifier():
         assert roc_auc_score(y_test, result.test_prediction) >= 0.9
         assert list(pd.read_csv(os.path.join(temp_path, 'submission.csv')).columns) == ['id', 'tgt']
 
-        _check_file_exists(temp_path, ('submission.csv', 'oof_prediction.npy', 'test_prediction.npy', 'metrics.txt'))
+        _check_file_exists(temp_path)
 
 
 def test_experiment_cat_regressor():
@@ -125,7 +131,7 @@ def test_experiment_cat_regressor():
         result = run_experiment(params, X_train, y_train, X_test, temp_path, algorithm_type='cat')
 
         assert mean_squared_error(y_train, result.oof_prediction) == result.metrics[-1]
-        _check_file_exists(temp_path, ('oof_prediction.npy', 'test_prediction.npy', 'metrics.txt'))
+        _check_file_exists(temp_path)
 
 
 def test_experiment_cat_multiclass():
@@ -148,7 +154,7 @@ def test_experiment_cat_multiclass():
 
         assert list(pd.read_csv(os.path.join(temp_path, 'submission.csv')).columns) == ['id', '0', '1', '2', '3', '4']
 
-        _check_file_exists(temp_path, ('submission.csv', 'oof_prediction.npy', 'test_prediction.npy', 'metrics.txt'))
+        _check_file_exists(temp_path, submission_filename='submission.csv')
 
 
 def test_experiment_xgb_classifier():
@@ -172,7 +178,7 @@ def test_experiment_xgb_classifier():
         assert roc_auc_score(y_test, result.test_prediction) >= 0.9
         assert list(pd.read_csv(os.path.join(temp_path, 'submission.csv')).columns) == ['id', 'tgt']
 
-        _check_file_exists(temp_path, ('submission.csv', 'oof_prediction.npy', 'test_prediction.npy', 'metrics.txt'))
+        _check_file_exists(temp_path, submission_filename='submission.csv')
 
 
 def test_experiment_xgb_regressor():
@@ -190,7 +196,7 @@ def test_experiment_xgb_regressor():
         result = run_experiment(params, X_train, y_train, X_test, temp_path, algorithm_type='xgb', with_auto_prep=True)
 
         assert mean_squared_error(y_train, result.oof_prediction) == result.metrics[-1]
-        _check_file_exists(temp_path, ('oof_prediction.npy', 'test_prediction.npy', 'metrics.txt'))
+        _check_file_exists(temp_path)
 
 
 def test_experiment_xgb_multiclass():
@@ -214,7 +220,7 @@ def test_experiment_xgb_multiclass():
 
         assert list(pd.read_csv(os.path.join(temp_path, 'submission.csv')).columns) == ['id', '0', '1', '2', '3', '4']
 
-        _check_file_exists(temp_path, ('submission.csv', 'oof_prediction.npy', 'test_prediction.npy', 'metrics.txt'))
+        _check_file_exists(temp_path, submission_filename='submission.csv')
 
 
 def test_experiment_sklearn_classifier():
@@ -236,7 +242,7 @@ def test_experiment_sklearn_classifier():
         assert roc_auc_score(y_train, result.oof_prediction) >= 0.8
         assert roc_auc_score(y_test, result.test_prediction) >= 0.8
 
-        _check_file_exists(temp_path, ('oof_prediction.npy', 'test_prediction.npy', 'metrics.txt'))
+        _check_file_exists(temp_path)
 
 
 def test_experiment_sklearn_regressor():
@@ -257,7 +263,7 @@ def test_experiment_sklearn_regressor():
         assert len(np.unique(result.test_prediction)) > 5
         assert mean_squared_error(y_train, result.oof_prediction) == result.metrics[-1]
 
-        _check_file_exists(temp_path, ('oof_prediction.npy', 'test_prediction.npy', 'metrics.txt'))
+        _check_file_exists(temp_path)
 
 
 def test_experiment_sklearn_multiclass():
@@ -279,7 +285,7 @@ def test_experiment_sklearn_multiclass():
         assert result.oof_prediction.shape == (len(y_train), 5)
         assert result.test_prediction.shape == (len(y_test), 5)
 
-        _check_file_exists(temp_path, ('oof_prediction.npy', 'test_prediction.npy', 'metrics.txt'))
+        _check_file_exists(temp_path)
 
 
 def test_experiment_cat_custom_eval():
@@ -299,7 +305,7 @@ def test_experiment_cat_custom_eval():
                                 algorithm_type='cat', eval_func=mean_absolute_error)
 
         assert mean_absolute_error(y_train, result.oof_prediction) == result.metrics[-1]
-        _check_file_exists(temp_path, ('oof_prediction.npy', 'test_prediction.npy', 'metrics.txt'))
+        _check_file_exists(temp_path)
 
 
 def test_experiment_without_test_data():
@@ -317,7 +323,7 @@ def test_experiment_without_test_data():
         result = run_experiment(params, X_train, y_train, None, temp_path)
 
         assert roc_auc_score(y_train, result.oof_prediction) >= 0.9
-        _check_file_exists(temp_path, ('oof_prediction.npy', 'metrics.txt'))
+        _check_file_exists(temp_path)
 
 
 def test_experiment_fit_params():
@@ -357,7 +363,7 @@ def test_experiment_mlflow():
     with get_temp_directory() as temp_path:
         run_experiment(params, X_train, y_train, None, temp_path, with_mlflow=True)
 
-        _check_file_exists(temp_path, ('oof_prediction.npy', 'metrics.txt', 'mlflow.json'))
+        _check_file_exists(temp_path, with_mlflow=True)
 
         # test if output files are also stored in the mlflow artifact uri
         with open(os.path.join(temp_path, 'mlflow.json'), 'r') as f:
@@ -365,7 +371,7 @@ def test_experiment_mlflow():
             p = unquote(urlparse(mlflow_meta['artifact_uri']).path)
             if os.name == 'nt' and p.startswith("/"):
                 p = p[1:]
-            _check_file_exists(p, ('oof_prediction.npy', 'metrics.txt'))
+            _check_file_exists(p, with_mlflow=False)
 
 
 def test_experiment_already_exists():
@@ -380,13 +386,13 @@ def test_experiment_already_exists():
     }
 
     with get_temp_directory() as temp_path:
-        run_experiment(params, X_train, y_train, None, temp_path, overwrite=True)
+        run_experiment(params, X_train, y_train, None, temp_path)
 
-        # result is overwrited by default
-        run_experiment(params, X_train, y_train, None, temp_path, overwrite=True)
+        # result is not overwrited by default
+        run_experiment(params, X_train, y_train, None, temp_path, if_exists='replace')
 
         with pytest.raises(Exception):
-            run_experiment(params, X_train, y_train, None, temp_path, overwrite=False)
+            run_experiment(params, X_train, y_train, None, temp_path)
 
 
 def test_submission_filename():
