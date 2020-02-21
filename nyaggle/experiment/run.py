@@ -33,6 +33,25 @@ ExperimentResult = namedtuple('ExperimentResult',
                               ])
 
 
+class ExpeimentProxy(object):
+    __slots__ = ["_obj", "__weakref__"]
+
+    def __init__(self, obj):
+        object.__setattr__(self, "_obj", obj)
+
+    def __getattribute__(self, name):
+        return getattr(object.__getattribute__(self, "_obj"), name)
+
+    def __setattr__(self, name, value):
+        setattr(object.__getattribute__(self, "_obj"), name, value)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, ex_type, ex_value, trace):
+        pass
+
+
 def run_experiment(model_params: Dict[str, Any],
                    X_train: pd.DataFrame, y: pd.Series,
                    X_test: Optional[pd.DataFrame] = None,
@@ -49,6 +68,7 @@ def run_experiment(model_params: Dict[str, Any],
                    type_of_target: str = 'auto',
                    feature_list: Optional[List[Union[int, str]]] = None,
                    feature_directory: Optional[str] = None,
+                   inherit_experiment: Optional[Experiment] = None,
                    with_auto_hpo: bool = False,
                    with_auto_prep: bool = False,
                    with_mlflow: bool = False
@@ -132,6 +152,9 @@ def run_experiment(model_params: Dict[str, Any],
             The list of feature ids saved through nyaggle.feature_store module.
         feature_directory:
             The location of features stored. Only used if feature_list is not empty.
+        inherit_experiment:
+            An experiment object which is used to log results. if not ``None``, all logs in this function are treated
+            as a part of this experiment.
         with_auto_prep:
             If True, the input datasets will be copied and automatic preprocessing will be performed on them.
             For example, if ``gbdt_type = 'cat'``, all missing values in categorical features will be filled.
@@ -186,9 +209,14 @@ def run_experiment(model_params: Dict[str, Any],
 
     logging_directory = logging_directory.format(time=datetime.now().strftime('%Y%m%d_%H%M%S'))
 
-    with Experiment(logging_directory, if_exists=if_exists, with_mlflow=with_mlflow) as exp:
+    if inherit_experiment is not None:
+        experiment = ExpeimentProxy(inherit_experiment)
+    else:
+        experiment = Experiment(logging_directory, if_exists=if_exists, with_mlflow=with_mlflow)
+
+    with experiment as exp:
         exp.log('Algorithm: {}'.format(algorithm_type))
-        exp.log('Experiment: {}'.format(logging_directory))
+        exp.log('Experiment: {}'.format(exp.logging_directory))
         exp.log('Params: {}'.format(model_params))
         exp.log('Features: {}'.format(list(X_train.columns)))
         exp.log_param('algorithm_type', algorithm_type)
@@ -230,19 +258,19 @@ def run_experiment(model_params: Dict[str, Any],
         # save importance plot
         if result.importance:
             importance = pd.concat(result.importance)
-            plot_file_path = os.path.join(logging_directory, 'importance.png')
+            plot_file_path = os.path.join(exp.logging_directory, 'importance.png')
             plot_importance(importance, plot_file_path)
             exp.log_artifact(plot_file_path)
 
         # save trained model
         for i, model in enumerate(models):
-            _save_model(model, logging_directory, i + 1, exp)
+            _save_model(model, exp.logging_directory, i + 1, exp)
 
         # save submission.csv
         submit_df = None
         if X_test is not None:
             submit_df = _make_submission_df(result.test_prediction, type_of_target, y, sample_submission)
-            exp.log_dataframe(submission_filename or os.path.basename(logging_directory), submit_df, 'csv')
+            exp.log_dataframe(submission_filename or os.path.basename(exp.logging_directory), submit_df, 'csv')
 
         elapsed_time = time.time() - start_time
 

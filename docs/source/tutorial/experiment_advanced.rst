@@ -53,3 +53,24 @@ If you are familiar with mlflow tracking, you may notice that these APIs are sim
       # logging as you want, and you can see the result in mlflow ui
       ...
 
+
+
+Log extra parameters to run_experiment
+---------------------------------------
+
+By using ``inherit_experiment`` parameter, you can mix any additional logging with the results ``run_experiment`` will create.
+In the following example, nyaggle records the result of ``run_experiment`` under the same experiment as
+the parameter and metrics written outside of the function.
+
+.. code-block:: python
+
+  from nyaggle.experiment import Experiment, run_experiment
+
+  with Experiment(logging_directory='./output/') as exp:
+
+      exp.log_param('my extra param', 'bar')
+
+      run_experiment(..., inherit_experiment=exp)
+
+      exp.log_metrics('my extra metrics', 0.999)
+
