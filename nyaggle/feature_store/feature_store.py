@@ -11,6 +11,7 @@ from tqdm import tqdm
 def validate_train_test_difference(train: pd.Series, test: pd.Series):
     # % of nulls
     if test.isnull().mean() == 1.0:
+        print(UNDEFINED)
         raise RuntimeError('Error in feature {}: all values in test data is null'.format(train.name))
 
 
