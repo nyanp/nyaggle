@@ -9,25 +9,24 @@ from nyaggle.experiment import Experiment
 from nyaggle.testing import get_temp_directory
 
 
-def test_log_params():
-    with get_temp_directory() as logging_dir:
-        with Experiment(logging_dir) as e:
-            e.log_param('x', 1)
-            e.log_param('x', 2)
-            e.log_params({
-                'y': 'ABC',
-                'z': None,
-            })
+def test_log_params(tmpdir):
+    with Experiment(tmpdir) as e:
+        e.log_param('x', 1)
+        e.log_param('x', 2)
+        e.log_params({
+            'y': 'ABC',
+            'z': None,
+        })
 
-        with open(os.path.join(logging_dir, 'params.json'), 'r') as f:
-            params = json.load(f)
+    with open(os.path.join(tmpdir, 'params.json'), 'r') as f:
+        params = json.load(f)
 
-            expected = {
-                'x': 2,      # if the key is duplicated, the latter one is stored
-                'y': 'ABC',
-                'z': 'None'  # all non-numerical values are casted to string before logging
-            }
-            assert params == expected
+        expected = {
+            'x': 2,      # if the key is duplicated, the latter one is stored
+            'y': 'ABC',
+            'z': 'None'  # all non-numerical values are casted to string before logging
+        }
+        assert params == expected
 
 
 def test_log_params_empty():
