@@ -2,3 +2,5 @@ build/
 dist/
 nyaggle.egg-info/
 .idea/
+__pycache__/
+mlruns/
