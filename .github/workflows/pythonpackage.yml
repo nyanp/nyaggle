@@ -37,4 +37,4 @@ jobs:
       run: |
         pip install pytest
         export PYTHONPATH=./
-        pytest
+        pytest --verbose  --color=yes
