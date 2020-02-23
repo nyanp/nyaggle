@@ -1,4 +1,4 @@
-experiment
+nyaggle.experiment
 -----------------------
 
 .. automodule:: nyaggle.experiment

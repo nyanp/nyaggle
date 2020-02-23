@@ -2,11 +2,17 @@
 ![GitHub Actions CI Status](https://github.com/nyanp/nyaggle/workflows/Python%20package/badge.svg)
 ![Python Versions](https://img.shields.io/pypi/pyversions/nyaggle.svg?logo=python&logoColor=white)
 
-**nyaggle** is a utility library for Kaggle and offline competitions, 
-particularly focused on experiment logging, feature engineering and validation. 
+[**Documentation**](https://nyaggle.readthedocs.io/en/latest/index.html)
+| [**Slide (Japanese)**](https://docs.google.com/presentation/d/1jv3J7DISw8phZT4z9rqjM-azdrQ4L4wWJN5P-gKL6fA/edit?usp=sharing)
 
-- [documentation](https://nyaggle.readthedocs.io/en/latest/index.html)
-- [slide (Japanese)](https://docs.google.com/presentation/d/1jv3J7DISw8phZT4z9rqjM-azdrQ4L4wWJN5P-gKL6fA/edit?usp=sharing)
+**nyaggle** is a utility library for Kaggle and offline competitions, 
+particularly focused on experiment tracking, feature engineering and validation.
+
+- **nyaggle.experiment** - Experiment tracking
+- **nyaggle.feature_store** - Lightweight feature storage using feather-format
+- **nyaggle.features** - sklearn-compatible features
+- **nyaggle.hyper_parameters** - Collection of GBDT hyper-parameters used in past Kaggle competitions
+- **nyaggle.validation** - Adversarial validation & sklearn-compatible CV splitters
 
 ## Installation
 You can install nyaggle via pip:
@@ -16,7 +22,7 @@ $pip install nyaggle
 
 ## Examples
 
-### Experiment Logging
+### Experiment Tracking
 `run_experiment()` is an high-level API for experiment with cross validation.
 It outputs parameters, metrics, out of fold predictions, test predictions,
 feature importance and submission.csv under the specified directory.
@@ -63,6 +69,28 @@ result = run_experiment(params,
                         with_mlflow=True)
 ```
 
+nyaggle also has a low-level API which has similar interface to
+[mlflow tracking](https://www.mlflow.org/docs/latest/tracking.html) and [wandb](https://www.wandb.com/).
+
+```python
+from nyaggle.experiment import Experiment
+
+with Experiment(logging_directory='./output/') as exp:
+    # log key-value pair as a parameter
+    exp.log_param('lr', 0.01)
+    exp.log_param('optimizer', 'adam')
+
+    # log text
+    exp.log('blah blah blah')
+
+    # log metric
+    exp.log_metric('CV', 0.85)
+
+    # log numpy ndarray, pandas dafaframe and any artifacts
+    exp.log_numpy('predicted', predicted)
+    exp.log_dataframe('submission', sub, file_format='csv')
+    exp.log_artifact('path-to-your-file')
+```
 
 ### Feature Engineering
 
