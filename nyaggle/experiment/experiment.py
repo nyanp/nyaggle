@@ -175,7 +175,7 @@ class Experiment(object):
         try:
             path = os.path.join(self.logging_directory, filename)
             with open(path, 'w') as f:
-                json.dump(obj, f)
+                json.dump(obj, f, indent=2)
         except IOError:
             self.logger.warning('failed to save file: {}'.format(filename))
 
