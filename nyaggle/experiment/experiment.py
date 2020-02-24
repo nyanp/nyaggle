@@ -276,6 +276,16 @@ class Experiment(object):
             import mlflow
             mlflow.log_metric(name, score)
 
+    def log_metrics(self, metrics: Dict):
+        """
+        Log a batch of metrics under the logging directory.
+
+        Args:
+            metrics: dictionary of metrics.
+        """
+        for k, v in metrics.items():
+            self.log_metric(k, v)
+
     def log_numpy(self, name: str, array: np.ndarray):
         """
         Log a numpy ndarray under the logging directory.
