@@ -1,4 +1,4 @@
-feature
+nyaggle.feature
 ----------------------------------------
 
 .. automodule:: nyaggle.feature.category_encoder

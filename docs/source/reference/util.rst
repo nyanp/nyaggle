@@ -1,4 +1,4 @@
-util
+nyaggle.util
 -----------------------
 
 .. automodule:: nyaggle.util

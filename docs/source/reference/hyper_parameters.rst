@@ -1,4 +1,4 @@
-hyper_parameters
+nyaggle.hyper_parameters
 --------------------------
 
 .. automodule:: nyaggle.hyper_parameters

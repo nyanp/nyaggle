@@ -1,4 +1,4 @@
-feature_store
+nyaggle.feature_store
 ---------------------------
 
 .. automodule:: nyaggle.feature_store
