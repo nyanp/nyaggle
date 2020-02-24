@@ -45,12 +45,18 @@ def test_log_metrics():
         with Experiment(logging_dir) as e:
             e.log_metric('x', 1)
             e.log_metric('x', 2)
+            e.log_metrics({
+                'y': 3,
+                'z': 4,
+            })
 
         with open(os.path.join(logging_dir, 'metrics.json'), 'r') as f:
             params = json.load(f)
 
             expected = {
-                'x': 2
+                'x': 2,
+                'y': 3,
+                'z': 4,
             }
             assert params == expected
 
