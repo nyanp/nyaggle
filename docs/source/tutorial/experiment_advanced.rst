@@ -85,7 +85,8 @@ A nested run functionality of mlflow is useful to display multiple models togeth
 .. code-block:: python
 
   import mlflow
-  from nyaggle.experiment import average_results
+  from nyaggle.ensemble import averaging
+  from nyaggle.util import make_submission_df
 
   mlflow.start_run()
   base_logging_dir = './seed-avg/'
@@ -105,4 +106,7 @@ A nested run functionality of mlflow is useful to display multiple models togeth
 
       mlflow.end_run()
 
-  average_results([base_logging_dir+f'seed_{i}' for i in range(3)], base_logging_dir+'sub.csv')
+
+  ensemble = averaging([result.test_prediction for result in results])
+  sub = make_submission_df(ensemble.test_prediction, pd.read_csv('sample_submission.csv'))
+  sub.to_csv('ensemble_sub.csv', index=False)
