@@ -20,6 +20,43 @@ def stacking(test_predictions: List[np.ndarray],
              groups: Optional[pd.Series] = None,
              type_of_target: str = 'auto',
              eval_func: Optional[Callable] = None) -> EnsembleResult:
+    """
+    Perform stacking on predictions.
+
+    Args:
+        test_predictions:
+            List of predicted values on test data.
+        oof_predictions:
+            List of predicted values on out-of-fold training data.
+        y:
+            Target value
+        estimator:
+            Estimator used for the 2nd-level model.
+            If ``None``, the default estimator (auto-tuned linear model) will be used.
+        cv:
+            int, cross-validation generator or an iterable which determines the cross-validation splitting strategy.
+
+            - None, to use the default ``KFold(5, random_state=0, shuffle=True)``,
+            - integer, to specify the number of folds in a ``(Stratified)KFold``,
+            - CV splitter (the instance of ``BaseCrossValidator``),
+            - An iterable yielding (train, test) splits as arrays of indices.
+        groups:
+            Group labels for the samples. Only used in conjunction with a “Group” cv instance (e.g., ``GroupKFold``).
+        type_of_target:
+            The type of target variable. If ``auto``, type is inferred by ``sklearn.utils.multiclass.type_of_target``.
+            Otherwise, ``binary``, ``continuous``, or ``multiclass`` are supported.
+        eval_func:
+            Evaluation metric used for calculating result score. Used only if ``oof_predictions`` and ``y`` are given.
+    Returns:
+        Namedtuple with following members
+
+        * test_prediction:
+            numpy array, Average prediction on test data.
+        * oof_prediction:
+            numpy array, Average prediction on Out-of-Fold validation data. ``None`` if ``oof_predictions`` = ``None``.
+        * score:
+            float, Calculated score on Out-of-Fold data. ``None`` if ``eval_func`` is ``None``.
+    """
     assert len(oof_predictions) == len(test_predictions), "Number of oof and test predictions should be same"
 
     def _stack(predictions):

@@ -13,6 +13,30 @@ def averaging(test_predictions: List[np.ndarray],
               y: Optional[pd.Series] = None,
               weights: Optional[List[float]] = None,
               eval_func: Optional[Callable] = None) -> EnsembleResult:
+    """
+    Perform averaging on model predictions.
+
+    Args:
+        test_predictions:
+            List of predicted values on test data.
+        oof_predictions:
+            List of predicted values on out-of-fold training data.
+        y:
+            Target value
+        weights:
+            Weights for each predictions
+        eval_func:
+            Evaluation metric used for calculating result score. Used only if ``oof_predictions`` and ``y`` are given.
+    Returns:
+        Namedtuple with following members
+
+        * test_prediction:
+            numpy array, Average prediction on test data.
+        * oof_prediction:
+            numpy array, Average prediction on Out-of-Fold validation data. ``None`` if ``oof_predictions`` = ``None``.
+        * score:
+            float, Calculated score on Out-of-Fold data. ``None`` if ``eval_func`` is ``None``.
+    """
     if weights is None:
         weights = np.ones((len(test_predictions))) / len(test_predictions)
 
@@ -44,6 +68,30 @@ def rank_averaging(test_predictions: List[np.ndarray],
                    y: Optional[pd.Series] = None,
                    weights: Optional[List[float]] = None,
                    eval_func: Optional[Callable] = None) -> EnsembleResult:
+    """
+    Perform rank-averaging on model predictions.
+
+    Args:
+        test_predictions:
+            List of predicted values on test data.
+        oof_predictions:
+            List of predicted values on out-of-fold training data.
+        y:
+            Target value
+        weights:
+            Weights for each predictions
+        eval_func:
+            Evaluation metric used for calculating result score. Used only if ``oof_predictions`` and ``y`` are given.
+    Returns:
+        Namedtuple with following members
+
+        * test_prediction:
+            numpy array, Average prediction on test data.
+        * oof_prediction:
+            numpy array, Average prediction on Out-of-Fold validation data. ``None`` if ``oof_predictions`` = ``None``.
+        * score:
+            float, Calculated score on Out-of-Fold data. ``None`` if ``eval_func`` is ``None``.
+    """
     def _to_rank(prediction: np.ndarray):
         return stats.rankdata(prediction) / len(prediction)
 
