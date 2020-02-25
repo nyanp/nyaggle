@@ -1,9 +1,10 @@
 from collections import namedtuple
-from typing import Callable, Iterable, List, Union, Optional
+from typing import Callable, Iterable, List, Union, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 import scipy.stats as stats
+from scipy.optimize import minimize
 
 from nyaggle.ensemble.common import EnsembleResult
 
@@ -102,3 +103,54 @@ def rank_averaging(test_predictions: List[np.ndarray],
     test_rank_predictions = [_to_rank(test) for test in test_predictions]
 
     return averaging(test_rank_predictions, oof_rank_predictions, y, weights, eval_func)
+
+
+def averaging_opt(test_predictions: List[np.ndarray],
+                  oof_predictions: Optional[List[np.ndarray]],
+                  y: Optional[pd.Series],
+                  eval_func: Optional[Callable],
+                  higher_is_better: bool,
+                  weight_bounds: Tuple = (0, 1)) -> EnsembleResult:
+    """
+    Perform averaging with optimal weights using scipy.optimize
+
+    Args:
+        test_predictions:
+            List of predicted values on test data.
+        oof_predictions:
+            List of predicted values on out-of-fold training data.
+        y:
+            Target value
+        eval_func:
+            Evaluation metric used for calculating result score. Used only if ``oof_predictions`` and ``y`` are given.
+        higher_is_better:
+            Determine the direction of optimize ``eval_func``.
+        weight_bounds:
+            Specify lower/upper bounds of each weight.
+    Returns:
+        Namedtuple with following members
+
+        * test_prediction:
+            numpy array, Average prediction on test data.
+        * oof_prediction:
+            numpy array, Average prediction on Out-of-Fold validation data. ``None`` if ``oof_predictions`` = ``None``.
+        * score:
+            float, Calculated score on Out-of-Fold data. ``None`` if ``eval_func`` is ``None``.
+    """
+    def _minimize(weights):
+        prediction = np.zeros_like(oof_predictions[0])
+        for weight, oof in zip(weights, oof_predictions):
+            prediction += weight * oof
+        oof_score = eval_func(y, prediction)
+
+        return -oof_score if higher_is_better else oof_score
+
+    weights = np.ones((len(test_predictions))) / len(test_predictions)
+
+    cons = ({'type': 'eq', 'fun': lambda w: 1 - sum(w)})
+
+    bounds = [weight_bounds] * len(test_predictions)
+
+    result = minimize(_minimize, weights, method='SLSQP', constraints=cons, bounds=bounds)
+
+    return averaging(test_predictions, oof_predictions, y, result['x'], eval_func)
