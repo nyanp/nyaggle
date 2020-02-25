@@ -36,6 +36,19 @@ def test_averaging():
     X, y = make_classification_df()
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
 
+    _, test = _make_1st_stage_preds(X_train, y_train, X_test)
+
+    result = averaging(test)
+
+    assert_array_almost_equal((test[0]+test[1]+test[2])/3, result.test_prediction)
+    assert result.score is None
+    assert result.oof_prediction is None
+
+
+def test_averaging_with_oof():
+    X, y = make_classification_df()
+    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
     oof, test = _make_1st_stage_preds(X_train, y_train, X_test)
 
     result = averaging(test, oof, y_train)
@@ -96,6 +109,20 @@ def test_weight_averaging():
 
 
 def test_rank_averaging():
+    X, y = make_classification_df(n_samples=1024)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
+    oof, test = _make_1st_stage_preds(X_train, y_train, X_test)
+
+    result = rank_averaging(test)
+
+    test_rank = [stats.rankdata(t) / len(X_test) for t in test]
+
+    assert_array_almost_equal((test_rank[0]+test_rank[1]+test_rank[2])/3, result.test_prediction)
+    assert result.score is None
+
+
+def test_rank_averaging_with_oof():
     X, y = make_classification_df(n_samples=1024)
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
 
