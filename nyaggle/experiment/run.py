@@ -113,12 +113,12 @@ def run_experiment(model_params: Dict[str, Any],
         logging_directory:
             Path to directory where output of experiment is stored.
         if_exists:
-            How to behave if the logging directory already exists.
+            How to behave if the logging directory already exists. Should be one of:
 
-            - error: Raise a ValueError.
-            - replace: Delete logging directory before logging.
-            - append: Append to exisitng experiment.
-            - rename: Rename current directory by adding "_1", "_2"... prefix
+            - 'error': Raises a ValueError.
+            - 'replace': Deletes logging directory before logging.
+            - 'append': Appends to exisitng experiment.
+            - 'rename': Renames current directory by adding "_1", "_2"... prefix
         fit_params:
             Parameters passed to the fit method of the estimator. If dict is passed, the same parameter except
             eval_set passed for each fold. If callable is passed,

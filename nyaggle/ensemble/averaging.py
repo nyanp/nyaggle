@@ -90,9 +90,9 @@ def averaging_opt(test_predictions: List[np.ndarray],
         eval_func:
             Evaluation metric used for calculating result score. Used only if ``oof_predictions`` and ``y`` are given.
         higher_is_better:
-            Determine the direction of optimize ``eval_func``.
+            The direction of optimization of ``eval_func``.
         weight_bounds:
-            Specify lower/upper bounds of each weight.
+            Bounds on weights for optimization.
         rank_averaging:
             If ``True``, predictions will be converted to rank before averaging.
     Returns:

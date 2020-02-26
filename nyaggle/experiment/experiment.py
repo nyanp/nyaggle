@@ -90,12 +90,12 @@ class Experiment(object):
             Note that all output files are located both ``logging_directory`` and
             mlflow's directory (``mlruns`` by default).
         if_exists:
-            How to behave if the logging directory already exists.
+            How to behave if the logging directory already exists. Should be one of:
 
-            - error: Raise a ValueError.
-            - replace: Delete logging directory before logging.
-            - append: Append to exisitng experiment.
-            - rename: Rename current directory by adding "_1", "_2"... prefix
+            - 'error': Raises a ValueError.
+            - 'replace': Deletes logging directory before logging.
+            - 'append': Appends to exisitng experiment.
+            - 'rename': Renames current directory by adding "_1", "_2"... prefix
     Example:
         >>> import numpy as np
         >>> import pandas as pd
