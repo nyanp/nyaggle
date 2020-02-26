@@ -9,6 +9,7 @@
 **nyaggle** is a utility library for Kaggle and offline competitions, 
 particularly focused on experiment tracking, feature engineering and validation.
 
+- **nyaggle.ensemble** - Averaging & stacking
 - **nyaggle.experiment** - Experiment tracking
 - **nyaggle.feature_store** - Lightweight feature storage using feather-format
 - **nyaggle.features** - sklearn-compatible features
@@ -212,3 +213,4 @@ Please let me know if you have another one :)
 - [analokmaus/kuma_utils](https://github.com/analokmaus/kuma_utils)
 - [Far0n/kaggletils](https://github.com/Far0n/kaggletils)
 - [MLWave/Kaggle-Ensemble-Guide](https://github.com/MLWave/Kaggle-Ensemble-Guide)
+- [rushter/heamy](https://github.com/rushter/heamy)
