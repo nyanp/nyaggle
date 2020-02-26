@@ -65,16 +65,16 @@ def _try_to_get_existing_mlflow_run_id(logging_directory: str) -> Optional[str]:
 class Experiment(object):
     """Minimal experiment logger for Kaggle
 
-    This module provides minimal functionality for logging Kaggle experiments.
+    This module provides minimal functionality for tracking experiments.
     The output files are laid out as follows:
 
     .. code-block:: none
 
       <logging_directory>/
-          <log_filename>            <== output of log()
-          <metrics_filename>        <== output of log_metrics(), format: name,score
-          <params_filename>         <== output of log_param(), format: key,value
-          mlflow.json               <== (optional) corresponding mlflow's run_id, experiment_id are logged.
+          log.txt       <== Output of log
+          metrics.json  <== Output of log_metric(s), format: name,score
+          params.json   <== Output of log_param(s), format: key,value
+          mlflow.json   <== mlflow's run_id, experiment_id and artifact_uri (logged if with_mlflow=True)
 
 
     You can add numpy array and pandas dataframe under the directory through ``log_numpy`` and ``log_dataframe``.
@@ -91,10 +91,31 @@ class Experiment(object):
             mlflow's directory (``mlruns`` by default).
         if_exists:
             How to behave if the logging directory already exists.
+
             - error: Raise a ValueError.
             - replace: Delete logging directory before logging.
             - append: Append to exisitng experiment.
             - rename: Rename current directory by adding "_1", "_2"... prefix
+    Example:
+        >>> import numpy as np
+        >>> import pandas as pd
+        >>> from nyaggle.experiment import Experiment
+        >>>
+        >>> with Experiment(logging_directory='./output/') as exp:
+        >>>     # log key-value pair as a parameter
+        >>>     exp.log_param('lr', 0.01)
+        >>>     exp.log_param('optimizer', 'adam')
+        >>>
+        >>>     # log text
+        >>>     exp.log('blah blah blah')
+        >>>
+        >>>     # log metric
+        >>>     exp.log_metric('CV', 0.85)
+        >>>
+        >>>     # log numpy ndarray, pandas dafaframe and any artifacts
+        >>>     exp.log_numpy('predicted', np.zeros(1))
+        >>>     exp.log_dataframe('submission', pd.DataFrame(), file_format='csv')
+        >>>     exp.log_artifact('path-to-your-file')
     """
 
     def __init__(self,

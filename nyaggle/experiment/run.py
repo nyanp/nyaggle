@@ -114,6 +114,7 @@ def run_experiment(model_params: Dict[str, Any],
             Path to directory where output of experiment is stored.
         if_exists:
             How to behave if the logging directory already exists.
+
             - error: Raise a ValueError.
             - replace: Delete logging directory before logging.
             - append: Append to exisitng experiment.
