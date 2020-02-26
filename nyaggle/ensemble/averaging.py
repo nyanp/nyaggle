@@ -13,7 +13,8 @@ def averaging(test_predictions: List[np.ndarray],
               oof_predictions: Optional[List[np.ndarray]] = None,
               y: Optional[pd.Series] = None,
               weights: Optional[List[float]] = None,
-              eval_func: Optional[Callable] = None) -> EnsembleResult:
+              eval_func: Optional[Callable] = None,
+              rank_averaging: bool = False) -> EnsembleResult:
     """
     Perform averaging on model predictions.
 
@@ -28,6 +29,8 @@ def averaging(test_predictions: List[np.ndarray],
             Weights for each predictions
         eval_func:
             Evaluation metric used for calculating result score. Used only if ``oof_predictions`` and ``y`` are given.
+        rank_averaging:
+            If ``True``, predictions will be converted to rank before averaging.
     Returns:
         Namedtuple with following members
 
@@ -40,6 +43,9 @@ def averaging(test_predictions: List[np.ndarray],
     """
     if weights is None:
         weights = np.ones((len(test_predictions))) / len(test_predictions)
+
+    if rank_averaging:
+        test_predictions, oof_predictions = _to_rank(test_predictions, oof_predictions)
 
     def _weighted_average(predictions: List[np.ndarray], weights: List[float]):
         if len(predictions) != len(weights):
@@ -64,53 +70,13 @@ def averaging(test_predictions: List[np.ndarray],
     return EnsembleResult(average_test, average_oof, score)
 
 
-def rank_averaging(test_predictions: List[np.ndarray],
-                   oof_predictions: Optional[List[np.ndarray]] = None,
-                   y: Optional[pd.Series] = None,
-                   weights: Optional[List[float]] = None,
-                   eval_func: Optional[Callable] = None) -> EnsembleResult:
-    """
-    Perform rank-averaging on model predictions.
-
-    Args:
-        test_predictions:
-            List of predicted values on test data.
-        oof_predictions:
-            List of predicted values on out-of-fold training data.
-        y:
-            Target value
-        weights:
-            Weights for each predictions
-        eval_func:
-            Evaluation metric used for calculating result score. Used only if ``oof_predictions`` and ``y`` are given.
-    Returns:
-        Namedtuple with following members
-
-        * test_prediction:
-            numpy array, Average prediction on test data.
-        * oof_prediction:
-            numpy array, Average prediction on Out-of-Fold validation data. ``None`` if ``oof_predictions`` = ``None``.
-        * score:
-            float, Calculated score on Out-of-Fold data. ``None`` if ``eval_func`` is ``None``.
-    """
-    def _to_rank(prediction: np.ndarray):
-        return stats.rankdata(prediction) / len(prediction)
-
-    if oof_predictions is not None:
-        oof_rank_predictions = [_to_rank(oof) for oof in oof_predictions]
-    else:
-        oof_rank_predictions = None
-    test_rank_predictions = [_to_rank(test) for test in test_predictions]
-
-    return averaging(test_rank_predictions, oof_rank_predictions, y, weights, eval_func)
-
-
 def averaging_opt(test_predictions: List[np.ndarray],
                   oof_predictions: Optional[List[np.ndarray]],
                   y: Optional[pd.Series],
                   eval_func: Optional[Callable],
                   higher_is_better: bool,
-                  weight_bounds: Tuple = (0, 1)) -> EnsembleResult:
+                  weight_bounds: Tuple = (0, 1),
+                  rank_averaging: bool = False) -> EnsembleResult:
     """
     Perform averaging with optimal weights using scipy.optimize
 
@@ -127,6 +93,8 @@ def averaging_opt(test_predictions: List[np.ndarray],
             Determine the direction of optimize ``eval_func``.
         weight_bounds:
             Specify lower/upper bounds of each weight.
+        rank_averaging:
+            If ``True``, predictions will be converted to rank before averaging.
     Returns:
         Namedtuple with following members
 
@@ -147,6 +115,9 @@ def averaging_opt(test_predictions: List[np.ndarray],
 
     weights = np.ones((len(test_predictions))) / len(test_predictions)
 
+    if rank_averaging:
+        test_predictions, oof_predictions = _to_rank(test_predictions, oof_predictions)
+
     cons = ({'type': 'eq', 'fun': lambda w: 1 - sum(w)})
 
     bounds = [weight_bounds] * len(test_predictions)
@@ -154,3 +125,11 @@ def averaging_opt(test_predictions: List[np.ndarray],
     result = minimize(_minimize, weights, method='SLSQP', constraints=cons, bounds=bounds)
 
     return averaging(test_predictions, oof_predictions, y, result['x'], eval_func)
+
+
+def _to_rank(test_predictions: List[np.ndarray], oof_predictions: Optional[List[np.ndarray]]):
+    if oof_predictions is not None:
+        oof_predictions = [stats.rankdata(oof) / len(oof) for oof in oof_predictions]
+    test_predictions = [stats.rankdata(test) / len(test) for test in test_predictions]
+
+    return test_predictions, oof_predictions
