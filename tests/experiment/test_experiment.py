@@ -9,8 +9,8 @@ from nyaggle.experiment import Experiment
 from nyaggle.testing import get_temp_directory
 
 
-def test_log_params(tmpdir):
-    with Experiment(tmpdir) as e:
+def test_log_params(tmpdir_name):
+    with Experiment(tmpdir_name) as e:
         e.log_param('x', 1)
         e.log_param('x', 2)
         e.log_params({
@@ -18,7 +18,7 @@ def test_log_params(tmpdir):
             'z': None,
         })
 
-    with open(os.path.join(tmpdir, 'params.json'), 'r') as f:
+    with open(os.path.join(tmpdir_name, 'params.json'), 'r') as f:
         params = json.load(f)
 
         expected = {
