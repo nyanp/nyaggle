@@ -9,7 +9,7 @@ from sklearn.svm import SVC, SVR
 from sklearn.metrics import roc_auc_score, mean_squared_error
 
 from nyaggle.testing import make_classification_df, make_regression_df
-from nyaggle.ensemble import averaging, rank_averaging
+from nyaggle.ensemble import averaging, averaging_opt
 from nyaggle.validation import cross_validate
 
 
@@ -114,7 +114,7 @@ def test_rank_averaging():
 
     oof, test = _make_1st_stage_preds(X_train, y_train, X_test)
 
-    result = rank_averaging(test)
+    result = averaging(test, rank_averaging=True)
 
     test_rank = [stats.rankdata(t) / len(X_test) for t in test]
 
@@ -128,7 +128,7 @@ def test_rank_averaging_with_oof():
 
     oof, test = _make_1st_stage_preds(X_train, y_train, X_test)
 
-    result = rank_averaging(test, oof, y_train)
+    result = averaging(test, oof, y_train, rank_averaging=True)
 
     oof_rank = [stats.rankdata(o) / len(X_train) for o in oof]
     test_rank = [stats.rankdata(t) / len(X_test) for t in test]
@@ -137,3 +137,59 @@ def test_rank_averaging_with_oof():
     assert_array_almost_equal((oof_rank[0]+oof_rank[1]+oof_rank[2])/3, result.oof_prediction)
     assert result.score is None
 
+
+def test_averaging_opt_maximize():
+    X, y = make_classification_df(n_samples=1024)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
+    oof, test = _make_1st_stage_preds(X_train, y_train, X_test)
+
+    best_single_model = max(roc_auc_score(y_train, oof[0]),
+                            roc_auc_score(y_train, oof[1]),
+                            roc_auc_score(y_train, oof[2]))
+
+    result = averaging_opt(test, oof, y_train, roc_auc_score, higher_is_better=True)
+
+    assert result.score >= best_single_model
+
+    result_simple_avg = averaging(test, oof, y_train, eval_func=roc_auc_score)
+
+    assert result.score >= result_simple_avg.score
+
+
+def test_averaging_opt_minimize():
+    X, y = make_regression_df(n_samples=1024)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
+    oof, test = _make_1st_stage_preds(X_train, y_train, X_test)
+
+    best_single_model = min(mean_squared_error(y_train, oof[0]),
+                            mean_squared_error(y_train, oof[1]),
+                            mean_squared_error(y_train, oof[2]))
+
+    result = averaging_opt(test, oof, y_train, mean_squared_error, higher_is_better=False)
+
+    assert result.score <= best_single_model
+
+    result_simple_avg = averaging(test, oof, y_train, eval_func=mean_squared_error)
+
+    assert result.score <= result_simple_avg.score
+
+
+def test_rank_averaging_opt_maximize():
+    X, y = make_classification_df(n_samples=1024)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
+    oof, test = _make_1st_stage_preds(X_train, y_train, X_test)
+
+    best_single_model = max(roc_auc_score(y_train, oof[0]),
+                            roc_auc_score(y_train, oof[1]),
+                            roc_auc_score(y_train, oof[2]))
+
+    result = averaging_opt(test, oof, y_train, roc_auc_score, higher_is_better=True, rank_averaging=True)
+
+    assert result.score >= best_single_model
+
+    result_simple_avg = averaging(test, oof, y_train, eval_func=roc_auc_score, rank_averaging=True)
+
+    assert result.score >= result_simple_avg.score
