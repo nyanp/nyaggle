@@ -544,7 +544,9 @@ def test_with_long_params(tmpdir_name):
                    logging_directory=tmpdir_name, with_mlflow=True)
 
 
-def test_with_rare_categories(tmpdir_name):
+@pytest.mark.parametrize('cat_cast', [True, False])
+@pytest.mark.parametrize('algorithm', ['cat', 'xgb', 'lgbm'])
+def test_with_rare_categories(tmpdir_name, cat_cast, algorithm):
     X = pd.DataFrame({
         'x0': [None]*100,
         'x1': np.random.choice([np.inf, -np.inf], size=100),
@@ -569,22 +571,20 @@ def test_with_rare_categories(tmpdir_name):
         }
     }
 
-    for cat_cast in (True, False):
-        X_ = X.copy()
-        y_ = y.copy()
-        if cat_cast:
-            for c in X.columns:
-                X_[c] = X_[c].astype('category')
-            X_ = X_.iloc[:50, :]
-            y_ = y_.iloc[:50]
+    X_ = X.copy()
+    y_ = y.copy()
+    if cat_cast:
+        for c in X.columns:
+            X_[c] = X_[c].astype('category')
+        X_ = X_.iloc[:50, :]
+        y_ = y_.iloc[:50]
 
-        X_train, X_test, y_train, y_test = train_test_split(X_, y_, shuffle=False, test_size=0.5)
+    X_train, X_test, y_train, y_test = train_test_split(X_, y_, shuffle=False, test_size=0.5)
 
-        for algorithm in ('cat', 'xgb', 'lgbm'):
-            run_experiment(params[algorithm], X_train, y_train, X_test, algorithm_type=algorithm,
-                           logging_directory=os.path.join(tmpdir_name, algorithm),
-                           with_mlflow=True, with_auto_prep=True,
-                           categorical_feature=['x0', 'x1', 'x2', 'x3'])
+    run_experiment(params[algorithm], X_train, y_train, X_test, algorithm_type=algorithm,
+                   logging_directory=tmpdir_name,
+                   with_mlflow=True, with_auto_prep=True,
+                   categorical_feature=['x0', 'x1', 'x2', 'x3'])
 
 
 def test_inherit_outer_scope_run(tmpdir_name):
