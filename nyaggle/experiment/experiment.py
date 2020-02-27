@@ -2,6 +2,7 @@ import json
 import numbers
 import os
 import shutil
+import sys
 import uuid
 import warnings
 from logging import getLogger, FileHandler, DEBUG, Logger
@@ -62,6 +63,20 @@ def _try_to_get_existing_mlflow_run_id(logging_directory: str) -> Optional[str]:
     return None
 
 
+class LoggerWriter(object):
+    def __init__(self, logger, stdout):
+        self.logger = logger
+        self.stdout = stdout
+
+    def write(self, message):
+        self.stdout.write(message)
+        if message != '\n':
+            self.logger.debug(message)
+
+    def flush(self):
+        pass
+
+
 class Experiment(object):
     """Minimal experiment logger for Kaggle
 
@@ -96,6 +111,10 @@ class Experiment(object):
             - replace: Delete logging directory before logging.
             - append: Append to exisitng experiment.
             - rename: Rename current directory by adding "_1", "_2"... prefix
+        capture_stdout:
+            If True, all message to stdout will be captured and recorded to log file.
+            Since it has the global side effect by replacing sys.stdout with custom object while experiment,
+            it is not recommended to use in threaded applications.
     Example:
         >>> import numpy as np
         >>> import pandas as pd
@@ -122,13 +141,16 @@ class Experiment(object):
                  logging_directory: str,
                  custom_logger: Optional[Logger] = None,
                  with_mlflow: bool = False,
-                 if_exists: str = 'error'
+                 if_exists: str = 'error',
+                 capture_stdout: bool = False
                  ):
         logging_directory = _check_directory(logging_directory, if_exists)
         os.makedirs(logging_directory, exist_ok=True)
 
         self.logging_directory = logging_directory
         self.with_mlflow = with_mlflow
+        self.redirect_stdout = capture_stdout
+        self.old_stream = None
 
         if custom_logger is not None:
             self.logger = custom_logger
@@ -183,13 +205,16 @@ class Experiment(object):
             with open(os.path.join(self.logging_directory, 'mlflow.json'), 'w') as f:
                 json.dump(mlflow_metadata, f, indent=4)
 
+        if self.redirect_stdout:
+            self.old_stream = sys.stdout
+            sys.stdout = LoggerWriter(self.logger, self.old_stream)
+
     def _load_dict(self, filename: str) -> Dict:
         try:
             path = os.path.join(self.logging_directory, filename)
             with open(path, 'r') as f:
                 return json.load(f)
         except IOError:
-            self.logger.warning('failed to load file: {}'.format(filename))
             return {}
 
     def _save_dict(self, obj: Dict, filename: str):
@@ -204,6 +229,9 @@ class Experiment(object):
         """
         Stop current experiment.
         """
+        if self.redirect_stdout:
+            sys.stdout = self.old_stream
+
         self._save_dict(self.metrics, 'metrics.json')
         self._save_dict(self.params, 'params.json')
 

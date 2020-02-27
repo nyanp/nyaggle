@@ -112,8 +112,9 @@ def run_experiment(model_params: Dict[str, Any],
             Test data (Optional). If specified, prediction on the test data is performed using ensemble of models.
         logging_directory:
             Path to directory where output of experiment is stored.
+            It will be ignored if ``inherit_experiment`` is used.
         if_exists:
-            How to behave if the logging directory already exists.
+            How to behave if the logging directory already exists. It will be ignored if ``inherit_experiment`` is used.
 
             - error: Raise a ValueError.
             - replace: Delete logging directory before logging.
@@ -164,8 +165,7 @@ def run_experiment(model_params: Dict[str, Any],
         with_mlflow:
             If True, `mlflow tracking <https://www.mlflow.org/docs/latest/tracking.html>`_ is used.
             One instance of ``nyaggle.experiment.Experiment`` corresponds to one run in mlflow.
-            Note that all output
-            mlflow's directory (``mlruns`` by default).
+            It will be ignored if ``inherit_experiment`` is used.
     :return:
         Namedtuple with following members
 

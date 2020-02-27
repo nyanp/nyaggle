@@ -1,6 +1,7 @@
 import json
 import os
 import pytest
+import sys
 
 import pandas as pd
 import numpy as np
@@ -264,3 +265,19 @@ def test_experiment_continue():
         with open(metric_file, 'r') as f:
             obj = json.load(f)
             assert 'Y' in obj
+
+
+def test_redirect_stdout():
+    with get_temp_directory() as tmpdir:
+        with Experiment(tmpdir, capture_stdout=True) as e:
+            e.log('foo')
+            print('bar')
+            print('buzz', file=sys.stderr)
+
+        with open(os.path.join(tmpdir, 'log.txt'), 'r') as f:
+            lines = f.readlines()
+            lines = [l.strip() for l in lines]
+
+            assert 'foo' in lines
+            assert 'bar' in lines
+            assert 'buzz' not in lines  # stderr is not captured
