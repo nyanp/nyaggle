@@ -1,6 +1,6 @@
-nyaggle.util
+nyaggle.ensemble
 -----------------------
 
-.. automodule:: nyaggle.util
+.. automodule:: nyaggle.ensemble
     :members:
     :imported-members:

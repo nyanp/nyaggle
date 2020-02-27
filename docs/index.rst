@@ -7,17 +7,10 @@ Welcome to nyaggle's documentation!
 ===================================
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: Contents:
 
    installation
    source/tutorial/index
    source/reference/index
 
-
-Indices and tables
--------------------
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

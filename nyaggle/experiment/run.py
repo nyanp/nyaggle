@@ -17,7 +17,7 @@ from nyaggle.experiment.auto_prep import autoprep_gbdt
 from nyaggle.experiment.experiment import Experiment
 from nyaggle.experiment.hyperparameter_tuner import find_best_lgbm_parameter
 from nyaggle.feature_store import load_features
-from nyaggle.util import plot_importance, is_gbdt_instance
+from nyaggle.util import plot_importance, is_gbdt_instance, make_submission_df
 from nyaggle.validation.cross_validate import cross_validate
 from nyaggle.validation.split import check_cv
 
@@ -114,6 +114,7 @@ def run_experiment(model_params: Dict[str, Any],
             Path to directory where output of experiment is stored.
         if_exists:
             How to behave if the logging directory already exists.
+
             - error: Raise a ValueError.
             - replace: Delete logging directory before logging.
             - append: Append to exisitng experiment.
@@ -269,41 +270,13 @@ def run_experiment(model_params: Dict[str, Any],
         # save submission.csv
         submit_df = None
         if X_test is not None:
-            submit_df = _make_submission_df(result.test_prediction, type_of_target, y, sample_submission)
+            submit_df = make_submission_df(result.test_prediction, sample_submission, y)
             exp.log_dataframe(submission_filename or os.path.basename(exp.logging_directory), submit_df, 'csv')
 
         elapsed_time = time.time() - start_time
 
         return ExperimentResult(result.oof_prediction, result.test_prediction,
                                 result.scores, models, result.importance, elapsed_time, submit_df)
-
-
-def _make_submission_df(test_prediction: np.ndarray, type_of_target: str, y: pd.Series,
-                        sample_submission: Optional[pd.DataFrame] = None):
-    if sample_submission is not None:
-        submit_df = sample_submission.copy()
-
-        if type_of_target == 'multiclass':
-            n_id_cols = submit_df.shape[1] - test_prediction.shape[1]
-            for i, y in enumerate(sorted(y.unique())):
-                submit_df.iloc[:, n_id_cols + i] = test_prediction[:, i]
-        else:
-            n_id_cols = submit_df.shape[1] - 1
-            submit_df.iloc[:, n_id_cols] = test_prediction
-    else:
-        submit_df = pd.DataFrame()
-        id_col_name = y.index.name or 'id'
-        tgt_col_name = y.name or 'target'
-
-        submit_df[id_col_name] = np.arange(len(test_prediction))
-
-        if type_of_target == 'multiclass':
-            for i, y in enumerate(sorted(y.unique())):
-                submit_df[y] = test_prediction[:, i]
-        else:
-            submit_df[tgt_col_name] = test_prediction
-
-    return submit_df
 
 
 def _dispatch_eval_func(target_type: str, custom_eval: Optional[Callable] = None):

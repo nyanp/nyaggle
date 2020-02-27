@@ -1,4 +1,4 @@
-validation
+nyaggle.validation
 --------------------------
 
 .. automodule:: nyaggle.validation

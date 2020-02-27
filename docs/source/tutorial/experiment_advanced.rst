@@ -55,8 +55,8 @@ If you are familiar with mlflow tracking, you may notice that these APIs are sim
 
 
 
-Log extra parameters to run_experiment
----------------------------------------
+Logging extra parameters to run_experiment
+-------------------------------------------
 
 By using ``inherit_experiment`` parameter, you can mix any additional logging with the results ``run_experiment`` will create.
 In the following example, nyaggle records the result of ``run_experiment`` under the same experiment as
@@ -74,3 +74,39 @@ the parameter and metrics written outside of the function.
 
       exp.log_metrics('my extra metrics', 0.999)
 
+
+Tracking seed averaging experiment
+---------------------------------------
+
+If you train a bunch of models with different seeds to ensemble them, tracking individual models with mlflow
+will make GUI filled up with these results and make it difficult to manage.
+A nested run functionality of mlflow is useful to display multiple models together in one result.
+
+.. code-block:: python
+
+  import mlflow
+  from nyaggle.ensemble import averaging
+  from nyaggle.util import make_submission_df
+
+  mlflow.start_run()
+  base_logging_dir = './seed-avg/'
+  results = []
+
+  for i in range(3):
+      mlflow.start_run(nested=True)  # use nested-run to place each experiments under the parent run
+      params['seed'] = i
+
+      result = run_experiment(params,
+                              X_train,
+                              y_train,
+                              X_test,
+                              logging_directory=base_logging_dir+f'seed_{i}',
+                              with_mlflow=True)
+      results.append(result)
+
+      mlflow.end_run()
+
+
+  ensemble = averaging([result.test_prediction for result in results])
+  sub = make_submission_df(ensemble.test_prediction, pd.read_csv('sample_submission.csv'))
+  sub.to_csv('ensemble_sub.csv', index=False)
