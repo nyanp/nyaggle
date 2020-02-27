@@ -66,6 +66,21 @@ def test_log_metrics_empty(tmpdir_name):
         assert params == {}
 
 
+def test_log_dict(tmpdir_name):
+    with Experiment(tmpdir_name) as e:
+        e.log_dict('foo', {'a': 1, 'b': 'foo', 'c': {'d': 'e', 'f': {}, 'g': {'h': 'i'}}})
+
+    with open(os.path.join(tmpdir_name, 'params.json'), 'r') as f:
+        params = json.load(f)
+        assert params == {
+            'foo.a': 1,
+            'foo.b': 'foo',
+            'foo.c.d': 'e',
+            'foo.c.f': '{}',
+            'foo.c.g.h': 'i'
+        }
+
+
 def test_error_while_experiment(tmpdir_name):
     try:
         with Experiment(tmpdir_name) as e:
@@ -74,7 +89,7 @@ def test_error_while_experiment(tmpdir_name):
             e.log_numpy('np', np.zeros(100))
             e.log_dataframe('df', pd.DataFrame({'a': [1, 2, 3]}))
 
-            raise KeyboardInterrupt()
+        raise KeyboardInterrupt()
     except KeyboardInterrupt:
         pass
 
