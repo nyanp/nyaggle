@@ -622,3 +622,19 @@ def test_custom_experiment(tmpdir_name):
 
     # all files are logged into e.logging_directory, instead of 'foobar'
     _check_file_exists(tmpdir_name, with_mlflow=True)
+
+
+def test_log_params(tmpdir_name):
+    params = {
+        'objective': 'binary',
+        'max_depth': 8
+    }
+    X, y = make_classification_df()
+
+    run_experiment(params, X, y, logging_directory=tmpdir_name)
+
+    with open(os.path.join(tmpdir_name, 'params.json'), 'r') as f:
+        recorded_params = json.load(f)
+        assert recorded_params['model_params.max_depth'] == 8
+        assert recorded_params['model_params.objective'] == 'binary'
+        assert recorded_params['fit_params'] == 'None'

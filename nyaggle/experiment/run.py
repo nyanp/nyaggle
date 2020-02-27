@@ -222,8 +222,8 @@ def run_experiment(model_params: Dict[str, Any],
         exp.log('Features: {}'.format(list(X_train.columns)))
         exp.log_param('algorithm_type', algorithm_type)
         exp.log_param('num_features', X_train.shape[1])
-        exp.log_param('fit_params', fit_params)
-        exp.log_param('model_params', model_params)
+        exp.log_dict('fit_params', fit_params)
+        exp.log_dict('model_params', model_params)
         if feature_list is not None:
             exp.log_param('features', feature_list)
 
