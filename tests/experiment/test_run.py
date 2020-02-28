@@ -8,7 +8,7 @@ import pandas as pd
 import pytest
 from sklearn.linear_model import LogisticRegression, LinearRegression
 from sklearn.metrics import roc_auc_score, mean_squared_error, mean_absolute_error, log_loss
-from sklearn.model_selection import GroupKFold, KFold, train_test_split
+from sklearn.model_selection import GroupKFold, KFold, StratifiedKFold, train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 
 from nyaggle.experiment import Experiment, run_experiment
@@ -582,6 +582,7 @@ def test_with_rare_categories(tmpdir_name, cat_cast, algorithm):
     X_train, X_test, y_train, y_test = train_test_split(X_, y_, shuffle=False, test_size=0.5)
 
     run_experiment(params[algorithm], X_train, y_train, X_test, algorithm_type=algorithm,
+                   cv=StratifiedKFold(3, shuffle=True, random_state=0),
                    logging_directory=tmpdir_name,
                    with_mlflow=True, with_auto_prep=True,
                    categorical_feature=['x0', 'x1', 'x2', 'x3'])
