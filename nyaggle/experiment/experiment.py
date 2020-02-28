@@ -305,7 +305,7 @@ class Experiment(object):
             items = []
             for k, v in d.items():
                 child_key = prefix + separator + str(k) if prefix else str(k)
-                if isinstance(v, Dict):
+                if isinstance(v, Dict) and v:
                     items.extend(_flatten(v, child_key, separator).items())
                 else:
                     items.append((child_key, v))

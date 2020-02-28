@@ -68,7 +68,7 @@ def test_log_metrics_empty(tmpdir_name):
 
 def test_log_dict(tmpdir_name):
     with Experiment(tmpdir_name) as e:
-        e.log_dict('foo', {'a': 1, 'b': 'foo', 'c': {'d': 'e', 'f': {}, 'g': {'h': 'i'}}})
+        e.log_dict('foo', {'a': 1, 'b': 'foo', 'c': {'d': 'e', 'f': {}, 'g': {'h': 'i'}, 'j': None}})
 
     with open(os.path.join(tmpdir_name, 'params.json'), 'r') as f:
         params = json.load(f)
@@ -77,7 +77,8 @@ def test_log_dict(tmpdir_name):
             'foo.b': 'foo',
             'foo.c.d': 'e',
             'foo.c.f': '{}',
-            'foo.c.g.h': 'i'
+            'foo.c.g.h': 'i',
+            'foo.c.j': 'None'
         }
 
 
