@@ -112,6 +112,9 @@ class Experiment(object):
         >>>     # log metric
         >>>     exp.log_metric('CV', 0.85)
         >>>
+        >>>     # log dictionary with flattening keys
+        >>>     exp.log_dict('params', {'X': 3, 'Y': {'Z': 'foobar'}})
+        >>>
         >>>     # log numpy ndarray, pandas dafaframe and any artifacts
         >>>     exp.log_numpy('predicted', np.zeros(1))
         >>>     exp.log_dataframe('submission', pd.DataFrame(), file_format='csv')
@@ -278,6 +281,38 @@ class Experiment(object):
         """
         for k, v in params.items():
             self.log_param(k, v)
+
+    def log_dict(self, name: str, value: Dict, separator: str = '.'):
+        """
+        Logs a dictionary as parameter with flatten format.
+
+        Args:
+            name: Parameter name
+            value: Parameter value
+            separator: Separating character used to concatanate keys
+        Examples:
+            >>> with Experiment('./') as e:
+            >>>     e.log_dict('a', {'b': 1, 'c': 'd'})
+            >>>     print(e.params)
+            { 'a.b': 1, 'a.c': 'd' }
+        """
+
+        if value is None:
+            self.log_param(name, value)
+            return
+
+        def _flatten(d: Dict, prefix: str, separator: str) -> Dict:
+            items = []
+            for k, v in d.items():
+                child_key = prefix + separator + str(k) if prefix else str(k)
+                if isinstance(v, Dict) and v:
+                    items.extend(_flatten(v, child_key, separator).items())
+                else:
+                    items.append((child_key, v))
+            return dict(items)
+
+        value = _flatten(value, name, separator)
+        self.log_params(value)
 
     def log_metric(self, name: str, score: float):
         """
