@@ -5,3 +5,4 @@ nyaggle.egg-info/
 __pycache__/
 .pytest_cache/
 mlruns/
+catboost_info
