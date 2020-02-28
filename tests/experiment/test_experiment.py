@@ -6,7 +6,6 @@ import pandas as pd
 import numpy as np
 
 from nyaggle.experiment import Experiment
-from nyaggle.testing import get_temp_directory
 
 
 def test_log_params(tmpdir_name):

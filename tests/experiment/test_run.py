@@ -13,7 +13,7 @@ from sklearn.neighbors import KNeighborsClassifier
 
 from nyaggle.experiment import Experiment, run_experiment
 from nyaggle.feature_store import save_feature
-from nyaggle.testing import make_classification_df, make_regression_df, get_temp_directory
+from nyaggle.testing import make_classification_df, make_regression_df
 
 
 def _check_file_exists(directory, submission_filename=None, with_mlflow=False):
