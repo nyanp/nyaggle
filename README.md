@@ -1,4 +1,5 @@
 # nyaggle
+
 ![GitHub Actions CI Status](https://github.com/nyanp/nyaggle/workflows/Python%20package/badge.svg)
 ![Python Versions](https://img.shields.io/pypi/pyversions/nyaggle.svg?logo=python&logoColor=white)
 ![Documentation Status](https://readthedocs.org/projects/nyaggle/badge/?version=latest)
@@ -17,14 +18,17 @@ particularly focused on experiment tracking, feature engineering and validation.
 - **nyaggle.validation** - Adversarial validation & sklearn-compatible CV splitters
 
 ## Installation
+
 You can install nyaggle via pip:
-```
+
+```Shell
 $pip install nyaggle
 ```
 
 ## Examples
 
 ### Experiment Tracking
+
 `run_experiment()` is an high-level API for experiment with cross validation.
 It outputs parameters, metrics, out of fold predictions, test predictions,
 feature importance and submission.csv under the specified directory.
@@ -49,7 +53,7 @@ result = run_experiment(params,
                         X_train,
                         y_train,
                         X_test)
-                         
+
 # You can get outputs that needed in data science competitions with 1 API
 
 print(result.test_prediction)  # Test prediction in numpy array
@@ -97,6 +101,7 @@ with Experiment(logging_directory='./output/') as exp:
 ### Feature Engineering
 
 #### Target Encoding with K-Fold
+
 ```python
 import pandas as pd
 import numpy as np
@@ -126,6 +131,7 @@ all.loc[:, cat_cols] = te.fit_transform(all[cat_cols], all[cat_cols])
 ```
 
 #### Text Vectorization using BERT
+
 You need to install pytorch to your virtual environment to use BertSentenceVectorizer. 
 MaCab and mecab-python3 are also required if you use Japanese BERT model.
 
@@ -203,8 +209,8 @@ cross_validate(..., cv=Nth(1, ts))
 
 ```
 
-
 ### Other Awesome Repositories
+
 Here is a list of awesome repositories that provide general utility functions for data science competitions.
 Please let me know if you have another one :)
 
