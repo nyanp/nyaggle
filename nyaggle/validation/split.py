@@ -49,6 +49,21 @@ def check_cv(cv: Union[int, Iterable, BaseCrossValidator] = 5,
     return model_selection.check_cv(cv, y, stratified)
 
 
+def extract_source_of_time_series_split(cv: BaseCrossValidator) -> Union[str, None]:
+    def _get_deepest_base_validator(obj):
+        if hasattr(obj, 'base_validator'):
+            base_validator = obj.base_validator
+            obj = _get_deepest_base_validator(base_validator)
+        else:
+            return obj
+        return obj
+
+    base_validator: Union[TimeSeriesSplit, Take, Skip, Nth] = _get_deepest_base_validator(cv)
+    if isinstance(base_validator, TimeSeriesSplit):
+        return base_validator.source
+    return None
+
+
 class Take(BaseCrossValidator):
     """ Returns the first N folds of the base validator
 

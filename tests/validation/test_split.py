@@ -230,3 +230,33 @@ def test_stratified_group_kfold_imbalanced_group():
     train_index, test_index = next(splits)
     assert np.array_equal(train_index, np.array([0, 1, 2, 3, 4, 5, 6, 7]))
     assert np.array_equal(test_index, np.array([8, 9, 10, 11]))
+
+
+def test_extract_source_of_time_series_split():
+    df = pd.DataFrame()
+    df['time'] = pd.date_range(start='2018/1/1', periods=5)
+
+    folds_time_series = split.TimeSeriesSplit('time',
+                                  [(('2018-01-01', '2018-01-02'), ('2018-01-02', '2018-01-04')),
+                                   (('2018-01-02', '2018-01-03'), ('2018-01-04', '2018-01-06'))])
+
+    assert folds_time_series.source == 'time'
+
+    source = split.extract_source_of_time_series_split(folds_time_series)
+    assert source == 'time'
+
+    folds_take = split.Take(1, folds_time_series)
+    source = split.extract_source_of_time_series_split(folds_take)
+    assert source == 'time'
+
+    folds_skip = split.Skip(2, folds_time_series)
+    source = split.extract_source_of_time_series_split(folds_skip)
+    assert source == 'time'
+
+    folds_nth = split.Nth(2, folds_time_series)
+    source = split.extract_source_of_time_series_split(folds_nth)
+    assert source == 'time'
+
+    kfolds = KFold(5)
+    source = split.extract_source_of_time_series_split(kfolds)
+    assert source is None
