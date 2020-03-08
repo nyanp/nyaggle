@@ -50,6 +50,17 @@ def check_cv(cv: Union[int, Iterable, BaseCrossValidator] = 5,
 
 
 def extract_source_of_time_series_split(cv: BaseCrossValidator) -> Union[str, None]:
+    """
+    Extract `source` if cv contains TimeSeriesSplit.
+
+    Args:
+        cv:
+            BaseCrossValidator, An iterable which determines the cross-validation splitting strategy.
+
+    Returns:
+        Union[str, None]
+            Source name if exist.
+    """
     def _get_deepest_base_validator(obj):
         if hasattr(obj, 'base_validator'):
             base_validator = obj.base_validator
