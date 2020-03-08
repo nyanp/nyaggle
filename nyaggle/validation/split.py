@@ -58,7 +58,7 @@ def extract_source_of_time_series_split(cv: BaseCrossValidator) -> Union[str, No
             return obj
         return obj
 
-    base_validator: Union[TimeSeriesSplit, Take, Skip, Nth] = _get_deepest_base_validator(cv)
+    base_validator = _get_deepest_base_validator(cv)
     if isinstance(base_validator, TimeSeriesSplit):
         return base_validator.source
     return None
