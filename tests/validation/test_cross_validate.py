@@ -1,4 +1,5 @@
 from typing import List
+from datetime import datetime
 
 import numpy as np
 
@@ -11,7 +12,7 @@ from sklearn.model_selection import train_test_split, KFold
 
 from nyaggle.experiment import autoprep_gbdt
 from nyaggle.testing import make_classification_df
-from nyaggle.validation import cross_validate, Take
+from nyaggle.validation import cross_validate, Take, TimeSeriesSplit
 
 
 def test_cv_sklean_binary():
@@ -154,3 +155,33 @@ def test_fit_params_callback():
                                       eval_func=roc_auc_score, fit_params={'early_stopping_rounds': 50})
 
     assert result_w_weight.scores[-1] != result_wo_weight.scores[-1]
+
+
+def test_cv_lgbm_df_include_time_series():
+    X, y = make_classification_df(n_samples=1024, n_num_features=20, n_cat_features=1, class_sep=0.98, random_state=0)
+    X = X.reset_index(drop=True)
+    X.loc[:256, 'date'] = datetime(1993, 8, 14)
+    X.loc[256: 512, 'date'] = datetime(2020, 8, 14)
+    X.loc[512: 768, 'date'] = datetime(1994, 1, 10)
+    X.loc[768: 1024, 'date'] = datetime(2021, 1, 10)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
+    shape_X_train_before = X_train.shape
+    shape_X_test_before = X_train.shape
+    folds = TimeSeriesSplit('date', [(('1993-08-14', '1993-08-31'), ('1994-01-10', '1994-01-31')),
+                                     (('2020-08-14', '2020-08-31'), ('2021-01-10', '2021-01-31'))])
+
+    models = [LGBMClassifier(n_estimators=300) for _ in range(2)]
+
+    pred_oof, pred_test, scores, importance = cross_validate(models, X_train, y_train, X_test, cv=folds,
+                                                             eval_func=roc_auc_score)
+
+    assert shape_X_train_before == X_train.shape  # not drop original dataframe
+    assert shape_X_test_before == X_test.shape
+    assert len(scores) == 2 + 1
+    assert scores[-1] >= 0.85  # overall roc_auc
+    assert roc_auc_score(y_test, pred_test) >= 0.85  # test roc_auc
+    assert roc_auc_score(y_test, models[0].predict_proba(X_test.drop(columns="date"))[:, 1]) >= 0.85  # make sure models are trained
+    assert len(importance) == 2
+    assert list(importance[0].columns) == ['feature', 'importance']
+    assert len(importance[0]) == 20 + 1
+    assert models[0].booster_.num_trees() < 300  # making sure early stopping worke

@@ -12,7 +12,7 @@ from category_encoders.utils import convert_input, convert_input_vector
 from sklearn.base import BaseEstimator
 from sklearn.model_selection import BaseCrossValidator
 from nyaggle.util.traits import is_gbdt_instance
-from nyaggle.validation.split import check_cv
+from nyaggle.validation.split import check_cv, extract_source_of_time_series_split
 
 
 CVResult = namedtuple('CVResult', ['oof_prediction', 'test_prediction', 'scores', 'importance'])
@@ -118,6 +118,8 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
     if X_test is not None:
         X_test = convert_input(X_test)
 
+    time_series_column = extract_source_of_time_series_split(cv) if cv else None
+
     if not isinstance(estimator, list):
         estimator = [estimator] * cv.get_n_splits()
 
@@ -150,6 +152,9 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
     if X_test is not None:
         test = np.zeros((len(X_test), n_output_cols)) if n_output_cols > 1 else np.zeros(len(X_test))
 
+    if time_series_column is not None:
+        X_test = X_test.drop(columns=time_series_column)
+
     scores = []
     eta_all = []
     importance = []
@@ -159,6 +164,10 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
 
         train_x, train_y = X_train.iloc[train_idx], y.iloc[train_idx]
         valid_x, valid_y = X_train.iloc[valid_idx], y.iloc[valid_idx]
+
+        if time_series_column is not None:
+            train_x = train_x.drop(columns=time_series_column)
+            valid_x = valid_x.drop(columns=time_series_column)
 
         if fit_params is None:
             fit_params_fold = {}
@@ -188,7 +197,7 @@ def cross_validate(estimator: Union[BaseEstimator, List[BaseEstimator]],
             on_each_fold(n, estimator[n], train_x, train_y)
 
         if is_gbdt_instance(estimator[n], ('lgbm', 'cat', 'xgb')):
-            importance.append(_get_gbdt_importance(estimator[n], list(X_train.columns), importance_type))
+            importance.append(_get_gbdt_importance(estimator[n], list(train_x.columns), importance_type))
 
         if eval_func is not None:
             score = eval_func(valid_y, oof[valid_idx])
