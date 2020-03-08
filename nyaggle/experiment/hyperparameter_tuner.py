@@ -6,7 +6,7 @@ import optuna.integration.lightgbm as optuna_lgb
 import sklearn.utils.multiclass as multiclass
 from sklearn.model_selection import BaseCrossValidator
 
-from nyaggle.validation.split import check_cv
+from nyaggle.validation.split import check_cv, extract_source_of_time_series_split
 
 
 def find_best_lgbm_parameter(base_param: Dict, X: pd.DataFrame, y: pd.Series,
@@ -44,8 +44,13 @@ def find_best_lgbm_parameter(base_param: Dict, X: pd.DataFrame, y: pd.Series,
 
     train_index, test_index = next(cv.split(X, y, groups))
 
-    dtrain = optuna_lgb.Dataset(X.iloc[train_index], y.iloc[train_index])
-    dvalid = optuna_lgb.Dataset(X.iloc[test_index], y.iloc[test_index])
+    time_series_source = extract_source_of_time_series_split(cv)
+    if time_series_source is None:
+        dtrain = optuna_lgb.Dataset(X.iloc[train_index], y.iloc[train_index])
+        dvalid = optuna_lgb.Dataset(X.iloc[test_index], y.iloc[test_index])
+    else:
+        dtrain = optuna_lgb.Dataset(X.iloc[train_index].drop(columns=time_series_source), y.iloc[train_index])
+        dvalid = optuna_lgb.Dataset(X.iloc[test_index].drop(columns=time_series_source), y.iloc[test_index])
 
     params = copy.deepcopy(base_param)
     if 'early_stopping_rounds' not in params:
