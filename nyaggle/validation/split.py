@@ -66,7 +66,7 @@ class Take(BaseCrossValidator):
         >>> from nyaggle.validation import Take
 
         >>> # take the first 3 folds out of 5
-        >>> split = Take(3, KFold(5))
+        >>> folds = Take(3, KFold(5))
         >>> folds.get_n_splits()
         3
     """
@@ -114,7 +114,7 @@ class Skip(BaseCrossValidator):
         >>> from nyaggle.validation import Skip
 
         >>> # take the last 2 folds out of 5
-        >>> split = Skip(3, KFold(5))
+        >>> folds = Skip(3, KFold(5))
         >>> folds.get_n_splits()
         2
     """
@@ -152,7 +152,7 @@ class Nth(BaseCrossValidator):
         >>> from nyaggle.validation import Nth
 
         >>> # take the 3rd fold
-        >>> split = Nth(3, KFold(5))
+        >>> folds = Nth(3, KFold(5))
         >>> folds.get_n_splits()
         1
     """
