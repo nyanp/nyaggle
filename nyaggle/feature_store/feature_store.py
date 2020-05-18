@@ -1,10 +1,10 @@
 import functools
 import os
-import pyarrow
 import warnings
 from typing import List, Optional, Union
 
 import pandas as pd
+import pyarrow
 from tqdm import tqdm
 
 
@@ -171,6 +171,7 @@ def cached_feature(feature_name: Union[int, str], directory: str = './features/'
         "called"
         >>> x = make_feature_x(...)  # load from file in the second time
     """
+
     def _decorator(fun):
         @functools.wraps(fun)
         def _decorated_fun(*args, **kwargs):

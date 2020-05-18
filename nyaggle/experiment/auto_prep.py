@@ -56,4 +56,3 @@ def _fill_na_by_unique_value(strain: pd.Series, stest: Optional[pd.Series]) -> T
         return strain.fillna(fillval), stest.fillna(fillval)
     else:
         return strain.astype(str), stest.astype(str)
-

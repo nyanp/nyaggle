@@ -1,11 +1,11 @@
 from collections import namedtuple
-from typing import Optional
+from typing import Iterable, List, Optional, Union
 
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator
 from sklearn.metrics import roc_auc_score
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, BaseCrossValidator
 
 from nyaggle.environment import requires_lightgbm
 from nyaggle.util import is_instance
@@ -19,8 +19,8 @@ def adversarial_validate(X_train: pd.DataFrame,
                          X_test: pd.DataFrame,
                          importance_type: str = 'gain',
                          estimator: Optional[BaseEstimator] = None,
-                         cat_cols = None,
-                         cv = None) -> ADVResult:
+                         categorical_feature: List[str] = None,
+                         cv: Optional[Union[int, Iterable, BaseCrossValidator]] = None) -> ADVResult:
     """
     Perform adversarial validation between X_train and X_test.
 
@@ -33,6 +33,9 @@ def adversarial_validate(X_train: pd.DataFrame,
             The type of feature importance calculated.
         estimator:
             The custom estimator. If None, LGBMClassifier is automatically used.
+            Only LGBMModel or CatBoost instances are supported.
+        categorical_feature:
+            List of categorical column names. If ``None``, categorical columns are automatically determined by dtype.
         cv:
             Cross validation split. If ``None``, the first fold out of 5 fold is used as validation.
     Returns:
@@ -63,7 +66,7 @@ def adversarial_validate(X_train: pd.DataFrame,
         col_9   170.6438643
     """
     concat = pd.concat([X_train, X_test]).copy().reset_index(drop=True)
-    y = np.array([1]*len(X_train) + [0]*len(X_test))
+    y = np.array([1] * len(X_train) + [0] * len(X_test))
 
     if estimator is None:
         requires_lightgbm()
@@ -78,8 +81,8 @@ def adversarial_validate(X_train: pd.DataFrame,
         cv = Take(1, KFold(5, shuffle=True, random_state=0))
 
     fit_params = {'verbose': -1}
-    if cat_cols:
-        fit_params['categorical_feature'] = cat_cols
+    if categorical_feature:
+        fit_params['categorical_feature'] = categorical_feature
 
     result = cross_validate(estimator, concat, y, None, cv=cv,
                             eval_func=roc_auc_score, fit_params=fit_params, importance_type=importance_type)

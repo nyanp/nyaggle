@@ -1,5 +1,8 @@
+import sys
+
 import numpy.testing as npt
 import pandas as pd
+import pytest
 from pandas.testing import assert_frame_equal
 
 from nyaggle.feature.nlp import BertSentenceVectorizer
@@ -23,6 +26,11 @@ _TEST_SENTENCE_JP = [
 ]
 
 
+def _under_py35():
+    return not (sys.version_info.major == 3 and sys.version_info.minor >= 6)
+
+
+@pytest.mark.skipif(_under_py35(), reason="BertSentenceVectorizer is not supported under Python <= 3.5")
 def test_bert_fit():
     bert = BertSentenceVectorizer(use_cuda=False)
 
@@ -42,6 +50,7 @@ def test_bert_fit():
     npt.assert_almost_equal(ret.iloc[0, :].values, ret.iloc[5, :].values)
 
 
+@pytest.mark.skipif(_under_py35(), reason="BertSentenceVectorizer is not supported under Python <= 3.5")
 def test_bert_fit_transform():
     X = pd.DataFrame({
         'id': [0, 1, 2, 3, 4, 5],
@@ -58,6 +67,7 @@ def test_bert_fit_transform():
     assert_frame_equal(ret, ret2)
 
 
+@pytest.mark.skipif(_under_py35(), reason="BertSentenceVectorizer is not supported under Python <= 3.5")
 def test_bert_en_svd():
     n_components = 3
     bert = BertSentenceVectorizer(n_components=n_components, use_cuda=False)
@@ -77,6 +87,7 @@ def test_bert_en_svd():
     npt.assert_almost_equal(ret.iloc[0, :].values, ret.iloc[5, :].values, decimal=3)
 
 
+@pytest.mark.skipif(_under_py35(), reason="BertSentenceVectorizer is not supported under Python <= 3.5")
 def test_bert_en_svd_multicol():
     bert = BertSentenceVectorizer(use_cuda=False)
 
@@ -89,13 +100,14 @@ def test_bert_en_svd_multicol():
     ret = bert.fit_transform(X)
 
     assert ret.shape[0] == 6
-    assert ret.shape[1] == 2*768 + 1
+    assert ret.shape[1] == 2 * 768 + 1
 
     ret.drop('id', axis=1, inplace=True)
     npt.assert_almost_equal(ret.iloc[0, :].values, ret.iloc[4, :].values, decimal=3)
     npt.assert_almost_equal(ret.iloc[0, :].values, ret.iloc[5, :].values, decimal=3)
 
 
+@pytest.mark.skipif(_under_py35(), reason="BertSentenceVectorizer is not supported under Python <= 3.5")
 def test_bert_jp():
     bert = BertSentenceVectorizer(use_cuda=False, lang='jp')
 
@@ -112,5 +124,3 @@ def test_bert_jp():
     ret.drop('id', axis=1, inplace=True)
     npt.assert_almost_equal(ret.iloc[0, :].values, ret.iloc[4, :].values)
     npt.assert_almost_equal(ret.iloc[0, :].values, ret.iloc[5, :].values)
-
-

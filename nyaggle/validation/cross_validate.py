@@ -11,9 +11,9 @@ import sklearn.utils.multiclass as multiclass
 from category_encoders.utils import convert_input, convert_input_vector
 from sklearn.base import BaseEstimator
 from sklearn.model_selection import BaseCrossValidator
+
 from nyaggle.util.traits import is_gbdt_instance
 from nyaggle.validation.split import check_cv
-
 
 CVResult = namedtuple('CVResult', ['oof_prediction', 'test_prediction', 'scores', 'importance'])
 

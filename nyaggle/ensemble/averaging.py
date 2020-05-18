@@ -1,5 +1,4 @@
-from collections import namedtuple
-from typing import Callable, Iterable, List, Union, Optional, Tuple
+from typing import Callable, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -105,6 +104,7 @@ def averaging_opt(test_predictions: List[np.ndarray],
         * score:
             float, Calculated score on Out-of-Fold data. ``None`` if ``eval_func`` is ``None``.
     """
+
     def _minimize(weights):
         prediction = np.zeros_like(oof_predictions[0])
         for weight, oof in zip(weights, oof_predictions):

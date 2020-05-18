@@ -33,6 +33,7 @@ class KFoldEncoderWrapper(BaseFeaturizer):
             If True, `transform` and `fit_transform` return the same type as X.
             If False, these APIs always return a numpy array, similar to sklearn's API.
     """
+
     def __init__(self, base_transformer: BaseEstimator,
                  cv: Optional[Union[int, Iterable, BaseCrossValidator]] = None, return_same_type: bool = True,
                  groups: Optional[pd.Series] = None):
@@ -168,6 +169,7 @@ class TargetEncoder(KFoldEncoderWrapper):
             If True, ``transform`` and ``fit_transform`` return the same type as X.
             If False, these APIs always return a numpy array, similar to sklearn's API.
     """
+
     def __init__(self, cv: Optional[Union[Iterable, BaseCrossValidator]] = None,
                  groups: Optional[pd.Series] = None,
                  cols: List[str] = None,

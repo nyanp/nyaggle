@@ -61,7 +61,7 @@ def test_target_encoder_fit_transform():
     })
 
     X = pd.concat([X_train, X_test])
-    y = pd.concat([y_train, pd.Series([None]*4)]).astype(float)
+    y = pd.concat([y_train, pd.Series([None] * 4)]).astype(float)
 
     ce1 = TargetEncoder(cols=['x'])
     ce1.fit(X_train, y_train)
