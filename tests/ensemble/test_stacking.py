@@ -1,15 +1,12 @@
-import numpy as np
-import scipy.stats as stats
-from numpy.testing import assert_array_almost_equal
-from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.linear_model import Ridge, LogisticRegression
-from sklearn.utils.multiclass import type_of_target
+from sklearn.metrics import roc_auc_score
+from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC, SVR
-from sklearn.metrics import roc_auc_score, mean_squared_error
+from sklearn.utils.multiclass import type_of_target
 
-from nyaggle.testing import make_classification_df, make_regression_df
 from nyaggle.ensemble import stacking
+from nyaggle.testing import make_classification_df
 from nyaggle.validation import cross_validate
 
 
@@ -43,5 +40,3 @@ def test_stacking():
     result = stacking(test, oof, y_train, eval_func=roc_auc_score)
 
     assert roc_auc_score(y_train, result.oof_prediction) > worst_base_roc
-
-

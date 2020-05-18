@@ -89,7 +89,7 @@ def test_bert_en_svd_multicol():
     ret = bert.fit_transform(X)
 
     assert ret.shape[0] == 6
-    assert ret.shape[1] == 2*768 + 1
+    assert ret.shape[1] == 2 * 768 + 1
 
     ret.drop('id', axis=1, inplace=True)
     npt.assert_almost_equal(ret.iloc[0, :].values, ret.iloc[4, :].values, decimal=3)
@@ -112,5 +112,3 @@ def test_bert_jp():
     ret.drop('id', axis=1, inplace=True)
     npt.assert_almost_equal(ret.iloc[0, :].values, ret.iloc[4, :].values)
     npt.assert_almost_equal(ret.iloc[0, :].values, ret.iloc[5, :].values)
-
-

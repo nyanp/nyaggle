@@ -1,8 +1,8 @@
 import copy
 from typing import Dict, Iterable, Optional, Union
 
-import pandas as pd
 import optuna.integration.lightgbm as optuna_lgb
+import pandas as pd
 import sklearn.utils.multiclass as multiclass
 from sklearn.model_selection import BaseCrossValidator
 

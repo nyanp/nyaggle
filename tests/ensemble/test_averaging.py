@@ -1,15 +1,14 @@
-import numpy as np
 import scipy.stats as stats
 from numpy.testing import assert_array_almost_equal
-from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.linear_model import Ridge, LogisticRegression
-from sklearn.utils.multiclass import type_of_target
-from sklearn.svm import SVC, SVR
 from sklearn.metrics import roc_auc_score, mean_squared_error
+from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC, SVR
+from sklearn.utils.multiclass import type_of_target
 
-from nyaggle.testing import make_classification_df, make_regression_df
 from nyaggle.ensemble import averaging, averaging_opt
+from nyaggle.testing import make_classification_df, make_regression_df
 from nyaggle.validation import cross_validate
 
 
@@ -40,7 +39,7 @@ def test_averaging():
 
     result = averaging(test)
 
-    assert_array_almost_equal((test[0]+test[1]+test[2])/3, result.test_prediction)
+    assert_array_almost_equal((test[0] + test[1] + test[2]) / 3, result.test_prediction)
     assert result.score is None
     assert result.oof_prediction is None
 
@@ -53,8 +52,8 @@ def test_averaging_with_oof():
 
     result = averaging(test, oof, y_train)
 
-    assert_array_almost_equal((test[0]+test[1]+test[2])/3, result.test_prediction)
-    assert_array_almost_equal((oof[0]+oof[1]+oof[2])/3, result.oof_prediction)
+    assert_array_almost_equal((test[0] + test[1] + test[2]) / 3, result.test_prediction)
+    assert_array_almost_equal((oof[0] + oof[1] + oof[2]) / 3, result.oof_prediction)
     assert result.score is None
 
 
@@ -66,8 +65,8 @@ def test_averaging_regression():
 
     result = averaging(test, oof, y_train)
 
-    assert_array_almost_equal((test[0]+test[1]+test[2])/3, result.test_prediction)
-    assert_array_almost_equal((oof[0]+oof[1]+oof[2])/3, result.oof_prediction)
+    assert_array_almost_equal((test[0] + test[1] + test[2]) / 3, result.test_prediction)
+    assert_array_almost_equal((oof[0] + oof[1] + oof[2]) / 3, result.oof_prediction)
     assert result.score is None
 
 
@@ -79,8 +78,8 @@ def test_averaging_multiclass():
 
     result = averaging(test, oof, y_train)
 
-    assert_array_almost_equal((test[0]+test[1]+test[2])/3, result.test_prediction)
-    assert_array_almost_equal((oof[0]+oof[1]+oof[2])/3, result.oof_prediction)
+    assert_array_almost_equal((test[0] + test[1] + test[2]) / 3, result.test_prediction)
+    assert_array_almost_equal((oof[0] + oof[1] + oof[2]) / 3, result.oof_prediction)
     assert result.score is None
 
 
@@ -103,8 +102,8 @@ def test_weight_averaging():
 
     result = averaging(test, oof, y_train, weights=[0.2, 0.4, 0.3])
 
-    assert_array_almost_equal(0.2*test[0]+0.4*test[1]+0.3*test[2], result.test_prediction)
-    assert_array_almost_equal(0.2*oof[0]+0.4*oof[1]+0.3*oof[2], result.oof_prediction)
+    assert_array_almost_equal(0.2 * test[0] + 0.4 * test[1] + 0.3 * test[2], result.test_prediction)
+    assert_array_almost_equal(0.2 * oof[0] + 0.4 * oof[1] + 0.3 * oof[2], result.oof_prediction)
     assert result.score is None
 
 
@@ -118,7 +117,7 @@ def test_rank_averaging():
 
     test_rank = [stats.rankdata(t) / len(X_test) for t in test]
 
-    assert_array_almost_equal((test_rank[0]+test_rank[1]+test_rank[2])/3, result.test_prediction)
+    assert_array_almost_equal((test_rank[0] + test_rank[1] + test_rank[2]) / 3, result.test_prediction)
     assert result.score is None
 
 
@@ -133,8 +132,8 @@ def test_rank_averaging_with_oof():
     oof_rank = [stats.rankdata(o) / len(X_train) for o in oof]
     test_rank = [stats.rankdata(t) / len(X_test) for t in test]
 
-    assert_array_almost_equal((test_rank[0]+test_rank[1]+test_rank[2])/3, result.test_prediction)
-    assert_array_almost_equal((oof_rank[0]+oof_rank[1]+oof_rank[2])/3, result.oof_prediction)
+    assert_array_almost_equal((test_rank[0] + test_rank[1] + test_rank[2]) / 3, result.test_prediction)
+    assert_array_almost_equal((oof_rank[0] + oof_rank[1] + oof_rank[2]) / 3, result.oof_prediction)
     assert result.score is None
 
 

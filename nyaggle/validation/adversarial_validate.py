@@ -19,8 +19,8 @@ def adversarial_validate(X_train: pd.DataFrame,
                          X_test: pd.DataFrame,
                          importance_type: str = 'gain',
                          estimator: Optional[BaseEstimator] = None,
-                         cat_cols = None,
-                         cv = None) -> ADVResult:
+                         cat_cols=None,
+                         cv=None) -> ADVResult:
     """
     Perform adversarial validation between X_train and X_test.
 
@@ -63,7 +63,7 @@ def adversarial_validate(X_train: pd.DataFrame,
         col_9   170.6438643
     """
     concat = pd.concat([X_train, X_test]).copy().reset_index(drop=True)
-    y = np.array([1]*len(X_train) + [0]*len(X_test))
+    y = np.array([1] * len(X_train) + [0] * len(X_test))
 
     if estimator is None:
         requires_lightgbm()

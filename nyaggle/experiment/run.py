@@ -5,7 +5,6 @@ from collections import namedtuple
 from datetime import datetime
 from typing import Any, Callable, Dict, Iterable, List, Optional, Type, Union
 
-import numpy as np
 import pandas as pd
 import sklearn.utils.multiclass as multiclass
 from sklearn.base import BaseEstimator

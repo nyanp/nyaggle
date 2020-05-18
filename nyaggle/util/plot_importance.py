@@ -1,11 +1,11 @@
 from typing import Optional, Tuple
 
-import pandas as pd
 import matplotlib.pyplot as plt
+import pandas as pd
 import seaborn as sns
 
 
-def plot_importance(importance: pd.DataFrame, path: Optional[str] = None, top_n: int = 100, 
+def plot_importance(importance: pd.DataFrame, path: Optional[str] = None, top_n: int = 100,
                     figsize: Optional[Tuple[int, int]] = None,
                     title: Optional[str] = None):
     """
@@ -37,9 +37,9 @@ def plot_importance(importance: pd.DataFrame, path: Optional[str] = None, top_n:
         >>> })
         >>> plot_importance(importance, 'importance.png')
     """
-    importance = importance.groupby('feature')['importance']\
-        .mean()\
-        .reset_index()\
+    importance = importance.groupby('feature')['importance'] \
+        .mean() \
+        .reset_index() \
         .sort_values(by='importance', ascending=False)
 
     if len(importance) > top_n:

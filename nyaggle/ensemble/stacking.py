@@ -94,4 +94,3 @@ def stacking(test_predictions: List[np.ndarray],
     score = result.scores[-1] if result.scores else None
 
     return EnsembleResult(result.test_prediction, result.oof_prediction, score)
-

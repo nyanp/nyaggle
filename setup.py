@@ -1,6 +1,7 @@
-from setuptools import find_packages, setup
 from codecs import open
 from os import path
+
+from setuptools import find_packages, setup
 
 
 def get_long_description():

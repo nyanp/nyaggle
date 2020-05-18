@@ -70,6 +70,7 @@ class Take(BaseCrossValidator):
         >>> folds.get_n_splits()
         3
     """
+
     def __init__(self, n: int, base_validator: BaseCrossValidator):
         self.base_validator = base_validator
         self.n = n
@@ -118,6 +119,7 @@ class Skip(BaseCrossValidator):
         >>> folds.get_n_splits()
         2
     """
+
     def __init__(self, n: int, base_validator: BaseCrossValidator):
         self.base_validator = base_validator
         self.n = n
@@ -156,9 +158,10 @@ class Nth(BaseCrossValidator):
         >>> folds.get_n_splits()
         1
     """
+
     def __init__(self, n: int, base_validator: BaseCrossValidator):
         assert n > 0, "n is 1-origin and should be greater than 0"
-        self.base_validator = Take(1, Skip(n-1, base_validator))
+        self.base_validator = Take(1, Skip(n - 1, base_validator))
         self.n = n
 
     def get_n_splits(self, X=None, y=None, groups=None):
@@ -245,7 +248,8 @@ class TimeSeriesSplit(BaseCrossValidator):
         assert train_interval[1], "train_interval[1] should not be None"
         assert test_interval[0], "test_interval[0] should not be None"
 
-        assert (not train_interval[0]) or (train_interval[0] <= train_interval[1]), "train_interval[0] < train_interval[1]"
+        assert (not train_interval[0]) or (
+                    train_interval[0] <= train_interval[1]), "train_interval[0] < train_interval[1]"
         assert (not test_interval[1]) or (test_interval[0] <= test_interval[1]), "test_interval[0] < test_interval[1]"
 
         self.times.append((train_interval, test_interval))
@@ -440,7 +444,7 @@ class StratifiedGroupKFold(_BaseKFold):
             else:
                 freq_loss = freq_loss / denom
             losses = ratio_loss + freq_loss
-            #-------
+            # -------
             splitx = np.argmin(losses)
             split_freq[splitx] = cand_freq[splitx]
             split_ratios[splitx] = cand_ratio[splitx]
