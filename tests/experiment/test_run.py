@@ -610,6 +610,28 @@ def test_inherit_outer_scope_run(tmpdir_name):
     mlflow.end_run()
 
 
+def test_ignore_errors_in_mlflow_params(tmpdir_name):
+    mlflow.start_run()
+    mlflow.log_param('features', 'ABC')
+    mlflow.log_metric('Overall', -99)
+
+    params = {
+        'objective': 'binary',
+        'max_depth': 8
+    }
+    X, y = make_classification_df()
+
+    result = run_experiment(params, X, y, with_mlflow=True, logging_directory=tmpdir_name, feature_list=[])
+
+    client = mlflow.tracking.MlflowClient()
+    data = client.get_run(mlflow.active_run().info.run_id).data
+
+    assert data.metrics['Overall'] == result.metrics[-1]
+    assert data.params['features'] == 'ABC'  # params cannot be overwritten
+
+    mlflow.end_run()
+
+
 def test_custom_experiment(tmpdir_name):
     params = {
         'objective': 'binary',
