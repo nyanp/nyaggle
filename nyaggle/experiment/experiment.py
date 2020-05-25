@@ -216,9 +216,14 @@ class Experiment(object):
 
         if self.with_mlflow:
             import mlflow
-            mlflow.log_artifact(self.log_path)
-            mlflow.log_artifact(os.path.join(self.logging_directory, 'metrics.json'))
-            mlflow.log_artifact(os.path.join(self.logging_directory, 'params.json'))
+            from mlflow.exceptions import MlflowException
+
+            try:
+                mlflow.log_artifact(self.log_path)
+                mlflow.log_artifact(os.path.join(self.logging_directory, 'metrics.json'))
+                mlflow.log_artifact(os.path.join(self.logging_directory, 'params.json'))
+            except MlflowException as e:
+                warnings.warn('Error in saving artifacts to mlflow. The result may not be saved.: {}'.format(e))
             if not self.inherit_existing_run:
                 mlflow.end_run()
 
@@ -268,9 +273,15 @@ class Experiment(object):
 
         if self.with_mlflow:
             import mlflow
+            from mlflow.exceptions import MlflowException
+
             key_mlflow = _sanitize_mlflow_param(key, MLFLOW_KEY_LENGTH_LIMIT)
             value_mlflow = _sanitize_mlflow_param(value, MLFLOW_VALUE_LENGTH_LIMIT)
-            mlflow.log_param(key_mlflow, value_mlflow)
+
+            try:
+                mlflow.log_param(key_mlflow, value_mlflow)
+            except MlflowException as e:
+                warnings.warn('Error in logging parameter {} to mlflow. Skipped. {}'.format(key, e))
 
     def log_params(self, params: Dict):
         """
@@ -330,7 +341,12 @@ class Experiment(object):
 
         if self.with_mlflow:
             import mlflow
-            mlflow.log_metric(name, score)
+            from mlflow.exceptions import MlflowException
+
+            try:
+                mlflow.log_metric(name, score)
+            except MlflowException as e:
+                warnings.warn('Error in logging metric {} to mlflow. Skipped. {}'.format(name, e))
 
     def log_metrics(self, metrics: Dict):
         """
