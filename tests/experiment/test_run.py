@@ -1,5 +1,6 @@
 import json
 import os
+from typing import List
 from urllib.parse import urlparse, unquote
 
 import mlflow
@@ -331,6 +332,37 @@ def test_experiment_fit_params(tmpdir_name):
 
     assert result1.models[-1].booster_.num_trees() == params['n_estimators']
     assert result2.models[-1].booster_.num_trees() < params['n_estimators']
+
+
+def test_experiment_fit_params_callback(tmpdir_name):
+    X, y = make_classification_df(n_samples=1024, n_num_features=10, n_cat_features=2,
+                                  class_sep=0.98, random_state=0, id_column='user_id')
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
+
+    params = {
+        'objective': 'binary',
+        'max_depth': 8,
+        'n_estimators': 500
+    }
+
+    sample_weights = np.random.randint(1, 10, size=len(X_train))
+    sample_weights = sample_weights / sample_weights.sum()
+
+    def fit_params(n: int, train_index: List[int], valid_index: List[int]):
+        return {
+            'early_stopping_rounds': 100,
+            'sample_weight': list(sample_weights[train_index]),
+            'eval_sample_weight': [list(sample_weights[valid_index])]
+        }
+
+    result1 = run_experiment(params, X_train, y_train, X_test,
+                             os.path.join(tmpdir_name, '1'), fit_params=fit_params)
+
+    result2 = run_experiment(params, X_train, y_train, X_test,
+                             os.path.join(tmpdir_name, '2'))
+
+    assert result1.metrics[-1] != result2.metrics[-1]
 
 
 def test_experiment_mlflow(tmpdir_name):

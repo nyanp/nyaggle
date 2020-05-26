@@ -149,7 +149,6 @@ def test_fit_params_callback():
     result_w_weight = cross_validate(models, X_train, y_train, X_test, cv=5,
                                      eval_func=roc_auc_score, fit_params=fit_params)
 
-
     result_wo_weight = cross_validate(models, X_train, y_train, X_test, cv=5,
                                       eval_func=roc_auc_score, fit_params={'early_stopping_rounds': 50})
 
