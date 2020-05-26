@@ -221,7 +221,10 @@ def run_experiment(model_params: Dict[str, Any],
         exp.log('Features: {}'.format(list(X_train.columns)))
         exp.log_param('algorithm_type', algorithm_type)
         exp.log_param('num_features', X_train.shape[1])
-        exp.log_dict('fit_params', fit_params)
+        if callable(fit_params):
+            exp.log_param('fit_params', str(fit_params))
+        else:
+            exp.log_dict('fit_params', fit_params)
         exp.log_dict('model_params', model_params)
         if feature_list is not None:
             exp.log_param('features', feature_list)
@@ -241,7 +244,8 @@ def run_experiment(model_params: Dict[str, Any],
         if cat_param_name is not None and not callable(fit_params) and cat_param_name not in fit_params:
             fit_params[cat_param_name] = categorical_feature
 
-        exp.log_params(fit_params)
+        if isinstance(fit_params, Dict):
+            exp.log_params(fit_params)
 
         result = cross_validate(models, X_train=X_train, y=y, X_test=X_test, cv=cv, groups=groups,
                                 logger=exp.get_logger(), eval_func=eval_func, fit_params=fit_params,
