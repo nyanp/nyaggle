@@ -173,8 +173,8 @@ def run_experiment(model_params: Dict[str, Any],
         * test_prediction:
             numpy array, shape (len(X_test),) Predicted value on test data. ``None`` if X_test is ``None``
         * metrics:
-            list of float, shape(nfolds+1) ``scores[i]`` denotes validation score in i-th fold.
-            ``scores[-1]`` is overall score.
+            list of float, shape(nfolds+1) ``metrics[i]`` denotes validation score in i-th fold.
+            ``metrics[-1]`` is overall score.
         * models:
             list of objects, shape(nfolds) Trained models for each folds.
         * importance:
