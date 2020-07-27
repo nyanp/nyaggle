@@ -50,8 +50,9 @@ class BertSentenceVectorizer(BaseFeaturizer):
             self.tokenizer = tokenizer
             self.model = model
         if lang == 'en':
-            self.tokenizer = transformers.BertTokenizer.from_pretrained('bert-base-uncased')
-            self.model = transformers.BertModel.from_pretrained('bert-base-uncased')
+            pretrained_model_name = 'bert-base-uncased'
+            self.tokenizer = transformers.BertTokenizer.from_pretrained(pretrained_model_name)
+            self.model = transformers.BertModel.from_pretrained(pretrained_model_name)
         elif lang == 'jp':
             pretrained_model_name = 'cl-tohoku/bert-base-japanese-whole-word-masking'
             self.tokenizer = transformers.BertJapaneseTokenizer.from_pretrained(pretrained_model_name)
