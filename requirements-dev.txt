@@ -3,6 +3,6 @@ mlflow
 catboost
 lightgbm
 xgboost
-mecab-python3
+mecab-python3==0.996.6rc2
 flake8
 pytest
