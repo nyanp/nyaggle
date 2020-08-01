@@ -78,10 +78,7 @@ def find_best_lgbm_parameter(base_param: Dict, X: pd.DataFrame, y: pd.Series,
     if not any([p in params for p in ('verbose', 'verbosity')]):
         params['verbosity'] = -1
 
-    best_params, tuning_history = dict(), list()
-    optuna_lgb.train(params, dtrain, valid_sets=[dvalid], verbose_eval=0,
-                     best_params=best_params, tuning_history=tuning_history, time_budget=time_budget)
+    model = optuna_lgb.train(params, dtrain, valid_sets=[dvalid], verbose_eval=0,
+                             time_budget=time_budget)
 
-    result_param = copy.deepcopy(base_param)
-    result_param.update(best_params)
-    return result_param
+    return model.params
