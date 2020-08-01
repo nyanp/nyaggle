@@ -1,6 +1,7 @@
 # nyaggle
 
 ![GitHub Actions CI Status](https://github.com/nyanp/nyaggle/workflows/Python%20package/badge.svg)
+![GitHub Actions CI Status](https://github.com/nyanp/nyaggle/workflows/weekly_test/badge.svg)
 ![Python Versions](https://img.shields.io/pypi/pyversions/nyaggle.svg?logo=python&logoColor=white)
 ![Documentation Status](https://readthedocs.org/projects/nyaggle/badge/?version=latest)
 
