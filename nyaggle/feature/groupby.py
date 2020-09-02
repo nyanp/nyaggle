@@ -31,7 +31,7 @@ SOFTWARE.
 -----------------------------------------------------------------------------
 """
 
-from typing import List
+from typing import List, Callable, Union
 
 import pandas as pd
 
@@ -40,7 +40,7 @@ def aggregation(
         input_df: pd.DataFrame,
         group_key: str,
         group_values: List[str],
-        agg_methods: List[str],
+        agg_methods: List[Union[str, Callable]],
 ):
     """Aggregate values after grouping table rows by a given key.
     Args:
@@ -51,7 +51,8 @@ def aggregation(
         group_values:
             Used to aggregate values for the groupby.
         agg_methods:
-            List of function names, e.g. ['mean', 'max', 'min', 'std'].
+            List of function or function names,
+             e.g. ['mean', 'max', 'min', numpy.mean].
     Returns:
         Tuple of output dataframe and new column names.
     """
@@ -60,12 +61,14 @@ def aggregation(
     new_cols = []
     for agg_method in agg_methods:
         for col in group_values:
-            new_col = f"agg_{agg_method}_{col}_by_{group_key}"
+            if isinstance(agg_method, str):
+                agg_method_name = agg_method
+            elif isinstance(agg_method, Callable):
+                agg_method_name = agg_method.__name__
+            else:
+                raise ValueError('')
+            new_col = f"agg_{agg_method_name}_{col}_by_{group_key}"
 
-            # NOTE(smly):
-            # Failed when cudf.DataFrame try to merge with cudf.Series.
-            # Use workaround to merge with cudf.DataFrame.
-            # Ref: http://github.com/rapidsai/cudf/issues/5013
             df_agg = (
                 input_df[[col] + [group_key]].groupby(group_key)[[col]].agg(
                     agg_method)
