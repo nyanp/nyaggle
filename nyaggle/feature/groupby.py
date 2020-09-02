@@ -66,7 +66,7 @@ def aggregation(
             elif isinstance(agg_method, Callable):
                 agg_method_name = agg_method.__name__
             else:
-                raise ValueError(f'Supported types are: {str or Callable}.'
+                raise ValueError(f'Supported types are: {str} or {Callable}.'
                                  f' Got {type(agg_method)} instead.')
             new_col = f"agg_{agg_method_name}_{col}_by_{group_key}"
 
