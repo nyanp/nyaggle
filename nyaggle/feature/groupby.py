@@ -31,6 +31,7 @@ SOFTWARE.
 -----------------------------------------------------------------------------
 """
 
+from types import LambdaType, FunctionType
 from typing import List, Callable, Union
 
 import pandas as pd
@@ -53,6 +54,8 @@ def aggregation(
         agg_methods:
             List of function or function names,
              e.g. ['mean', 'max', 'min', numpy.mean].
+            Do not use a lambda function because the name attribute of the lambda function
+             cannot generate a unique string of column names in <lambda>.
     Returns:
         Tuple of output dataframe and new column names.
     """
@@ -63,8 +66,10 @@ def aggregation(
         for col in group_values:
             if isinstance(agg_method, str):
                 agg_method_name = agg_method
-            elif isinstance(agg_method, Callable):
+            elif isinstance(agg_method, FunctionType):
                 agg_method_name = agg_method.__name__
+            elif isinstance(agg_method, LambdaType):
+                raise ValueError(f'Not supported lambda function.')
             else:
                 raise ValueError(f'Supported types are: {str} or {Callable}.'
                                  f' Got {type(agg_method)} instead.')
