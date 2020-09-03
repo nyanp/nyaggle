@@ -38,6 +38,17 @@ import pandas as pd
 
 
 def is_lambda_function(obj):
+    """
+    Example:
+        >>> import numpy as np
+        >>> def custom_function(x): return np.sum(x)
+        >>> is_lambda_function(lambda x: np.sum(x))
+        True
+        >>> is_lambda_function(np.sum)
+        False
+        >>> is_lambda_function(custom_function)
+        False
+    """
     # It's worth noting that types.LambdaType is an alias for types.FunctionType
     return isinstance(obj, LambdaType) and obj.__name__ == "<lambda>"
 
