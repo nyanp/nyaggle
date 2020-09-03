@@ -87,8 +87,8 @@ def aggregation(
         elif isinstance(agg_method, FunctionType):
             pass
         else:
-            raise ValueError(f'Supported types are: {str} or {Callable}.'
-                             f' Got {type(agg_method)} instead.')
+            raise ValueError('Supported types are: {} or {}.'
+                             ' Got {} instead.'.format(str, Callable, type(agg_method)))
 
     for agg_method in agg_methods:
         for col in group_values:
