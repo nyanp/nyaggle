@@ -57,7 +57,7 @@ def aggregation(
         input_df: pd.DataFrame,
         group_key: str,
         group_values: List[str],
-        agg_methods: List[Union[str, Callable]],
+        agg_methods: List[Union[str, FunctionType]],
 ):
     """Aggregate values after grouping table rows by a given key.
     Args:
