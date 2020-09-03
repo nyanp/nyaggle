@@ -28,3 +28,10 @@ def test_return_type_by_aggregation(iris_dataframe):
                                    agg_methods)
     assert isinstance(new_df, pd.DataFrame)
     assert isinstance(new_cols, list)
+
+
+@pytest.mark.parametrize('agg_method', [[int], [lambda x: np.max(x)]])
+def test_assert_by_aggregation(iris_dataframe, agg_method):
+    df, group_key, group_values = iris_dataframe
+    with pytest.raises(ValueError):
+        aggregation(df, group_key, group_values, agg_method)
