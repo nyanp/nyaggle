@@ -8,4 +8,4 @@ pyarrow
 seaborn
 sklearn
 tqdm
-transformers
+transformers["ja"]
