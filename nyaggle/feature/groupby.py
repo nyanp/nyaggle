@@ -79,16 +79,23 @@ def aggregation(
 
     new_cols = []
     for agg_method in agg_methods:
+        if isinstance(agg_method, str):
+            pass
+        elif isinstance(agg_method, FunctionType):
+            pass
+        elif is_lambda_function(agg_method):
+            raise ValueError(f'Not supported lambda function.')
+        else:
+            raise ValueError(f'Supported types are: {str} or {Callable}.'
+                             f' Got {type(agg_method)} instead.')
+
+    for agg_method in agg_methods:
         for col in group_values:
+            # only str or FunctionType
             if isinstance(agg_method, str):
                 agg_method_name = agg_method
-            elif isinstance(agg_method, FunctionType):
-                agg_method_name = agg_method.__name__
-            elif is_lambda_function(agg_method):
-                raise ValueError(f'Not supported lambda function.')
             else:
-                raise ValueError(f'Supported types are: {str} or {Callable}.'
-                                 f' Got {type(agg_method)} instead.')
+                agg_method_name = agg_method.__name__
             new_col = f"agg_{agg_method_name}_{col}_by_{group_key}"
 
             df_agg = (
