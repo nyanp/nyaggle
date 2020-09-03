@@ -35,6 +35,7 @@ from types import LambdaType, FunctionType
 from typing import List, Callable, Union
 
 import pandas as pd
+from pandas.core.common import get_callable_name
 
 
 def is_lambda_function(obj):
@@ -95,7 +96,7 @@ def aggregation(
             if isinstance(agg_method, str):
                 agg_method_name = agg_method
             else:
-                agg_method_name = agg_method.__name__
+                agg_method_name = get_callable_name(agg_method)
             new_col = f"agg_{agg_method_name}_{col}_by_{group_key}"
 
             df_agg = (
