@@ -97,7 +97,7 @@ def aggregation(
                 agg_method_name = agg_method
             else:
                 agg_method_name = get_callable_name(agg_method)
-            new_col = f"agg_{agg_method_name}_{col}_by_{group_key}"
+            new_col = "agg_{}_{}_by_{}".format(agg_method_name, col, group_key)
 
             df_agg = (
                 input_df[[col] + [group_key]].groupby(group_key)[[col]].agg(
