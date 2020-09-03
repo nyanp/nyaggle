@@ -37,6 +37,11 @@ from typing import List, Callable, Union
 import pandas as pd
 
 
+def is_lambda_function(obj):
+    # It's worth noting that types.LambdaType is an alias for types.FunctionType
+    return isinstance(obj, LambdaType) and obj.__name__ == "<lambda>"
+
+
 def aggregation(
         input_df: pd.DataFrame,
         group_key: str,
@@ -68,7 +73,7 @@ def aggregation(
                 agg_method_name = agg_method
             elif isinstance(agg_method, FunctionType):
                 agg_method_name = agg_method.__name__
-            elif isinstance(agg_method, LambdaType):
+            elif is_lambda_function(agg_method):
                 raise ValueError(f'Not supported lambda function.')
             else:
                 raise ValueError(f'Supported types are: {str} or {Callable}.'
