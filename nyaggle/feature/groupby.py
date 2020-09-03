@@ -80,12 +80,12 @@ def aggregation(
 
     new_cols = []
     for agg_method in agg_methods:
-        if isinstance(agg_method, str):
+        if is_lambda_function(agg_method):
+            raise ValueError(f'Not supported lambda function.')
+        elif isinstance(agg_method, str):
             pass
         elif isinstance(agg_method, FunctionType):
             pass
-        elif is_lambda_function(agg_method):
-            raise ValueError(f'Not supported lambda function.')
         else:
             raise ValueError(f'Supported types are: {str} or {Callable}.'
                              f' Got {type(agg_method)} instead.')
