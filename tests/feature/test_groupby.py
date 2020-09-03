@@ -1,24 +1,30 @@
+import numpy as np
 import pandas as pd
 import pytest
+from sklearn import datasets
 
 from nyaggle.feature.groupby import aggregation
 
 
 @pytest.fixture
-def dataframe():
-    df = pd.DataFrame(
-        {"a": [1, 2, 3, 4, 5],
-         "b": ["a", "a", "a", "b", "b"],
-         "c": [0, 0, 1, 1, 1],
-         }
-    )
-    return df
+def iris_dataframe():
+    iris = datasets.load_iris()
+    df = pd.DataFrame(np.concatenate([iris.data,
+                                      iris.target.reshape((iris.target.shape[0], 1))], axis=1))
+    df.columns = ['sl', 'sw', 'pl', 'pw', 'species']
+    group_key = 'species'
+    group_values = ['sl', 'sw', 'pl', 'pw']
+    return df, group_key, group_values
 
 
-def test_aggregation(dataframe):
-    df = dataframe
-    group_key = 'b'
-    group_values = ["a", "c"]
-    agg_methods = ["max"]
+def custom_function(x):
+    return np.sum(x)
+
+
+def test_return_type_by_aggregation(iris_dataframe):
+    df, group_key, group_values = iris_dataframe
+    agg_methods = ["max", np.sum, custom_function]
     new_df, new_cols = aggregation(df, group_key, group_values,
                                    agg_methods)
+    assert isinstance(new_df, pd.DataFrame)
+    assert isinstance(new_cols, list)
