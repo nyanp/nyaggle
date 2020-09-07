@@ -60,7 +60,9 @@ def aggregation(
         group_values: List[str],
         agg_methods: List[Union[str, FunctionType]],
 ):
-    """Aggregate values after grouping table rows by a given key.
+    """
+    Aggregate values after grouping table rows by a given key.
+
     Args:
         input_df:
             Input data frame.
