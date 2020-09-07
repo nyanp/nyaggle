@@ -1,4 +1,5 @@
 import copy
+import warnings
 from typing import Dict, Iterable, Optional, Union
 
 import optuna.integration.lightgbm as optuna_lgb
@@ -50,6 +51,10 @@ def find_best_lgbm_parameter(base_param: Dict, X: pd.DataFrame, y: pd.Series,
     params = copy.deepcopy(base_param)
     if 'early_stopping_rounds' not in params:
         params['early_stopping_rounds'] = 100
+
+    if params.get('feature_pre_filter'):
+        warnings.warn("feature_pre_filter will be set to False to tune min_data_in_leaf.")
+    params['feature_pre_filter'] = False
 
     if not any([p in params for p in ('num_iterations', 'num_iteration',
                                       'num_trees', 'num_tree',
