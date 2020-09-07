@@ -31,7 +31,7 @@
 
 
 from types import LambdaType, FunctionType
-from typing import List, Callable, Union
+from typing import List, Callable, Union, Tuple
 
 import pandas as pd
 from pandas.core.common import get_callable_name
@@ -58,7 +58,7 @@ def aggregation(
         group_key: str,
         group_values: List[str],
         agg_methods: List[Union[str, FunctionType]],
-):
+) -> Tuple[pd.DataFrame, List[str]]:
     """
     Aggregate values after grouping table rows by a given key.
 
