@@ -70,10 +70,8 @@ def aggregation(
         group_values:
             Used to aggregate values for the groupby.
         agg_methods:
-            List of function or function names,
-             e.g. ['mean', 'max', 'min', numpy.mean].
-            Do not use a lambda function because the name attribute of the lambda function
-             cannot generate a unique string of column names in <lambda>.
+            List of function or function names, e.g. ['mean', 'max', 'min', numpy.mean].
+            Do not use a lambda function because the name attribute of the lambda function cannot generate a unique string of column names in <lambda>.
     Returns:
         Tuple of output dataframe and new column names.
     """
