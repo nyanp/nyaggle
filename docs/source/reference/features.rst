@@ -9,3 +9,8 @@ nyaggle.feature
 .. automodule:: nyaggle.feature.nlp
     :members:
     :imported-members:
+
+
+.. automodule:: nyaggle.feature.groupby
+    :members:
+    :imported-members:
