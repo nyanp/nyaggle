@@ -37,16 +37,16 @@ import pandas as pd
 from pandas.core.common import get_callable_name
 
 
-def is_lambda_function(obj):
+def _is_lambda_function(obj):
     """
     Example:
         >>> import numpy as np
         >>> def custom_function(x): return np.sum(x)
-        >>> is_lambda_function(lambda x: np.sum(x))
+        >>> _is_lambda_function(lambda x: np.sum(x))
         True
-        >>> is_lambda_function(np.sum)
+        >>> _is_lambda_function(np.sum)
         False
-        >>> is_lambda_function(custom_function)
+        >>> _is_lambda_function(custom_function)
         False
     """
     # It's worth noting that types.LambdaType is an alias for types.FunctionType
@@ -81,7 +81,7 @@ def aggregation(
 
     new_cols = []
     for agg_method in agg_methods:
-        if is_lambda_function(agg_method):
+        if _is_lambda_function(agg_method):
             raise ValueError('Not supported lambda function.')
         elif isinstance(agg_method, str):
             pass
