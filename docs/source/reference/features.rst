@@ -13,4 +13,3 @@ nyaggle.feature
 
 .. automodule:: nyaggle.feature.groupby
     :members:
-    :imported-members:

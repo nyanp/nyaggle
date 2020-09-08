@@ -1,53 +1,52 @@
-"""
-Modified work:
------------------------------------------------------------------------------
-Copyright (c) 2020 Kota Yuhara (@wakamezake)
------------------------------------------------------------------------------
+# Modified work:
+# -----------------------------------------------------------------------------
+# Copyright (c) 2020 Kota Yuhara (@wakamezake)
+# -----------------------------------------------------------------------------
 
-Original work of aggregation:
-https://github.com/pfnet-research/xfeat/blob/master/xfeat/helper.py
------------------------------------------------------------------------------
-MIT License
+# Original work of aggregation:
+# https://github.com/pfnet-research/xfeat/blob/master/xfeat/helper.py
+# -----------------------------------------------------------------------------
+# MIT License
+# 
+# Copyright (c) 2020 Preferred Networks, Inc.
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+# -----------------------------------------------------------------------------
 
-Copyright (c) 2020 Preferred Networks, Inc.
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
------------------------------------------------------------------------------
-"""
 
 from types import LambdaType, FunctionType
-from typing import List, Callable, Union
+from typing import List, Callable, Union, Tuple
 
 import pandas as pd
 from pandas.core.common import get_callable_name
 
 
-def is_lambda_function(obj):
+def _is_lambda_function(obj):
     """
     Example:
         >>> import numpy as np
         >>> def custom_function(x): return np.sum(x)
-        >>> is_lambda_function(lambda x: np.sum(x))
+        >>> _is_lambda_function(lambda x: np.sum(x))
         True
-        >>> is_lambda_function(np.sum)
+        >>> _is_lambda_function(np.sum)
         False
-        >>> is_lambda_function(custom_function)
+        >>> _is_lambda_function(custom_function)
         False
     """
     # It's worth noting that types.LambdaType is an alias for types.FunctionType
@@ -59,8 +58,10 @@ def aggregation(
         group_key: str,
         group_values: List[str],
         agg_methods: List[Union[str, FunctionType]],
-):
-    """Aggregate values after grouping table rows by a given key.
+) -> Tuple[pd.DataFrame, List[str]]:
+    """
+    Aggregate values after grouping table rows by a given key.
+
     Args:
         input_df:
             Input data frame.
@@ -69,10 +70,8 @@ def aggregation(
         group_values:
             Used to aggregate values for the groupby.
         agg_methods:
-            List of function or function names,
-             e.g. ['mean', 'max', 'min', numpy.mean].
-            Do not use a lambda function because the name attribute of the lambda function
-             cannot generate a unique string of column names in <lambda>.
+            List of function or function names, e.g. ['mean', 'max', 'min', numpy.mean].
+            Do not use a lambda function because the name attribute of the lambda function cannot generate a unique string of column names in <lambda>.
     Returns:
         Tuple of output dataframe and new column names.
     """
@@ -80,7 +79,7 @@ def aggregation(
 
     new_cols = []
     for agg_method in agg_methods:
-        if is_lambda_function(agg_method):
+        if _is_lambda_function(agg_method):
             raise ValueError('Not supported lambda function.')
         elif isinstance(agg_method, str):
             pass
