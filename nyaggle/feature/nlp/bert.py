@@ -80,9 +80,9 @@ class BertSentenceVectorizer(BaseFeaturizer):
 
         self.model.eval()
         with torch.no_grad():
-            all_encoder_layers, _ = self.model(tokens_tensor)
+            outputs = self.model(tokens_tensor)
 
-        embedding = all_encoder_layers.cpu().numpy()[0]
+        embedding = outputs.last_hidden_state.cpu().numpy()[0]
         if self.pooling_strategy == 'reduce_mean':
             return np.mean(embedding, axis=0)
         elif self.pooling_strategy == 'reduce_max':
