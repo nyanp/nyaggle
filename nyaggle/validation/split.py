@@ -46,7 +46,7 @@ def check_cv(cv: Union[int, Iterable, BaseCrossValidator] = 5,
         else:
             return KFold(cv, shuffle=True, random_state=random_state)
 
-    return model_selection.check_cv(cv, y, stratified)
+    return model_selection.check_cv(cv, y, classifier=stratified)
 
 
 class Take(BaseCrossValidator):
