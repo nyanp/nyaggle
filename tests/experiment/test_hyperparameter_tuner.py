@@ -16,9 +16,7 @@ def _check_parameter_tunes(params, x, y):
 
 
 def test_regression_problem_parameter_tunes():
-    dataset = datasets.load_boston()
-    x = pd.DataFrame(dataset.data, columns=dataset.feature_names)
-    y = pd.Series(dataset.target)
+    x, y = datasets.load_diabetes(return_X_y=True, as_frame=True)
     params = {
         'objective': 'regression',
         'metric': 'rmse',
