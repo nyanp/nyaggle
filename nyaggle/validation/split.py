@@ -46,7 +46,7 @@ def check_cv(cv: Union[int, Iterable, BaseCrossValidator] = 5,
         else:
             return KFold(cv, shuffle=True, random_state=random_state)
 
-    return model_selection.check_cv(cv, y, stratified)
+    return model_selection.check_cv(cv, y, classifier=stratified)
 
 
 class Take(BaseCrossValidator):
@@ -380,8 +380,7 @@ class StratifiedGroupKFold(_BaseKFold):
 
     def __init__(self, n_splits: int = 3, shuffle: bool = False,
                  random_state: Optional[Union[int, np.random.RandomState]] = None):
-        super(StratifiedGroupKFold, self).__init__(n_splits, shuffle,
-                                                   random_state)
+        super().__init__(n_splits, shuffle=shuffle, random_state=random_state)
 
     def _make_test_folds(self, X, y=None, groups=None):
         """
