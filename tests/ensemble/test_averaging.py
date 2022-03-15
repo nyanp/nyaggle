@@ -175,6 +175,27 @@ def test_averaging_opt_minimize():
     assert result.score <= result_simple_avg.score
 
 
+def test_averaging_opt_minimize_with_method():
+    X, y = make_regression_df(n_samples=1024)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
+    oof, test = _make_1st_stage_preds(X_train, y_train, X_test)
+
+    best_single_model = min(mean_squared_error(y_train, oof[0]),
+                            mean_squared_error(y_train, oof[1]),
+                            mean_squared_error(y_train, oof[2]))
+
+    result1 = averaging_opt(test, oof, y_train, mean_squared_error, higher_is_better=False)
+    result2 = averaging_opt(test, oof, y_train, mean_squared_error, higher_is_better=False, method='Nelder-Mead')
+    result3 = averaging_opt(test, oof, y_train, mean_squared_error, higher_is_better=False, method='SLSQP')
+
+    assert result1.score != result2.score
+    assert result1.score == result3.score
+
+    assert result1.score <= best_single_model
+    assert result2.score <= best_single_model
+
+
 def test_rank_averaging_opt_maximize():
     X, y = make_classification_df(n_samples=1024)
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
