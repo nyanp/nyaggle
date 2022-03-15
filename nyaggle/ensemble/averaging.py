@@ -72,12 +72,13 @@ def averaging(test_predictions: List[np.ndarray],
 def averaging_opt(test_predictions: List[np.ndarray],
                   oof_predictions: Optional[List[np.ndarray]],
                   y: Optional[pd.Series],
-                  eval_func: Optional[Callable],
+                  eval_func: Optional[Callable[[np.ndarray, np.ndarray], float]],
                   higher_is_better: bool,
-                  weight_bounds: Tuple = (0, 1),
-                  rank_averaging: bool = False) -> EnsembleResult:
+                  weight_bounds: Tuple[float, float] = (0.0, 1.0),
+                  rank_averaging: bool = False,
+                  method: Optional[str] = None) -> EnsembleResult:
     """
-    Perform averaging with optimal weights using scipy.optimize
+    Perform averaging with optimal weights using scipy.optimize.
 
     Args:
         test_predictions:
@@ -87,13 +88,16 @@ def averaging_opt(test_predictions: List[np.ndarray],
         y:
             Target value
         eval_func:
-            Evaluation metric used for calculating result score. Used only if ``oof_predictions`` and ``y`` are given.
+            Evaluation metric f(y_true, y_pred) used for calculating result score.
+            Used only if ``oof_predictions`` and ``y`` are given.
         higher_is_better:
             Determine the direction of optimize ``eval_func``.
         weight_bounds:
             Specify lower/upper bounds of each weight.
         rank_averaging:
             If ``True``, predictions will be converted to rank before averaging.
+        method:
+            Type of solver. If ``None``, SLSQP will be used.
     Returns:
         Namedtuple with following members
 
@@ -118,11 +122,16 @@ def averaging_opt(test_predictions: List[np.ndarray],
     if rank_averaging:
         test_predictions, oof_predictions = _to_rank(test_predictions, oof_predictions)
 
-    cons = ({'type': 'eq', 'fun': lambda w: 1 - sum(w)})
+    method = method or 'SLSQP'
+
+    if method in ['COBYLA', 'SLSQP', 'trust-constr']:
+        cons = ({'type': 'eq', 'fun': lambda w: 1 - sum(w)})
+    else:
+        cons = None
 
     bounds = [weight_bounds] * len(test_predictions)
 
-    result = minimize(_minimize, weights, method='SLSQP', constraints=cons, bounds=bounds)
+    result = minimize(_minimize, weights, method=method, constraints=cons, bounds=bounds)
 
     return averaging(test_predictions, oof_predictions, y, result['x'], eval_func)
 
