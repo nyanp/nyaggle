@@ -183,7 +183,7 @@ auc, importance = adversarial_validate(train, test, importance_type='gain')
 
 ### Validation Splitters
 
-nyaggle provides a set of validation splitters that compatible with sklean interface.
+nyaggle provides a set of validation splitters that compatible with sklearn interface.
 
 ```python
 import pandas as pd
