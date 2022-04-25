@@ -8,8 +8,8 @@
 [**Documentation**](https://nyaggle.readthedocs.io/en/latest/index.html)
 | [**Slide (Japanese)**](https://docs.google.com/presentation/d/1jv3J7DISw8phZT4z9rqjM-azdrQ4L4wWJN5P-gKL6fA/edit?usp=sharing)
 
-**nyaggle** is a utility library for Kaggle and offline competitions, 
-particularly focused on experiment tracking, feature engineering and validation.
+**nyaggle** is an utility library for Kaggle and offline competitions. 
+It is particularly focused on experiment tracking, feature engineering, and validation.
 
 - **nyaggle.ensemble** - Averaging & stacking
 - **nyaggle.experiment** - Experiment tracking
@@ -22,19 +22,19 @@ particularly focused on experiment tracking, feature engineering and validation.
 
 You can install nyaggle via pip:
 
-```Shell
-$pip install nyaggle
+```bash
+pip install nyaggle
 ```
 
 ## Examples
 
 ### Experiment Tracking
 
-`run_experiment()` is an high-level API for experiment with cross validation.
+`run_experiment()` is a high-level API for experiments with cross validation.
 It outputs parameters, metrics, out of fold predictions, test predictions,
-feature importance and submission.csv under the specified directory.
+feature importance, and submission.csv under the specified directory.
 
-It can be combined with mlflow tracking.
+To enable mlflow tracking, include the optional `with_mlflow=True` parameter.
 
 ```python
 from sklearn.model_selection import train_test_split
@@ -55,7 +55,7 @@ result = run_experiment(params,
                         y_train,
                         X_test)
 
-# You can get outputs that needed in data science competitions with 1 API
+# You can get outputs that are needed in data science competitions with 1 API
 
 print(result.test_prediction)  # Test prediction in numpy array
 print(result.oof_prediction)   # Out-of-fold prediction in numpy array
@@ -134,7 +134,7 @@ all.loc[:, cat_cols] = te.fit_transform(all[cat_cols], all[cat_cols])
 #### Text Vectorization using BERT
 
 You need to install pytorch to your virtual environment to use BertSentenceVectorizer. 
-MaCab and mecab-python3 are also required if you use Japanese BERT model.
+MaCab and mecab-python3 are also required if you use the Japanese BERT model.
 
 ```python
 import pandas as pd
@@ -183,7 +183,7 @@ auc, importance = adversarial_validate(train, test, importance_type='gain')
 
 ### Validation Splitters
 
-nyaggle provides a set of validation splitters that compatible with sklearn interface.
+nyaggle provides a set of validation splitters that are compatible with sklearn.
 
 ```python
 import pandas as pd
