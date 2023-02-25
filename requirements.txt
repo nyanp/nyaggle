@@ -6,6 +6,6 @@ optuna>=1.0.0
 pandas
 pyarrow
 seaborn
-sklearn
+scikit-learn
 tqdm
 transformers[ja]
