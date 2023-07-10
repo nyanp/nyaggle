@@ -37,7 +37,7 @@ setup(
         'pandas',
         'pyarrow',
         'seaborn',
-        'sklearn',
+        'scikit-learn',
         'tqdm',
         'transformers>=2.3.0',
     ],
