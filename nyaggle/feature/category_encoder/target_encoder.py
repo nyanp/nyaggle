@@ -174,7 +174,7 @@ class TargetEncoder(KFoldEncoderWrapper):
                  groups: Optional[pd.Series] = None,
                  cols: List[str] = None,
                  drop_invariant: bool = False, handle_missing: str = 'value', handle_unknown: str = 'value',
-                 min_samples_leaf: int = 1, smoothing: float = 1.0, return_same_type: bool = True):
+                 min_samples_leaf: int = 20, smoothing: float = 10.0, return_same_type: bool = True):
         e = ce.TargetEncoder(cols=cols, drop_invariant=drop_invariant, return_df=True,
                              handle_missing=handle_missing,
                              handle_unknown=handle_unknown,
