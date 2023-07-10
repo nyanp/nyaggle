@@ -116,7 +116,7 @@ class BertSentenceVectorizer(BaseFeaturizer):
         X = convert_input(X)
 
         tqdm.pandas()
-        columns = self.text_columns or [c for c in X.columns if X[c].dtype == np.object]
+        columns = self.text_columns or [c for c in X.columns if X[c].dtype == object]
         non_text_columns = [c for c in X.columns if c not in columns]
 
         column_names = []
