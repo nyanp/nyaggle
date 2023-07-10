@@ -2,7 +2,7 @@ from typing import List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
-from pandas.api.types import is_integer_dtype, is_categorical
+from pandas.api.types import is_integer_dtype, is_categorical_dtype
 from sklearn.preprocessing import LabelEncoder
 
 
@@ -24,7 +24,7 @@ def autoprep_gbdt(algorithm_type: str, X_train: pd.DataFrame, X_test: Optional[p
 
     if algorithm_type == 'lgbm':
         # LightGBM can handle categorical dtype natively
-        categorical_feature_to_treat = [c for c in categorical_feature_to_treat if not is_categorical(X_train[c])]
+        categorical_feature_to_treat = [c for c in categorical_feature_to_treat if not is_categorical_dtype(X_train[c])]
 
     if algorithm_type == 'cat' and len(categorical_feature_to_treat) > 0:
         X_train = X_train.copy()
@@ -49,7 +49,7 @@ def autoprep_gbdt(algorithm_type: str, X_train: pd.DataFrame, X_test: Optional[p
 
 
 def _fill_na_by_unique_value(strain: pd.Series, stest: Optional[pd.Series]) -> Tuple[pd.Series, pd.Series]:
-    if is_categorical(strain):
+    if is_categorical_dtype(strain):
         return strain.cat.codes, stest.cat.codes
     elif is_integer_dtype(strain.dtype):
         fillval = min(strain.min(), stest.min()) - 1
