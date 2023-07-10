@@ -450,7 +450,7 @@ class StratifiedGroupKFold(_BaseKFold):
             split_diffs[splitx] = cand_diffs[splitx]
             grouped_splitx.append(splitx)
 
-        test_folds = np.empty(n_samples, dtype=np.int)
+        test_folds = np.empty(n_samples, dtype=int)
         for group_idx, splitx in zip(sortx, grouped_splitx):
             idxs = group_idxs[group_idx]
             test_folds[idxs] = splitx
