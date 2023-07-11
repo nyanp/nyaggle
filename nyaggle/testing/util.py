@@ -60,8 +60,6 @@ def make_regression_df(n_samples: int = 1024,
     return X, y
 
 
-
-
 @contextmanager
 def get_temp_directory() -> str:
     path = None
@@ -71,4 +69,3 @@ def get_temp_directory() -> str:
     finally:
         if path:
             shutil.rmtree(path, ignore_errors=True)
-

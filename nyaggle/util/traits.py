@@ -63,7 +63,7 @@ def is_instance(obj, class_path_str: Union[str, List, Tuple]) -> bool:
         # Check module exists
         try:
             spec = importlib.util.find_spec(module_name)
-        except:
+        except (ValueError, AttributeError, ModuleNotFoundError):
             spec = None
         if spec is None:
             continue

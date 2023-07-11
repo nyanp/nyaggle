@@ -24,7 +24,7 @@ result = run_experiment(params,
                         X_train,
                         y_train,
                         X_test,
-                         './wine-quality-{time}',
+                        './wine-quality-{time}',
                         type_of_target='continuous',
                         with_mlflow=True,
                         with_auto_hpo=True)

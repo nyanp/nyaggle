@@ -1,7 +1,7 @@
 parameters = [
     {
         "name": "ieee-2019-17th",
-        "url": "https://nbviewer.jupyter.org/github/tmheo/IEEE-Fraud-Detection-17th-Place-Solution/blob/master/notebook/IEEE-17th-Place-Solution-CatBoost-Ensemble.ipynb",
+        "url": "https://nbviewer.jupyter.org/github/tmheo/IEEE-Fraud-Detection-17th-Place-Solution/blob/master/notebook/IEEE-17th-Place-Solution-CatBoost-Ensemble.ipynb",  # noQA
         "competition": "ieee-fraud-detection",
         "rank": 17,
         "metric": "auc",
@@ -42,4 +42,3 @@ parameters = [
         }
     },
 ]
-

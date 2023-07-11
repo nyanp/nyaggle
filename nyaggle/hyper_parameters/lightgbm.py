@@ -28,7 +28,7 @@ parameters = [
     },
     {
         "name": "ieee-2019-17th",
-        "url": "https://nbviewer.jupyter.org/github/tmheo/IEEE-Fraud-Detection-17th-Place-Solution/blob/master/notebook/IEEE-17th-Place-Solution-LightGBM.ipynb",
+        "url": "https://nbviewer.jupyter.org/github/tmheo/IEEE-Fraud-Detection-17th-Place-Solution/blob/master/notebook/IEEE-17th-Place-Solution-LightGBM.ipynb",  # noQA
         "competition": "ieee-fraud-detection",
         "rank": 17,
         "metric": "auc",
@@ -98,7 +98,7 @@ parameters = [
     # 2019, Santander Customer Transaction Prediction
     {
         "name": "santander-2019-2nd",
-        "url": "https://github.com/KazukiOnodera/santander-customer-transaction-prediction/blob/master/py/990_2nd_place_solution_golf.py",
+        "url": "https://github.com/KazukiOnodera/santander-customer-transaction-prediction/blob/master/py/990_2nd_place_solution_golf.py",  # noQA
         "competition": "santander-customer-transaction-prediction",
         "rank": 2,
         "metric": "auc",
@@ -120,7 +120,7 @@ parameters = [
     },
     {
         "name": "santander-2019-5th",
-        "url": "https://github.com/tnmichael309/Kaggle-Santander-Customer-Transaction-Prediction-5th-Place-Partial-Solution/blob/master/notebooks/LGB%20Model.ipynb",
+        "url": "https://github.com/tnmichael309/Kaggle-Santander-Customer-Transaction-Prediction-5th-Place-Partial-Solution/blob/master/notebooks/LGB%20Model.ipynb",  # noQA
         "competition": "santander-customer-transaction-prediction",
         "rank": 5,
         "metric": "auc",
@@ -193,7 +193,7 @@ parameters = [
     # 2018, Microsoft Malware Prediction
     {
         "name": "microsoft-2018-2nd",
-        "url": "https://github.com/imor-de/microsoft_malware_prediction_kaggle_2nd/blob/master/code/7_Submission_M2.ipynb",
+        "url": "https://github.com/imor-de/microsoft_malware_prediction_kaggle_2nd/blob/master/code/7_Submission_M2.ipynb",  # noQA
         "competition": "microsoft-malware-prediction",
         "rank": 2,
         "metric": "auc",

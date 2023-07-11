@@ -1,7 +1,7 @@
 # pytorch
 
 try:
-    import torch
+    import torch  # noQA
     _has_torch = True
 except ImportError:
     _has_torch = False
@@ -15,7 +15,7 @@ def requires_torch():
 # mlflow
 
 try:
-    import mlflow
+    import mlflow  # noQA
     _has_mlflow = True
 except ImportError:
     _has_mlflow = False
@@ -30,7 +30,7 @@ def requires_mlflow():
 
 
 try:
-    import lightgbm
+    import lightgbm  # noQA
     _has_lightgbm = True
 except ImportError:
     _has_lightgbm = False
@@ -45,7 +45,7 @@ def requires_lightgbm():
 
 
 try:
-    import catboost
+    import catboost  # noQA
     _has_catboost = True
     # TODO check catboost version >= 0.17
 except ImportError:
@@ -61,7 +61,7 @@ def requires_catboost():
 
 
 try:
-    import xgboost
+    import xgboost  # noQA
     _has_xgboost = True
 except ImportError:
     _has_xgboost = False

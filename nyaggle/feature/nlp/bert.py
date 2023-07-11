@@ -58,7 +58,7 @@ class BertSentenceVectorizer(BaseFeaturizer):
             self.tokenizer = transformers.BertJapaneseTokenizer.from_pretrained(pretrained_model_name)
             self.model = transformers.BertModel.from_pretrained(pretrained_model_name)
         else:
-            raise ValueError('Specified language type () is invalid.'.format(lang))
+            raise ValueError(f'Specified language type ({lang}) is invalid.')
 
         self.lang = lang
         self.n_components = n_components
