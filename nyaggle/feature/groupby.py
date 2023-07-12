@@ -29,7 +29,7 @@
 # SOFTWARE.
 # -----------------------------------------------------------------------------
 
-
+from inspect import isroutine
 from types import FunctionType, LambdaType
 from typing import Callable, List, Tuple, Union
 
@@ -86,7 +86,7 @@ def aggregation(
             pass
         elif isinstance(agg_method, FunctionType):
             pass
-        elif isinstance(agg_method, Callable):
+        elif isroutine(agg_method):
             pass
         else:
             raise ValueError('Supported types are: {} or {}.'
