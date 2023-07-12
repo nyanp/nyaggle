@@ -7,19 +7,19 @@
 # https://github.com/pfnet-research/xfeat/blob/master/xfeat/helper.py
 # -----------------------------------------------------------------------------
 # MIT License
-# 
+#
 # Copyright (c) 2020 Preferred Networks, Inc.
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -29,9 +29,9 @@
 # SOFTWARE.
 # -----------------------------------------------------------------------------
 
-
-from types import LambdaType, FunctionType
-from typing import List, Callable, Union, Tuple
+from inspect import isroutine
+from types import FunctionType, LambdaType
+from typing import Callable, List, Tuple, Union
 
 import pandas as pd
 from pandas.core.common import get_callable_name
@@ -71,7 +71,8 @@ def aggregation(
             Used to aggregate values for the groupby.
         agg_methods:
             List of function or function names, e.g. ['mean', 'max', 'min', numpy.mean].
-            Do not use a lambda function because the name attribute of the lambda function cannot generate a unique string of column names in <lambda>.
+            Do not use a lambda function because the name attribute of the lambda
+            function cannot generate a unique string of column names in <lambda>.
     Returns:
         Tuple of output dataframe and new column names.
     """
@@ -84,6 +85,8 @@ def aggregation(
         elif isinstance(agg_method, str):
             pass
         elif isinstance(agg_method, FunctionType):
+            pass
+        elif isroutine(agg_method):
             pass
         else:
             raise ValueError('Supported types are: {} or {}.'
