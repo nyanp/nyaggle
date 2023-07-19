@@ -1,7 +1,7 @@
 torch
 mlflow
 catboost
-lightgbm
+lightgbm<4.0.0
 xgboost
 mecab-python3>=1.0.0
 flake8
