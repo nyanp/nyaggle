@@ -7,6 +7,8 @@ from category_encoders.utils import convert_input, convert_input_vector
 from sklearn.base import BaseEstimator
 from sklearn.linear_model import LogisticRegression, Ridge
 from sklearn.model_selection import BaseCrossValidator, GridSearchCV
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
 
 from nyaggle.ensemble.common import EnsembleResult
 from nyaggle.validation import cross_validate
@@ -76,12 +78,12 @@ def stacking(test_predictions: List[np.ndarray],
     if estimator is None:
         # if estimator is None, tuned linear estimator is used
         if type_of_target == 'continuous':
-            estimator = Ridge(normalize=True, random_state=0)
+            estimator = make_pipeline(StandardScaler(), Ridge(random_state=0))
             param_grid = {
-                'alpha': [0.001, 0.01, 0.1, 1, 10],
+                'ridge__alpha': [0.001, 0.01, 0.1, 1, 10],
             }
         else:
-            estimator = LogisticRegression(random_state=0)
+            estimator = LogisticRegression(random_state=0, solver='liblinear')
             param_grid = {
                 'penalty': ['l1', 'l2'],
                 'C': [0.001, 0.01, 0.1, 1, 10],
@@ -90,7 +92,7 @@ def stacking(test_predictions: List[np.ndarray],
         grid_search.fit(X_train, y, groups=groups)
         estimator = grid_search.best_estimator_
 
-    result = cross_validate(estimator, X_train, y, X_test, cv=cv, groups=groups, eval_func=eval_func)
+    result = cross_validate(estimator, X_train, y, X_test, cv=cv, groups=groups, eval_func=eval_func, type_of_target=type_of_target)
     score = result.scores[-1] if result.scores else None
 
     return EnsembleResult(result.test_prediction, result.oof_prediction, score)
